@@ -1,0 +1,24 @@
+{
+  "name": "unidots-v2",
+  "version": "1.0.0",
+  "description": "Unidots V2 - Full Stack Application",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "cd backend && npm start",
+    "build": "cd frontend && npm run build",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "dev": "concurrently \"cd backend && npm run server\" \"cd frontend && npm start\"",
+    "deploy:railway": "railway up",
+    "deploy:render": "render deploy",
+    "deploy:vercel": "vercel --prod"
+  },
+  "keywords": ["unidots", "fullstack", "react", "nodejs"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+} 

@@ -1,0 +1,22 @@
+{
+  "type": "PNG_TEMPLATE_EXPORT",
+  "metadata": {
+    "name": "Elegant Tea Package",
+    "category": "Food Packaging",
+    "colors": {
+      "usedColors": [],
+      "customColors": [],
+      "colorPalette": []
+    },
+    "textElements": {
+      "customText": []
+    },
+    "timestamp": "2025-06-07T17:38:37.647Z"
+  },
+  "dimensions": {
+    "width": 400,
+    "height": 300
+  },
+  "generated": "2025-06-07T17:38:37.662Z",
+  "preview": "Generated template preview with customizations"
+}
