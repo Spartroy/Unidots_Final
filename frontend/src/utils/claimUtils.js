@@ -65,5 +65,5 @@ export const normalizeStatus = (status) => {
  */
 export const downloadFile = (fileId) => {
   if (!fileId) return;
-  window.open(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/files/${fileId}/download`, '_blank');
+  window.open(`/api/files/${fileId}/download`, '_blank');
 }; 

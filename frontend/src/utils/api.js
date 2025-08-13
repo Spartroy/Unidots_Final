@@ -40,4 +40,22 @@ api.interceptors.request.use(
   error => Promise.reject(error)
 );
 
+// Global response interceptor: handle 401/403 by clearing user and redirecting to login
+api.interceptors.response.use(
+  response => response,
+  error => {
+    const status = error?.response?.status;
+    if (status === 401 || status === 403) {
+      try {
+        localStorage.removeItem('user');
+      } catch (_) {}
+      // Avoid infinite loops if already on login
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.assign('/login');
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api; 

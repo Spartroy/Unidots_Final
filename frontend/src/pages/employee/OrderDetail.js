@@ -913,7 +913,7 @@ const OrderDetail = () => {
                               </div>
                               <div className="ml-4 flex-shrink-0">
                                 <a
-                                  href={`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/files/${file._id}/download`}
+                                  href={`/api/files/${file._id}/download`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="font-medium text-primary-600 hover:text-primary-500"
@@ -947,7 +947,7 @@ const OrderDetail = () => {
                               </div>
                               <div className="ml-4 flex-shrink-0">
                                 <a
-                                  href={`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/files/${file._id}/download`}
+                                  href={`/api/files/${file._id}/download`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="font-medium text-primary-600 hover:text-primary-500"
@@ -1022,7 +1022,7 @@ const OrderDetail = () => {
                               </div>
                               <div className="ml-4 flex-shrink-0">
                                 <a
-                                  href={`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/files/${file._id}/download`}
+                                  href={`/api/files/${file._id}/download`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="font-medium text-primary-600 hover:text-primary-500"

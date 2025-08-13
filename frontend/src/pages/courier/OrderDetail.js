@@ -291,7 +291,7 @@ const CourierOrderDetail = () => {
                           </div>
                           <a 
                             className="text-primary-600 hover:underline text-sm"
-                            href={`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/files/${file._id}/download`} 
+                            href={`/api/files/${file._id}/download`} 
                             target="_blank" 
                             rel="noreferrer"
                           >

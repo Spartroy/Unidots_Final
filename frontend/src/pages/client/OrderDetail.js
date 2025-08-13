@@ -137,7 +137,7 @@ const OrderDetail = () => {
   
   // Function to download a file
   const downloadFile = (fileId) => {
-    window.open(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/files/${fileId}/download`, '_blank');
+    window.open(`/api/files/${fileId}/download`, '_blank');
   };
 
   // Function to handle order cancellation
