@@ -16,20 +16,6 @@
       }
     }
   ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/backend/server.js"
-    },
-    {
-      "src": "/uploads/(.*)",
-      "dest": "/backend/server.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/build/$1"
-    }
-  ],
   "env": {
     "NODE_ENV": "production"
   },
@@ -41,6 +27,10 @@
     {
       "source": "/uploads/(.*)",
       "destination": "/backend/server.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/frontend/build/$1"
     },
     {
       "source": "/((?!api|uploads).*)",
