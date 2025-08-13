@@ -1,8 +1,25 @@
 import axios from 'axios';
 
 // Create axios instance with base URL
-// In production on Vercel, we default to relative '/api' so Vercel routes proxy to Railway.
-const API_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:4000');
+// Normalize REACT_APP_API_URL. If not provided, use '' in production (Vercel proxy) and localhost in dev.
+const normalizeBaseUrl = (value) => {
+  if (!value) return null;
+  let url = String(value).trim();
+  // Add scheme if missing
+  if (!/^https?:\/\//i.test(url)) {
+    // If it looks like a relative path, return as-is (let Vercel proxy handle it)
+    if (url.startsWith('/')) return url;
+    url = `https://${url}`;
+  }
+  // Remove trailing slashes
+  url = url.replace(/\/+$/, '');
+  // Remove trailing /api to avoid duplication when callers use '/api/...'
+  url = url.replace(/\/api$/i, '');
+  return url;
+};
+
+const explicitBaseUrl = normalizeBaseUrl(process.env.REACT_APP_API_URL);
+const API_URL = explicitBaseUrl ?? (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:4000');
 
 const api = axios.create({
   baseURL: API_URL
