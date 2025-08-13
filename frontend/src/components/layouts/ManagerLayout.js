@@ -25,6 +25,7 @@ const ManagerLayout = () => {
     { name: 'Clients', href: '/manager/clients', current: location.pathname.startsWith('/manager/clients') },
     { name: 'Barrel Management', href: '/manager/barrel-management', current: location.pathname.startsWith('/manager/barrel-management') },
     { name: 'Monthly Reports', href: '/manager/reports', current: location.pathname.startsWith('/manager/reports') },
+    { name: 'Plate Monitoring', href: '/manager/plate-monitoring', current: location.pathname.startsWith('/manager/plate-monitoring') },
     // { name: 'Dot Deformation Detector', href: '/DotDeformationDetector', current: location.pathname.startsWith('/DotDeformationDetector') }
   ];
 

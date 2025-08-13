@@ -10,7 +10,8 @@
     "dev": "concurrently \"cd backend && npm run server\" \"cd frontend && npm start\"",
     "deploy:railway": "railway up",
     "deploy:render": "render deploy",
-    "deploy:vercel": "vercel --prod"
+    "deploy:vercel": "vercel --prod",
+    "deploy:vercel:setup": "chmod +x deploy-vercel.sh && ./deploy-vercel.sh"
   },
   "keywords": ["unidots", "fullstack", "react", "nodejs"],
   "author": "",

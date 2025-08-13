@@ -23,7 +23,6 @@ const OrderDetail = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
-  const [markingDelivered, setMarkingDelivered] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0); // Add a key to force refresh
   const [uploadFiles, setUploadFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -163,53 +162,6 @@ const OrderDetail = () => {
       console.error('Cancel order error:', error);
     } finally {
       setCancelLoading(false);
-    }
-  };
-
-  // Function to handle marking order as delivered (actually completed)
-  const handleMarkAsDelivered = async () => {
-    if (markingDelivered) return;
-    
-    setMarkingDelivered(true);
-    try {
-      console.log('Attempting to mark order as completed...');
-      
-      // Make API call to update the status to Completed
-      const response = await api.put(`/api/orders/${id}/status`, { 
-        status: 'Completed'  // Changed from 'Delivered' to 'Completed'
-      });
-      
-      console.log('Server response:', response.data);
-      
-      // Check if the response contains a valid order
-      if (response.data && response.data._id) {
-        // Show success message
-        toast.success('Thank you! Your order has been marked as completed');
-        
-        // Update the local order state with server response
-        setOrder(response.data);
-        
-        // Force a complete refresh of all order data
-        setTimeout(() => {
-          console.log('Refreshing order data...');
-          setRefreshKey(prevKey => prevKey + 1);
-        }, 500);
-      } else {
-        console.error('Invalid response received:', response.data);
-        toast.error('Failed to complete the order. Please refresh and try again.');
-      }
-    } catch (error) {
-      // Handle error cases
-      const errorMessage = error.response?.data?.message || 'Failed to complete the order';
-      console.error('Error marking order as completed:', error.response?.data || error.message);
-      toast.error(errorMessage);
-      
-      // If there was a problem, refresh the order data anyway
-      setTimeout(() => {
-        fetchOrderData();
-      }, 500);
-    } finally {
-      setMarkingDelivered(false);
     }
   };
 
@@ -472,6 +424,13 @@ const OrderDetail = () => {
                     <div className="mt-1 text-sm text-gray-900">{order.specifications?.printingMode || 'N/A'}</div>
                   </div>
 
+                  {order.assignedTo && (
+                    <div>
+                      <div className="text-sm font-medium text-gray-500">Assigned Designer</div>
+                      <div className="mt-1 text-sm text-gray-900">{order.assignedTo?.name}</div>
+                    </div>
+                  )}
+
                   <div>
                     <div className="text-sm font-medium text-gray-500">Email</div>
                     <div className="mt-1 text-sm text-gray-900">
@@ -502,6 +461,12 @@ const OrderDetail = () => {
                   <h4 className="text-base font-medium text-gray-900">Technical Specifications</h4>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 p-4">
+                  {order.specifications?.packageType && (
+                    <div>
+                      <div className="text-sm font-medium text-gray-500">Package Type</div>
+                      <div className="mt-1 text-sm text-gray-900">{order.specifications.packageType}</div>
+                    </div>
+                  )}
                   <div>
                     <div className="text-sm font-medium text-gray-500">Dimensions</div>
                     <div className="mt-1 text-sm text-gray-900">
@@ -581,6 +546,326 @@ const OrderDetail = () => {
                   <div className="mb-8">
                     <OrderProgressBar order={order} className="mt-2" />
                   </div>
+                  
+                  {/* Detailed Steps */}
+                  <div className="space-y-4 mt-6">
+                    {/* Design/Production Stage */}
+                    <div className={`bg-white border ${
+                      order.status === 'Designing' ? 'border-yellow-400 bg-yellow-50' : 
+                      order.status === 'Design Done' || order.status === 'In Prepress' || 
+                      order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' ? 'border-green-400 bg-green-50' : 'border-gray-200'
+                    } rounded-md overflow-hidden`}>
+                      <div className="px-4 py-4 sm:px-6 flex items-center">
+                        <div className={`flex-shrink-0 h-8 w-8 rounded-full ${
+                          order.status === 'Design Done' || order.status === 'In Prepress' || 
+                          order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' ? 'bg-green-500' : 
+                          order.status === 'Designing' ? 'bg-yellow-400' : 'bg-gray-200'
+                        } flex items-center justify-center mr-3`}>
+                          {order.status === 'Design Done' || order.status === 'In Prepress' || 
+                           order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' ? (
+                            <svg className="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          ) : (
+                            <span className="text-xs text-white font-medium">1</span>
+                          )}
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-900">Designing</h4>
+                          <p className="text-xs text-gray-500">
+                            {order.status === 'Design Done' || order.status === 'In Prepress' || 
+                             order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' 
+                             ? `Completed on ${formatDate(order.stages?.design?.completionDate || order.updatedAt)}` 
+                             : order.status === 'Designing' 
+                             ? 'Designing' 
+                             : 'Not started'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Prepress Stage */}
+                    <div className={`bg-white border ${
+                      order.status === 'In Prepress' ? 'border-yellow-400 bg-yellow-50' : 
+                      order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' ? 'border-green-400 bg-green-50' : 'border-gray-200'
+                    } rounded-md overflow-hidden`}>
+                      <div className="px-4 py-4 sm:px-6 flex items-center">
+                        <div className={`flex-shrink-0 h-8 w-8 rounded-full ${
+                          order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' ? 'bg-green-500' : 
+                          order.status === 'In Prepress' ? 'bg-yellow-400' : 'bg-gray-200'
+                        } flex items-center justify-center mr-3`}>
+                          {order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' ? (
+                            <svg className="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          ) : (
+                            <span className="text-xs text-white font-medium">2</span>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                           <h4 className="text-sm font-medium text-gray-900">Prepress</h4>
+                          <p className="text-xs text-gray-500">
+                            {order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' 
+                             ? `Completed on ${formatDate(order.stages?.prepress?.completionDate || order.updatedAt)}` 
+                             : order.status === 'In Prepress' 
+                             ? 'In progress' 
+                             : 'Not started'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Prepress Sub-processes - visible to client as well for transparency */}
+                      {(order.status === 'In Prepress' || order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed') && order.stages?.prepress?.subProcesses && (
+                        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                          <h5 className="text-xs font-medium text-gray-700 mb-2">Prepress Progress</h5>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <div className="flex items-center">
+                              <div className={`h-4 w-4 rounded-full ${
+                                order.stages?.prepress?.subProcesses?.positioning?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
+                              } mr-2`}></div>
+                              <span className="text-xs text-gray-600">Positioning</span>
+                            </div>
+                            <div className="flex items-center">
+                              <div className={`h-4 w-4 rounded-full ${
+                                order.stages?.prepress?.subProcesses?.laserImaging?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
+                              } mr-2`}></div>
+                              <span className="text-xs text-gray-600">Laser Imaging</span>
+                            </div>
+                            <div className="flex items-center">
+                              <div className={`h-4 w-4 rounded-full ${
+                                order.stages?.prepress?.subProcesses?.exposure?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
+                              } mr-2`}></div>
+                              <span className="text-xs text-gray-600">Exposure</span>
+                            </div>
+                            <div className="flex items-center">
+                              <div className={`h-4 w-4 rounded-full ${
+                                order.stages?.prepress?.subProcesses?.washout?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
+                              } mr-2`}></div>
+                              <span className="text-xs text-gray-600">Washout</span>
+                            </div>
+                            <div className="flex items-center">
+                              <div className={`h-4 w-4 rounded-full ${
+                                order.stages?.prepress?.subProcesses?.drying?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
+                              } mr-2`}></div>
+                              <span className="text-xs text-gray-600">Drying</span>
+                            </div>
+                            <div className="flex items-center">
+                              <div className={`h-4 w-4 rounded-full ${
+                                order.stages?.prepress?.subProcesses?.finishing?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
+                              } mr-2`}></div>
+                              <span className="text-xs text-gray-600">Finishing</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Delivery Stage */}
+                    <div className={`bg-white border ${
+                      order.status === 'Ready for Delivery' || order.status === 'Delivering' ? 'border-yellow-400 bg-yellow-50' : 
+                      order.status === 'Completed' ? 'border-green-400 bg-green-50' : 'border-gray-200'
+                    } rounded-md overflow-hidden`}>
+                      <div className="px-4 py-4 sm:px-6 flex items-center">
+                        <div className={`flex-shrink-0 h-8 w-8 rounded-full ${
+                          order.status === 'Completed' ? 'bg-green-500' : 
+                          order.status === 'Ready for Delivery' || order.status === 'Delivering' ? 'bg-yellow-400' : 'bg-gray-200'
+                        } flex items-center justify-center mr-3`}>
+                          {order.status === 'Completed' ? (
+                            <svg className="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          ) : (
+                            <span className="text-xs text-white font-medium">3</span>
+                          )}
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-900">Delivery</h4>
+                          <p className="text-xs text-gray-500">
+                            {order.status === 'Completed' 
+                             ? `Completed on ${formatDate(order.stages?.delivery?.completionDate || order.updatedAt)}` 
+                             : order.status === 'Ready for Delivery' || order.status === 'Delivering'
+                             ? 'In progress' 
+                             : 'Not started'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+
+
+                  {/* Direct Delivery Information - Show when designer chose direct delivery */}
+                  {order.status === 'Ready for Delivery' && order.stages?.delivery?.courierInfo?.mode === 'direct' && (
+                    <div className="my-6">
+                      <div className="rounded-md bg-green-50 p-4 mb-4">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                              <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <h3 className="text-sm font-medium text-green-800">Direct Handover Selected</h3>
+                            <div className="mt-2 text-sm text-green-700">
+                              <p>Your order will be delivered directly to your address. The courier will handle the delivery process.</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Delivery Address Display */}
+                      {order.stages?.delivery?.courierInfo?.destination && (
+                        <div className="bg-white border border-gray-200 rounded-md overflow-hidden mb-4">
+                          <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                            <h4 className="text-sm font-medium text-gray-900">Delivery Address</h4>
+                          </div>
+                          <div className="p-4">
+                            <p className="text-sm text-gray-900">
+                              {order.stages.delivery.courierInfo.destination.street && `${order.stages.delivery.courierInfo.destination.street}, `}
+                              {order.stages.delivery.courierInfo.destination.city && `${order.stages.delivery.courierInfo.destination.city}, `}
+                              {order.stages.delivery.courierInfo.destination.state && `${order.stages.delivery.courierInfo.destination.state} `}
+                              {order.stages.delivery.courierInfo.destination.postalCode && `${order.stages.delivery.courierInfo.destination.postalCode}, `}
+                              {order.stages.delivery.courierInfo.destination.country}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Shipping Company Information - Show when designer chose shipping company */}
+                  {order.status === 'Ready for Delivery' && order.stages?.delivery?.courierInfo?.mode === 'shipping-company' && (
+                    <div className="my-6">
+                      <div className="rounded-md bg-blue-50 p-4 mb-4">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                              <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <h3 className="text-sm font-medium text-blue-800">Shipping Company Selected</h3>
+                            <div className="mt-2 text-sm text-blue-700">
+                              <p>Your order will be delivered via {order.stages.delivery.courierInfo.shipmentCompany}. A courier will handle the delivery process.</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Client Self-Collection Information - Show when designer chose client self-collection */}
+                  {order.status === 'Ready for Delivery' && order.stages?.delivery?.courierInfo?.mode === 'client-collection' && (
+                    <div className="my-6">
+                      <div className="rounded-md bg-yellow-50 p-4 mb-4">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <h3 className="text-sm font-medium text-yellow-800">Self-Collection Selected</h3>
+                            <div className="mt-2 text-sm text-yellow-700">
+                              <p>Your order is ready for self-collection. Please visit our location to pick up your order.</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Collection Address Display */}
+                      {order.stages?.delivery?.courierInfo?.destination && (
+                        <div className="bg-white border border-gray-200 rounded-md overflow-hidden mb-4">
+                          <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                            <h4 className="text-sm font-medium text-gray-900">Collection Address</h4>
+                          </div>
+                          <div className="p-4">
+                            <p className="text-sm text-gray-900">
+                              {order.stages.delivery.courierInfo.destination.street && `${order.stages.delivery.courierInfo.destination.street}, `}
+                              {order.stages.delivery.courierInfo.destination.city && `${order.stages.delivery.courierInfo.destination.city}, `}
+                              {order.stages.delivery.courierInfo.destination.state && `${order.stages.delivery.courierInfo.destination.state} `}
+                              {order.stages.delivery.courierInfo.destination.postalCode && `${order.stages.delivery.courierInfo.destination.postalCode}, `}
+                              {order.stages.delivery.courierInfo.destination.country}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Shipment Label Component - show when order is Delivering */}
+                  {order.status === 'Delivering' && order.files && order.files.some(file => file.fileType === 'courier') && (
+                    <div className="my-6">
+                      <div className="rounded-md bg-blue-50 p-4 mb-4">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                              <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <h3 className="text-sm font-medium text-blue-800">Your order is on the way!</h3>
+                            <div className="mt-2 text-sm text-blue-700">
+                              <p>Your order has been shipped and is currently in transit. You can download the shipment label below.</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Shipment Label Files */}
+                      <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
+                        <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                          <h4 className="text-sm font-medium text-gray-900">Shipment Label</h4>
+                        </div>
+                        <div className="p-4">
+                          {order.files
+                            .filter(file => file.fileType === 'courier')
+                            .map((file, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <div className="flex items-center">
+                                  <svg className="h-5 w-5 text-gray-400 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                  </svg>
+                                  <span className="text-sm font-medium text-gray-900">{file.originalname || file.filename}</span>
+                                </div>
+                                <a
+                                  href={`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/files/${file._id}/download`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                >
+                                  Download Label
+                                </a>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Order completed confirmation message */}
+                  {(order.status === 'Completed' || order.stages?.delivery?.status === 'Completed') && (
+                    <div className="my-6">
+                      <div className="rounded-md bg-green-50 p-4 mb-4">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <h3 className="text-sm font-medium text-green-800">Order Completed</h3>
+                            <div className="mt-2 text-sm text-green-700">
+                              <p>Thank you for confirming delivery. Your order has been marked as completed.</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -595,26 +880,189 @@ const OrderDetail = () => {
                   <p className="mt-1 text-sm text-gray-500">Attachments and documents related to this order</p>
                 </div>
                 <div className="p-6">
-                  {files && files.length > 0 ? (
-                    <ul className="divide-y divide-gray-200">
-                      {files.map((file, index) => (
-                        <li key={index} className="py-3 flex items-center justify-between">
-                          <div className="flex items-center">
-                            <DocumentTextIcon className="h-5 w-5 text-gray-400 mr-3" />
-                            <span className="text-sm font-medium text-gray-900">{file.filename || file.name}</span>
-                          </div>
-                          <button
-                            onClick={() => window.open(file.fileUrl || file.url, '_blank')}
-                            className="text-primary-600 hover:text-primary-800 text-sm"
-                          >
-                            Download
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-gray-500 text-center py-8">No files attached to this order</p>
+                  {/* Your uploaded files section */}
+                  {order.files && order.files.some(file => file.uploadedBy?._id === user?.id) && (
+                    <div className="mb-6">
+                      <h4 className="text-sm font-medium text-gray-900 mb-3">Your Uploaded Files</h4>
+                      <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
+                        {order.files
+                          .filter(file => file.uploadedBy?._id === user?.id)
+                          .map((file, index) => (
+                            <li key={index} className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
+                              <div className="w-0 flex-1 flex items-center">
+                                <PaperClipIcon className="flex-shrink-0 h-5 w-5 text-gray-400" aria-hidden="true" />
+                                <span className="ml-2 flex-1 w-0 truncate">
+                                  {file.originalname || file.filename}
+                                </span>
+                              </div>
+                              <div className="ml-4 flex-shrink-0">
+                                <a
+                                  href={`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/files/${file._id}/download`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-medium text-primary-600 hover:text-primary-500"
+                                >
+                                  Download
+                                </a>
+                              </div>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
                   )}
+
+                  {/* Staff files section */}
+                  {order.files && order.files.some(file => file.uploadedBy?.role === 'employee' || file.uploadedBy?.role === 'prepress' || file.uploadedBy?.role === 'manager') && (
+                    <div className="mb-6">
+                      <h4 className="text-sm font-medium text-gray-900 mb-3">Files from Unidots Team</h4>
+                      <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
+                        {order.files
+                          .filter(file => file.uploadedBy?.role === 'employee' || file.uploadedBy?.role === 'prepress' || file.uploadedBy?.role === 'manager')
+                          .map((file, index) => (
+                            <li key={index} className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
+                              <div className="w-0 flex-1 flex items-center">
+                                <PaperClipIcon className="flex-shrink-0 h-5 w-5 text-gray-400" aria-hidden="true" />
+                                <span className="ml-2 flex-1 w-0 truncate">
+                                  {file.originalname || file.filename}
+                                  <span className="ml-2 text-xs text-gray-500">
+                                    (From {file.uploadedBy?.name || 'Unidots team'})
+                                  </span>
+                                </span>
+                              </div>
+                              <div className="ml-4 flex-shrink-0">
+                                <a
+                                  href={`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/files/${file._id}/download`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-medium text-primary-600 hover:text-primary-500"
+                                >
+                                  Download
+                                </a>
+                              </div>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Courier files section - Shipment Labels */}
+                  {order.files && order.files.some(file => file.fileType === 'courier') && (
+                    <div className="mb-6">
+                      <h4 className="text-sm font-medium text-gray-900 mb-3">Shipment Labels</h4>
+                      <div className="rounded-md bg-blue-50 p-3 mb-3">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                              <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <p className="text-sm text-blue-700">
+                              Your order is on the way! Download the shipment label below.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
+                        {order.files
+                          .filter(file => file.fileType === 'courier')
+                          .map((file, index) => (
+                            <li key={index} className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
+                              <div className="w-0 flex-1 flex items-center">
+                                <svg className="flex-shrink-0 h-5 w-5 text-blue-400 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                </svg>
+                                <span className="ml-2 flex-1 w-0 truncate">
+                                  {file.originalname || file.filename}
+                                  <span className="ml-2 text-xs text-blue-600">
+                                    (Shipment Label)
+                                  </span>
+                                </span>
+                              </div>
+                              <div className="ml-4 flex-shrink-0">
+                                <a
+                                  href={`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/files/${file._id}/download`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-medium text-blue-600 hover:text-blue-500"
+                                >
+                                  Download
+                                </a>
+                              </div>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* File upload section */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Upload New Files</h4>
+                    <div
+                      {...getRootProps()}
+                      className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 ${
+                        isDragActive ? 'border-primary-500 bg-primary-50' : 'border-gray-300'
+                      } border-dashed rounded-md`}
+                    >
+                      <div className="space-y-1 text-center">
+                        <svg
+                          className="mx-auto h-12 w-12 text-gray-400"
+                          stroke="currentColor"
+                          fill="none"
+                          viewBox="0 0 48 48"
+                          aria-hidden="true"
+                        >
+                          <path
+                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        <div className="flex text-sm text-gray-600">
+                          <input {...getInputProps()} />
+                          <p className="pl-1">Drag and drop files here, or click to select files</p>
+                        </div>
+                        <p className="text-xs text-gray-500">PNG, JPG, GIF, PDF, AI, EPS up to 50MB</p>
+                      </div>
+                    </div>
+                    
+                    {uploadFiles.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="text-sm font-medium text-gray-900 mb-2">Files to upload:</h4>
+                        <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
+                          {uploadFiles.map((file, index) => (
+                            <li key={index} className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
+                              <div className="w-0 flex-1 flex items-center">
+                                <PaperClipIcon className="flex-shrink-0 h-5 w-5 text-gray-400" aria-hidden="true" />
+                                <span className="ml-2 flex-1 w-0 truncate">{file.name}</span>
+                              </div>
+                              <div className="ml-4 flex-shrink-0 flex">
+                                <button
+                                  type="button"
+                                  onClick={() => removeFile(file)}
+                                  className="font-medium text-red-600 hover:text-red-500"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="mt-4">
+                          <button
+                            type="button"
+                            onClick={handleFileUpload}
+                            disabled={uploading}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                          >
+                            {uploading ? 'Uploading...' : 'Upload Files'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -678,385 +1126,6 @@ const OrderDetail = () => {
               >
                 Submit a Claim
               </Link>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Order progress - Original progress section preserved */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="px-4 py-5 sm:px-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">Order Progress</h3>
-          <p className="mt-1 max-w-2xl text-sm text-gray-500">
-            Current status: <span className="font-medium">
-              {getDisplayStatus(order.status, 'client')}
-            </span>
-          </p>
-        </div>
-        <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
-          {/* Order Progress Bar */}
-          <div className="mb-8">
-            <OrderProgressBar order={order} className="mt-2" />
-          </div>
-          
-          {/* Detailed Steps */}
-          <div className="space-y-4 mt-6">
-            {/* Design/Production Stage */}
-            <div className={`bg-white border ${
-              order.status === 'Designing' ? 'border-yellow-400 bg-yellow-50' : 
-              order.status === 'Design Done' || order.status === 'In Prepress' || 
-              order.status === 'Ready for Delivery' || order.status === 'Completed' ? 'border-green-400 bg-green-50' : 'border-gray-200'
-            } rounded-md overflow-hidden`}>
-              <div className="px-4 py-4 sm:px-6 flex items-center">
-                <div className={`flex-shrink-0 h-8 w-8 rounded-full ${
-                  order.status === 'Design Done' || order.status === 'In Prepress' || 
-                  order.status === 'Ready for Delivery' || order.status === 'Completed' ? 'bg-green-500' : 
-                  order.status === 'Designing' ? 'bg-yellow-400' : 'bg-gray-200'
-                } flex items-center justify-center mr-3`}>
-                  {order.status === 'Design Done' || order.status === 'In Prepress' || 
-                   order.status === 'Ready for Delivery' || order.status === 'Completed' ? (
-                    <svg className="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    <span className="text-xs text-white font-medium">1</span>
-                  )}
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900">Designing</h4>
-                  <p className="text-xs text-gray-500">
-                    {order.status === 'Design Done' || order.status === 'In Prepress' || 
-                     order.status === 'Ready for Delivery' || order.status === 'Completed' 
-                     ? `Completed on ${formatDate(order.stages?.design?.completionDate || order.updatedAt)}` 
-                     : order.status === 'Designing' 
-                     ? 'Designing' 
-                     : 'Not started'}
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            {/* Prepress Stage */}
-            <div className={`bg-white border ${
-              order.status === 'In Prepress' ? 'border-yellow-400 bg-yellow-50' : 
-              order.status === 'Ready for Delivery' || order.status === 'Completed' ? 'border-green-400 bg-green-50' : 'border-gray-200'
-            } rounded-md overflow-hidden`}>
-              <div className="px-4 py-4 sm:px-6 flex items-center">
-                <div className={`flex-shrink-0 h-8 w-8 rounded-full ${
-                  order.status === 'Ready for Delivery' || order.status === 'Completed' ? 'bg-green-500' : 
-                  order.status === 'In Prepress' ? 'bg-yellow-400' : 'bg-gray-200'
-                } flex items-center justify-center mr-3`}>
-                  {order.status === 'Ready for Delivery' || order.status === 'Completed' ? (
-                    <svg className="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    <span className="text-xs text-white font-medium">2</span>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-sm font-medium text-gray-900">Prepressing</h4>
-                  <p className="text-xs text-gray-500">
-                    {order.status === 'Ready for Delivery' || order.status === 'Completed' 
-                     ? `Completed on ${formatDate(order.stages?.prepress?.completionDate || order.updatedAt)}` 
-                     : order.status === 'In Prepress' 
-                     ? 'In progress' 
-                     : 'Not started'}
-                  </p>
-                </div>
-              </div>
-              
-              {/* Prepress Sub-processes - visible to client as well for transparency */}
-              {(order.status === 'In Prepress' || order.status === 'Ready for Delivery' || order.status === 'Completed') && order.stages?.prepress?.subProcesses && (
-                <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
-                  <h5 className="text-xs font-medium text-gray-700 mb-2">Prepress Progress</h5>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    <div className="flex items-center">
-                      <div className={`h-4 w-4 rounded-full ${
-                        order.stages?.prepress?.subProcesses?.ripping?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
-                      } mr-2`}></div>
-                      <span className="text-xs text-gray-600">File Ripping</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className={`h-4 w-4 rounded-full ${
-                        order.stages?.prepress?.subProcesses?.laserImaging?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
-                      } mr-2`}></div>
-                      <span className="text-xs text-gray-600">Laser Imaging</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className={`h-4 w-4 rounded-full ${
-                        order.stages?.prepress?.subProcesses?.exposure?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
-                      } mr-2`}></div>
-                      <span className="text-xs text-gray-600">Exposure</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className={`h-4 w-4 rounded-full ${
-                        order.stages?.prepress?.subProcesses?.washout?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
-                      } mr-2`}></div>
-                      <span className="text-xs text-gray-600">Washout</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className={`h-4 w-4 rounded-full ${
-                        order.stages?.prepress?.subProcesses?.drying?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
-                      } mr-2`}></div>
-                      <span className="text-xs text-gray-600">Drying</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className={`h-4 w-4 rounded-full ${
-                        order.stages?.prepress?.subProcesses?.finishing?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
-                      } mr-2`}></div>
-                      <span className="text-xs text-gray-600">Finishing</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* Delivery Stage */}
-            <div className={`bg-white border ${
-              order.status === 'Ready for Delivery' ? 'border-yellow-400 bg-yellow-50' : 
-              order.status === 'Completed' ? 'border-green-400 bg-green-50' : 'border-gray-200'
-            } rounded-md overflow-hidden`}>
-              <div className="px-4 py-4 sm:px-6 flex items-center">
-                <div className={`flex-shrink-0 h-8 w-8 rounded-full ${
-                  order.status === 'Completed' ? 'bg-green-500' : 
-                  order.status === 'Ready for Delivery' ? 'bg-yellow-400' : 'bg-gray-200'
-                } flex items-center justify-center mr-3`}>
-                  {order.status === 'Completed' ? (
-                    <svg className="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    <span className="text-xs text-white font-medium">3</span>
-                  )}
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900">Delivery</h4>
-                  <p className="text-xs text-gray-500">
-                    {order.status === 'Completed' 
-                     ? `Completed on ${formatDate(order.stages?.delivery?.completionDate || order.updatedAt)}` 
-                     : order.status === 'Ready for Delivery' 
-                     ? 'In progress' 
-                     : 'Not started'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Delivery confirmation button - show when order is ready for delivery and not already completed */}
-          {order.status === 'Ready for Delivery' && order.stages?.delivery?.status !== 'Completed' && (
-            <div className="my-6">
-              <div className="rounded-md bg-indigo-50 p-4 mb-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-indigo-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-indigo-800">Your order has been sent for delivery</h3>
-                    <div className="mt-2 text-sm text-indigo-700">
-                      <p>Once you've physically received your order, please click the button below to confirm delivery and complete the order.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-center">
-                <button
-                  onClick={handleMarkAsDelivered}
-                  disabled={markingDelivered}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-                >
-                  {markingDelivered ? 'Processing...' : 'Confirm Delivery & Complete Order'}
-                </button>
-              </div>
-            </div>
-          )}
-          
-          {/* Order completed confirmation message */}
-          {(order.status === 'Completed' || order.stages?.delivery?.status === 'Completed') && (
-            <div className="my-6">
-              <div className="rounded-md bg-green-50 p-4 mb-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-green-800">Order Completed</h3>
-                    <div className="mt-2 text-sm text-green-700">
-                      <p>Thank you for confirming delivery. Your order has been marked as completed.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Tasks list */}
-          {tasks.length > 0 ? (
-            <ul className="divide-y divide-gray-200">
-              {tasks.map((task) => (
-                <li key={task._id} className="py-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-900">{task.title}</h4>
-                      <p className="mt-1 text-sm text-gray-500">{task.description}</p>
-                    </div>
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getTaskStatusColor(task.status)}`}>
-                      {task.status ? task.status.replace('_', ' ').toUpperCase() : ''}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-gray-500">No tasks have been created for this order yet.</p>
-          )}
-        </div>
-      </div>
-
-      {/* Files section */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="px-4 py-5 sm:px-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">Files</h3>
-          <p className="mt-1 max-w-2xl text-sm text-gray-500">
-            Order attachments and related documents
-          </p>
-        </div>
-        <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
-          {/* Your uploaded files section */}
-          {order.files && order.files.some(file => file.uploadedBy?._id === user?.id) && (
-            <div className="mb-6">
-              <h4 className="text-sm font-medium text-gray-900 mb-3">Your Uploaded Files</h4>
-              <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
-                {order.files
-                  .filter(file => file.uploadedBy?._id === user?.id)
-                  .map((file, index) => (
-                    <li key={index} className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
-                      <div className="w-0 flex-1 flex items-center">
-                        <PaperClipIcon className="flex-shrink-0 h-5 w-5 text-gray-400" aria-hidden="true" />
-                        <span className="ml-2 flex-1 w-0 truncate">
-                          {file.originalname || file.filename}
-                        </span>
-                      </div>
-                      <div className="ml-4 flex-shrink-0">
-                        <a
-                          href={`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/files/${file._id}/download`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-medium text-primary-600 hover:text-primary-500"
-                        >
-                          Download
-                        </a>
-                      </div>
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          )}
-
-                      {/* Staff files section */}
-            {order.files && order.files.some(file => file.uploadedBy?.role === 'employee' || file.uploadedBy?.role === 'prepress' || file.uploadedBy?.role === 'manager') && (
-            <div className="mb-6">
-              <h4 className="text-sm font-medium text-gray-900 mb-3">Files from Unidots Team</h4>
-              <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
-                                  {order.files
-                    .filter(file => file.uploadedBy?.role === 'employee' || file.uploadedBy?.role === 'prepress' || file.uploadedBy?.role === 'manager')
-                    .map((file, index) => (
-                    <li key={index} className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
-                      <div className="w-0 flex-1 flex items-center">
-                        <PaperClipIcon className="flex-shrink-0 h-5 w-5 text-gray-400" aria-hidden="true" />
-                        <span className="ml-2 flex-1 w-0 truncate">
-                          {file.originalname || file.filename}
-                          <span className="ml-2 text-xs text-gray-500">
-                            (From {file.uploadedBy?.name || 'Unidots team'})
-                          </span>
-                        </span>
-                      </div>
-                      <div className="ml-4 flex-shrink-0">
-                        <a
-                          href={`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/files/${file._id}/download`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-medium text-primary-600 hover:text-primary-500"
-                        >
-                          Download
-                        </a>
-                      </div>
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          )}
-
-          {/* File upload section */}
-          <div className="mb-6">
-            <h4 className="text-sm font-medium text-gray-900 mb-2">Upload New Files</h4>
-            <div
-              {...getRootProps()}
-              className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 ${
-                isDragActive ? 'border-primary-500 bg-primary-50' : 'border-gray-300'
-              } border-dashed rounded-md`}
-            >
-              <div className="space-y-1 text-center">
-                <svg
-                  className="mx-auto h-12 w-12 text-gray-400"
-                  stroke="currentColor"
-                  fill="none"
-                  viewBox="0 0 48 48"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <div className="flex text-sm text-gray-600">
-                  <input {...getInputProps()} />
-                  <p className="pl-1">Drag and drop files here, or click to select files</p>
-                </div>
-                <p className="text-xs text-gray-500">PNG, JPG, GIF, PDF, AI, EPS up to 50MB</p>
-              </div>
-            </div>
-            
-            {uploadFiles.length > 0 && (
-              <div className="mt-4">
-                <h4 className="text-sm font-medium text-gray-900 mb-2">Files to upload:</h4>
-                <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
-                  {uploadFiles.map((file, index) => (
-                    <li key={index} className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
-                      <div className="w-0 flex-1 flex items-center">
-                        <PaperClipIcon className="flex-shrink-0 h-5 w-5 text-gray-400" aria-hidden="true" />
-                        <span className="ml-2 flex-1 w-0 truncate">{file.name}</span>
-                      </div>
-                      <div className="ml-4 flex-shrink-0 flex">
-                        <button
-                          type="button"
-                          onClick={() => removeFile(file)}
-                          className="font-medium text-red-600 hover:text-red-500"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-4">
-                  <button
-                    type="button"
-                    onClick={handleFileUpload}
-                    disabled={uploading}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                  >
-                    {uploading ? 'Uploading...' : 'Upload Files'}
-                  </button>
-                </div>
-              </div>
             )}
           </div>
         </div>

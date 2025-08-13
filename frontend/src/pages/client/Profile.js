@@ -3,6 +3,47 @@ import api from '../../utils/api';
 import { toast } from 'react-toastify';
 import AuthContext from '../../context/AuthContext';
 
+// Inline component to fetch and present employees for selection
+const ClientPreferredDesignerSelect = ({ value, onChange }) => {
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get('/api/users/public/employees');
+        setEmployees(res.data.users || []);
+      } catch (e) {
+        // noop
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEmployees();
+  }, []);
+  return (
+    <div className="sm:col-span-2">
+      <label htmlFor="defaultDesigner" className="block text-sm font-medium text-gray-700">
+        Preferred Designer
+      </label>
+      <select
+        id="defaultDesigner"
+        name="defaultDesigner"
+        className="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        <option value="">No default (manager will assign)</option>
+        {employees.map(emp => (
+          <option key={emp._id} value={emp._id}>{emp.name} {emp.department ? `- ${emp.department}` : ''}</option>
+        ))}
+      </select>
+      {loading && <p className="text-xs text-gray-500 mt-1">Loading employees...</p>}
+      <p className="text-xs text-gray-500 mt-1">New orders will auto-assign to your preferred designer. Managers can still change it.</p>
+    </div>
+  );
+};
+
 const Profile = () => {
   const { user, updateProfile } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
@@ -11,6 +52,8 @@ const Profile = () => {
     email: '',
     company: '',
     phone: '',
+    defaultDesigner: '',
+    geoLocation: { latitude: null, longitude: null },
     address: {
       street: '',
       city: '',
@@ -26,6 +69,7 @@ const Profile = () => {
   });
   const [isSubmittingProfile, setIsSubmittingProfile] = useState(false);
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
+  
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -36,6 +80,8 @@ const Profile = () => {
           email: response.data.email || '',
           company: response.data.company || '',
           phone: response.data.phone || '',
+          defaultDesigner: response.data.defaultDesigner || '',
+          geoLocation: response.data.geoLocation || { latitude: null, longitude: null },
           address: {
             street: response.data.address?.street || '',
             city: response.data.address?.city || '',
@@ -76,6 +122,7 @@ const Profile = () => {
     }
   };
 
+
   const handlePasswordChange = (e) => {
     setPasswordData({
       ...passwordData,
@@ -83,12 +130,21 @@ const Profile = () => {
     });
   };
 
+
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
     
     try {
       setIsSubmittingProfile(true);
-      await updateProfile(profileData);
+      await updateProfile({
+        name: profileData.name,
+        email: profileData.email,
+        phone: profileData.phone,
+        company: profileData.company,
+        address: profileData.address,
+        defaultDesigner: profileData.defaultDesigner || null,
+        geoLocation: profileData.geoLocation,
+      });
       toast.success('Profile updated successfully');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update profile');
@@ -208,6 +264,12 @@ const Profile = () => {
                     onChange={handleProfileChange}
                   />
                 </div>
+
+                {/* Preferred Designer */}
+                <ClientPreferredDesignerSelect 
+                  value={profileData.defaultDesigner}
+                  onChange={(val) => setProfileData(prev => ({ ...prev, defaultDesigner: val }))}
+                />
                 
                 <div className="sm:col-span-2">
                   <h4 className="text-lg font-medium text-gray-700 mb-3">Shipping Address</h4>
@@ -287,6 +349,8 @@ const Profile = () => {
                     onChange={handleProfileChange}
                   />
                 </div>
+
+                
               </div>
 
               <div className="mt-6">

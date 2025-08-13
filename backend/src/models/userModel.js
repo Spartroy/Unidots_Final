@@ -24,7 +24,7 @@ const userSchema = mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['client', 'employee', 'manager', 'admin', 'prepress'],
+      enum: ['client', 'employee', 'manager', 'admin', 'prepress', 'courier'],
       default: 'client',
     },
     company: {
@@ -71,6 +71,11 @@ const userSchema = mongoose.Schema(
         },
       },
     },
+    // Optional geolocation for clients to share delivery pin
+    geoLocation: {
+      latitude: { type: Number },
+      longitude: { type: Number }
+    },
     department: {
       type: String,
       enum: ['design', 'prepress', 'production', 'sales', 'management', 'none'],
@@ -81,6 +86,11 @@ const userSchema = mongoose.Schema(
     },
     profileImage: {
       type: String,
+    },
+    // Preferred/default designer for client (auto-assign new orders)
+    defaultDesigner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
     },
     isActive: {
       type: Boolean,

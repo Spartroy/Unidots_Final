@@ -10,7 +10,9 @@ import {
   deleteUser,
   createEmployee,
   updateUserStatus,
-  getDashboardStats
+  getDashboardStats,
+  getEmployeesPublic,
+  createCourier
 } from '../controllers/userController.js';
 import { protect, authorize, manager } from '../middleware/authMiddleware.js';
 
@@ -36,6 +38,16 @@ router.route('/employees')
   .get(protect, manager, getUsers) // Get employees with role filter
   .post(protect, manager, createEmployee);
 
+// Route for managers to create couriers and list them via role filter
+router.route('/couriers')
+  .get(protect, manager, getUsers)
+  .post(protect, manager, createCourier);
+
+// Public employees list for authenticated users (clients to pick preferred designer)
+router.route('/public/employees')
+  .get(protect, getEmployeesPublic);
+
+// ID-param routes MUST come after specific routes like /public/employees
 router.route('/:id')
   .get(protect, manager, getUserById)
   .put(protect, manager, updateUser)

@@ -18,9 +18,13 @@ import {
   getChatbotOrderData,
   submitDesignToOrder,
   getMonthlyReports,
-  downloadMonthlyReportsCSV
+  downloadMonthlyReportsCSV,
+  completeRippingAndStartPrepress,
+  courierClaimOrder,
+  courierUpdateDelivery,
+  chooseDeliveryMethod
 } from '../controllers/orderController.js';
-import { protect, client, staff, manager, prepress, prepressOrManager } from '../middleware/authMiddleware.js';
+import { protect, client, staff, manager, prepress, prepressOrManager, courier } from '../middleware/authMiddleware.js';
 
 // Client dashboard routes (must be defined before the /:id routes to avoid conflicts)
 router.route('/client-stats')
@@ -74,7 +78,7 @@ router.route('/:id/comments')
 
 // Prepress routes
 router.route('/:id/prepress-process')
-  .put(protect, prepressOrManager, updatePrepressProcess);
+  .put(protect, prepress, updatePrepressProcess);
 
 // Complete prepress stage
 router.route('/:id/prepress-complete')
@@ -83,5 +87,20 @@ router.route('/:id/prepress-complete')
 // Template design submission route (employees)
 router.route('/:id/submit-design')
   .post(protect, staff, submitDesignToOrder);
+
+// Designer completes ripping and moves to prepress
+router.route('/:id/ripping-complete')
+  .put(protect, staff, completeRippingAndStartPrepress);
+
+// Courier endpoints
+router.route('/:id/courier/claim')
+  .put(protect, courier, courierClaimOrder);
+
+router.route('/:id/courier/update')
+  .put(protect, courier, courierUpdateDelivery);
+
+// Designer chooses delivery method after prepress completion
+router.route('/:id/choose-delivery')
+  .post(protect, staff, chooseDeliveryMethod);
 
 export default router;

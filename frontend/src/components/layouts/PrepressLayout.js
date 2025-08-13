@@ -19,7 +19,9 @@ const PrepressLayout = () => {
   const navigation = [
     { name: 'Dashboard', href: '/prepress', current: location.pathname === '/prepress' },
     { name: 'Orders', href: '/prepress/orders', current: location.pathname === '/prepress/orders' },
+    { name: 'Order History', href: '/prepress/history', current: location.pathname === '/prepress/history' },
     { name: 'Solvent Monitor', href: '/prepress/acid-solution', current: location.pathname === '/prepress/acid-solution' },
+    { name: 'Plate Monitoring', href: '/prepress/plate-monitoring', current: location.pathname === '/prepress/plate-monitoring' },
   ];
 
   return (

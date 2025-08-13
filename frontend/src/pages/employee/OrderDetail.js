@@ -32,6 +32,20 @@ const OrderDetail = () => {
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [completionNote, setCompletionNote] = useState('');
+  const [designLink, setDesignLink] = useState('');
+  const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+  const [deliveryMethod, setDeliveryMethod] = useState('direct');
+  const [shipmentCompany, setShipmentCompany] = useState('');
+  const [tempAddress, setTempAddress] = useState('');
+  const [choosingDelivery, setChoosingDelivery] = useState(false);
+  const [markingDelivered, setMarkingDelivered] = useState(false);
+
+  // File ripping modal states
+  const [showRippingModal, setShowRippingModal] = useState(false);
+  const [rippingFiles, setRippingFiles] = useState([]);
+  const [rippingLink, setRippingLink] = useState('');
+  const [rippingNote, setRippingNote] = useState('');
+  const [uploadingRipping, setUploadingRipping] = useState(false);
 
   // Tabs
   const tabs = [
@@ -140,6 +154,34 @@ const OrderDetail = () => {
     URL.revokeObjectURL(fileToRemove.preview);
   };
 
+  // Ripping file dropzone setup
+  const onRippingDrop = acceptedFiles => {
+    console.log('Ripping files dropped:', acceptedFiles);
+    setRippingFiles(prevFiles => [
+      ...prevFiles,
+      ...acceptedFiles.map(file =>
+        Object.assign(file, { preview: URL.createObjectURL(file) })
+      )
+    ]);
+  };
+
+  const { getRootProps: getRippingRootProps, getInputProps: getRippingInputProps, isDragActive: isRippingDragActive } = useDropzone({
+    onDrop: onRippingDrop,
+    accept: {
+      'image/*': ['.jpeg', '.jpg', '.png', '.gif'],
+      'application/pdf': ['.pdf'],
+      'application/vnd.adobe.illustrator': ['.ai'],
+      'application/postscript': ['.eps'],
+      'application/x-photoshop': ['.psd'],
+    },
+    maxSize: 50 * 1024 * 1024, // 50MB
+  });
+
+  const removeRippingFile = (fileToRemove) => {
+    setRippingFiles(rippingFiles.filter(file => file !== fileToRemove));
+    URL.revokeObjectURL(fileToRemove.preview);
+  };
+
   const handleStageComplete = async (stageIndex) => {
     try {
       setUpdating(true);
@@ -199,8 +241,8 @@ const OrderDetail = () => {
   };
   
   const uploadFilesAndCompleteOrder = async () => {
-    if (files.length === 0) {
-      toast.error('Please upload at least one file before completing the design stage');
+    if (files.length === 0 && !designLink.trim()) {
+      toast.error('Please upload at least one file OR provide a design link to complete the design stage.');
       return;
     }
     
@@ -210,19 +252,26 @@ const OrderDetail = () => {
       // Create FormData for file upload
       const formData = new FormData();
       
-      // Add files with correct parameter name
-      files.forEach(file => {
-        formData.append('files', file);
-      });
+      // Add files if any are selected
+      if (files.length > 0) {
+        files.forEach(file => {
+          formData.append('files', file);
+        });
+      }
       
       // Add metadata as separate fields
       formData.append('relatedOrder', id);
       formData.append('fileType', 'design');
       formData.append('notes', completionNote || 'Completed design files');
       
-      console.log('Uploading files to order:', id);
+      // Add design link if provided
+      if (designLink.trim()) {
+        formData.append('designLink', designLink.trim());
+      }
       
-      // Upload files
+      console.log('Uploading files/design link to order:', id);
+      
+      // Upload files or design link
       const uploadResponse = await api.post('/api/files/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -230,9 +279,9 @@ const OrderDetail = () => {
       });
       
       if (uploadResponse.data) {
-        console.log('Files uploaded successfully:', uploadResponse.data);
+        console.log('Upload successful:', uploadResponse.data);
         
-        // Wait a moment to ensure files are fully processed
+        // Wait a moment to ensure everything is fully processed
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         console.log('About to update status to Design Done');
@@ -240,14 +289,15 @@ const OrderDetail = () => {
         try {
           // Mark stage as completed - use 'Design Done' status instead of 'Completed'
           await handleStatusUpdate('Design Done');
-        setShowCompletionModal(false);
-        setFiles([]);
-        setCompletionNote('');
-          toast.success('Design stage completed and files uploaded');
+          setShowCompletionModal(false);
+          setFiles([]);
+          setCompletionNote('');
+          setDesignLink(''); // Clear designLink on completion
+          toast.success('Design stage completed successfully');
         } catch (statusError) {
           console.error('Error in status update part:', statusError);
-          // Even if status update fails, we don't want to lose the files we already uploaded
-          toast.error('Files uploaded but failed to update order status');
+          // Even if status update fails, we don't want to lose the upload
+          toast.error('Upload successful but failed to update order status');
         }
       }
     } catch (error) {
@@ -260,10 +310,97 @@ const OrderDetail = () => {
       if (error.response?.data?.message) {
         toast.error(error.response.data.message);
       } else {
-        toast.error('Failed to upload files or complete design stage');
+        toast.error('Failed to upload files/link or complete design stage');
       }
     } finally {
       setUploading(false);
+    }
+  };
+
+  const uploadRippingFilesAndComplete = async () => {
+    if (rippingFiles.length === 0 && !rippingLink.trim()) {
+      toast.error('Please upload at least one file OR provide a ripping link to complete the ripping stage.');
+      return;
+    }
+    
+    try {
+      setUploadingRipping(true);
+      
+      // Create FormData for file upload
+      const formData = new FormData();
+      
+      // Add files if any are selected
+      if (rippingFiles.length > 0) {
+        rippingFiles.forEach(file => {
+          formData.append('files', file);
+        });
+      }
+      
+      // Add metadata as separate fields
+      formData.append('relatedOrder', id);
+      formData.append('fileType', 'ripping');
+      formData.append('notes', rippingNote || 'Ripping files');
+      
+      // Add ripping link if provided
+      if (rippingLink.trim()) {
+        formData.append('designLink', rippingLink.trim());
+      }
+      
+      console.log('Uploading ripping files/link to order:', id);
+      console.log('FormData contents:', {
+        files: rippingFiles.length,
+        fileType: 'ripping',
+        relatedOrder: id,
+        notes: rippingNote || 'Ripping files',
+        designLink: rippingLink.trim() || 'none'
+      });
+      
+      // Upload files or ripping link
+      const uploadResponse = await api.post('/api/files/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+      
+      if (uploadResponse.data) {
+        console.log('Ripping upload successful:', uploadResponse.data);
+        
+        // Wait a moment to ensure everything is fully processed
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        try {
+          // If order is still in 'Designing' status, first update to 'Design Done'
+          if (order.status === 'Designing') {
+            await handleStatusUpdate('Design Done');
+          }
+          
+          // Mark ripping as completed and move to prepress
+          await api.put(`/api/orders/${id}/ripping-complete`, {});
+          setShowRippingModal(false);
+          setRippingFiles([]);
+          setRippingNote('');
+          setRippingLink('');
+          
+          // Refresh order data
+          const response = await api.get(`/api/orders/${id}`);
+          setOrder(response.data);
+          
+          toast.success('Ripping completed and order moved to Prepress');
+        } catch (statusError) {
+          console.error('Error in ripping completion:', statusError);
+          console.error('Error response:', statusError.response?.data);
+          toast.error(statusError.response?.data?.message || 'Upload successful but failed to complete ripping stage');
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading ripping files:', error);
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error('Failed to upload ripping files/link');
+      }
+    } finally {
+      setUploadingRipping(false);
     }
   };
 
@@ -284,6 +421,55 @@ const OrderDetail = () => {
       console.error('Error adding comment:', error);
     } finally {
       setSubmittingComment(false);
+    }
+  };
+
+  const handleMarkAsDelivered = async () => {
+    try {
+      setMarkingDelivered(true);
+      await api.put(`/api/orders/${id}/status`, { status: 'Completed' });
+      const response = await api.get(`/api/orders/${id}`);
+      setOrder(response.data);
+      toast.success('Order marked as delivered and completed!');
+    } catch (error) {
+      toast.error('Failed to mark order as delivered');
+      console.error('Error marking as delivered:', error);
+    } finally {
+      setMarkingDelivered(false);
+    }
+  };
+
+  const handleChooseDeliveryMethod = async () => {
+    try {
+      setChoosingDelivery(true);
+      await api.post(`/api/orders/${id}/choose-delivery`, {
+        deliveryMethod,
+        shipmentCompany: deliveryMethod === 'shipping-company' ? 'Middle East' : undefined,
+        tempAddress: deliveryMethod === 'direct' ? tempAddress : undefined
+      });
+      
+      const response = await api.get(`/api/orders/${id}`);
+      setOrder(response.data);
+      setShowDeliveryModal(false);
+      setDeliveryMethod('direct');
+      setShipmentCompany('');
+      setTempAddress(''); // Clear temporary address on completion
+      
+      // Show appropriate success message based on delivery method
+      let successMessage = '';
+      if (deliveryMethod === 'direct') {
+        successMessage = 'Delivery method set to direct handover';
+      } else if (deliveryMethod === 'client-collection') {
+        successMessage = 'Delivery method set to client self-collection';
+      } else if (deliveryMethod === 'shipping-company') {
+        successMessage = 'Delivery method set to shipping company (Middle East)';
+      }
+      toast.success(successMessage);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to set delivery method');
+      console.error('Error choosing delivery method:', error);
+    } finally {
+      setChoosingDelivery(false);
     }
   };
 
@@ -389,6 +575,12 @@ const OrderDetail = () => {
                   <h4 className="text-base font-medium text-gray-900">Order Information</h4>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4 p-4">
+                  {order.specifications?.packageType && (
+                    <div>
+                      <div className="text-sm font-medium text-gray-500">Package Type</div>
+                      <div className="mt-1 text-sm text-gray-900">{order.specifications.packageType}</div>
+                    </div>
+                  )}
                   <div>
                     <div className="text-sm font-medium text-gray-500">Order Type</div>
                     <div className="mt-1 text-sm text-gray-900">{order.orderType || 'N/A'}</div>
@@ -552,6 +744,31 @@ const OrderDetail = () => {
                           </p>
                         </div>
                       </div>
+
+                      {/* Design Sub-processes */}
+                      {(order.status === 'Designing' || order.status === 'Design Done' || order.status === 'In Prepress' || order.status === 'Ready for Delivery' || order.status === 'Completed') && (
+                        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                          <h5 className="text-sm font-medium text-gray-700 mb-2">Design Sub-processes</h5>
+                          <div className="grid grid-cols-1 gap-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <div className={`h-4 w-4 rounded-full ${
+                                  order.stages?.production?.subProcesses?.ripping?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
+                                } mr-2`}></div>
+                                <span className="text-xs text-gray-600">File Ripping</span>
+                              </div>
+                              {order.stages?.production?.subProcesses?.ripping?.status === 'Completed' &&
+                                order.stages?.production?.subProcesses?.ripping?.completedBy && (
+                                <span className="text-xs text-gray-500">
+                                  Completed by {order.stages?.production?.subProcesses?.ripping?.completedBy?.name || 'Unknown'}
+                                  {order.stages?.production?.subProcesses?.ripping?.completedAt &&
+                                    ` on ${formatDate(order.stages?.production?.subProcesses?.ripping?.completedAt)}`}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Prepress Step */}
@@ -591,9 +808,9 @@ const OrderDetail = () => {
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             <div className="flex items-center">
                               <div className={`h-4 w-4 rounded-full ${
-                                order.stages?.prepress?.subProcesses?.ripping?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
+                                order.stages?.prepress?.subProcesses?.positioning?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
                               } mr-2`}></div>
-                              <span className="text-xs text-gray-600">File Ripping</span>
+                              <span className="text-xs text-gray-600">Positioning</span>
                             </div>
                             <div className="flex items-center">
                               <div className={`h-4 w-4 rounded-full ${
@@ -736,6 +953,124 @@ const OrderDetail = () => {
                                   className="font-medium text-primary-600 hover:text-primary-500"
                                 >
                                   Download
+                                </a>
+                              </div>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Design Links section */}
+                  {order.designLinks && order.designLinks.length > 0 && (
+                    <div className="mb-6">
+                      <h4 className="text-sm font-medium text-gray-900 mb-3">Design Links</h4>
+                      <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
+                        {order.designLinks.map((designLink, index) => (
+                          <li key={index} className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
+                            <div className="w-0 flex-1 flex items-center">
+                              <svg className="flex-shrink-0 h-5 w-5 text-blue-400 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5a2 2 0 11-2.828 2.828l-1.5 1.5a1 1 0 01-1.414 0 4 4 0 00-5.656 0l-1.5 1.5a4 4 0 105.656 5.656l1.5-1.5a1 1 0 011.414 0 2 2 0 002.828 0l1.5-1.5a4 4 0 105.656-5.656l-1.5 1.5a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                              </svg>
+                              <span className="ml-2 flex-1 w-0 truncate">
+                                {designLink.link}
+                                {designLink.notes && (
+                                  <span className="ml-2 text-xs text-gray-500">
+                                    ({designLink.notes})
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                            <div className="ml-4 flex-shrink-0">
+                              <a
+                                href={designLink.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium text-blue-600 hover:text-blue-500"
+                              >
+                                Open Link
+                              </a>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Ripping Files section */}
+                  {order.files && order.files.some(file => file.fileType === 'ripping') && (
+                    <div className="mb-6">
+                      <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
+                        <svg className="h-4 w-4 mr-2 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Ripping Files
+                      </h4>
+                      <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
+                        {order.files
+                          .filter(file => file.fileType === 'ripping')
+                          .map((file, index) => (
+                            <li key={index} className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
+                              <div className="w-0 flex-1 flex items-center">
+                                <PaperClipIcon className="flex-shrink-0 h-5 w-5 text-gray-400" aria-hidden="true" />
+                                <span className="ml-2 flex-1 w-0 truncate">
+                                  {file.originalname || file.filename}
+                                  <span className="ml-2 text-xs text-gray-500">
+                                    (Uploaded by {file.uploadedBy?.name || 'designer'} - Ripping)
+                                  </span>
+                                </span>
+                              </div>
+                              <div className="ml-4 flex-shrink-0">
+                                <a
+                                  href={`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/files/${file._id}/download`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-medium text-primary-600 hover:text-primary-500"
+                                >
+                                  Download
+                                </a>
+                              </div>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Ripping Links section */}
+                  {order.designLinks && order.designLinks.some(link => link.notes && link.notes.toLowerCase().includes('ripping')) && (
+                    <div className="mb-6">
+                      <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
+                        <svg className="h-4 w-4 mr-2 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5a2 2 0 11-2.828 2.828l-1.5 1.5a1 1 0 01-1.414 0 4 4 0 00-5.656 0l-1.5 1.5a4 4 0 105.656 5.656l1.5-1.5a1 1 0 011.414 0 2 2 0 002.828 0l1.5-1.5a4 4 0 105.656-5.656l-1.5 1.5a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                        </svg>
+                        Ripping Links
+                      </h4>
+                      <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
+                        {order.designLinks
+                          .filter(link => link.notes && link.notes.toLowerCase().includes('ripping'))
+                          .map((link, index) => (
+                            <li key={index} className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
+                              <div className="w-0 flex-1 flex items-center">
+                                <svg className="flex-shrink-0 h-5 w-5 text-blue-400 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5a2 2 0 11-2.828 2.828l-1.5 1.5a1 1 0 01-1.414 0 4 4 0 00-5.656 0l-1.5 1.5a4 4 0 105.656 5.656l1.5-1.5a1 1 0 011.414 0 2 2 0 002.828 0l1.5-1.5a4 4 0 105.656-5.656l-1.5 1.5a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                                </svg>
+                                <span className="ml-2 flex-1 w-0 truncate">
+                                  {link.link}
+                                  {link.notes && (
+                                    <span className="ml-2 text-xs text-gray-500">
+                                      ({link.notes})
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
+                              <div className="ml-4 flex-shrink-0">
+                                <a
+                                  href={link.link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-medium text-blue-600 hover:text-blue-500"
+                                >
+                                  Open Link
                                 </a>
                               </div>
                             </li>
@@ -957,6 +1292,36 @@ const OrderDetail = () => {
                 {updating ? 'Updating...' : 'Complete Design'}
               </button>
             )}
+            {/* Button to open ripping modal (designer responsibility) */}
+            {['Design Done', 'Designing'].includes(order.status) && (
+              <button
+                onClick={() => setShowRippingModal(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                File Ripping
+              </button>
+            )}
+
+            {/* Delivery Method Selection Button - Show when prepress is completed and designer can choose delivery */}
+            {order.stages?.prepress?.status === 'Completed' && order.status !== 'Ready for Delivery' && order.status !== 'Delivering' && order.status !== 'Completed' && (
+              <button
+                onClick={() => setShowDeliveryModal(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+              >
+                Choose Delivery Method
+              </button>
+            )}
+
+            {/* Direct Delivery Confirmation Button - Show when direct delivery is chosen */}
+            {order.status === 'Ready for Delivery' && order.stages?.delivery?.courierInfo?.mode === 'direct' && (
+              <button
+                onClick={handleMarkAsDelivered}
+                disabled={markingDelivered}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50"
+              >
+                {markingDelivered ? 'Processing...' : 'Confirm Direct Delivery & Complete Order'}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -982,7 +1347,7 @@ const OrderDetail = () => {
                   <h3 className="text-lg leading-6 font-medium text-gray-900">Complete Design Stage</h3>
                   <div className="mt-2">
                     <p className="text-sm text-gray-500">
-                      Please upload your final design files and add any notes before completing this stage.
+                      Please upload your final design files OR provide a design link (or both) before completing this stage.
                     </p>
                   </div>
                 </div>
@@ -1005,8 +1370,23 @@ const OrderDetail = () => {
                 </div>
 
                 <div className="mb-4">
+                  <label htmlFor="designLink" className="block text-sm font-medium text-gray-700">
+                    Design Link (optional)
+                  </label>
+                  <input
+                    type="url"
+                    id="designLink"
+                    name="designLink"
+                    value={designLink}
+                    onChange={(e) => setDesignLink(e.target.value)}
+                    placeholder="e.g., https://www.dropbox.com/s/abc123/design.pdf?dl=0"
+                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  />
+                </div>
+
+                <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700">
-                    Upload Files (required)
+                    Upload Files (optional)
                   </label>
                   <div
                     {...getRootProps()}
@@ -1067,7 +1447,7 @@ const OrderDetail = () => {
                 <button
                   type="button"
                   onClick={uploadFilesAndCompleteOrder}
-                  disabled={uploading || files.length === 0}
+                  disabled={uploading || (files.length === 0 && !designLink.trim())}
                   className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:col-start-2 sm:text-sm disabled:opacity-50"
                 >
                   {uploading ? 'Uploading...' : 'Complete Design Stage'}
@@ -1076,6 +1456,272 @@ const OrderDetail = () => {
                   type="button"
                   onClick={() => setShowCompletionModal(false)}
                   disabled={uploading}
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:col-start-1 sm:text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delivery Method Selection Modal */}
+      {showDeliveryModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-center w-12 h-12 mx-auto bg-green-100 rounded-full">
+                <svg className="h-6 w-6 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div className="mt-4 text-center">
+                <h3 className="text-lg font-medium text-gray-900">Choose Delivery Method</h3>
+                <div className="mt-4 text-sm text-gray-500">
+                  <p>Prepress work is completed. Please choose how this order will be delivered.</p>
+                </div>
+              </div>
+              
+              <div className="mt-6 space-y-4">
+                {/* Direct Delivery Option */}
+                <div className="flex items-center">
+                  <input
+                    id="direct-delivery"
+                    name="delivery-method"
+                    type="radio"
+                    value="direct"
+                    checked={deliveryMethod === 'direct'}
+                    onChange={(e) => setDeliveryMethod(e.target.value)}
+                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
+                  />
+                  <label htmlFor="direct-delivery" className="ml-3 block text-sm font-medium text-gray-700">
+                    Direct Handover
+                  </label>
+                </div>
+                
+                {/* Temporary Address Input for Direct Handover */}
+                {deliveryMethod === 'direct' && (
+                  <div className="ml-7">
+                    <label htmlFor="temp-address" className="block text-sm font-medium text-gray-700 mb-1">
+                      Temporary Delivery Address (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      id="temp-address"
+                      value={tempAddress}
+                      onChange={(e) => setTempAddress(e.target.value)}
+                      placeholder="e.g., Office address, different delivery location"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Leave empty if delivering to client's registered address
+                    </p>
+                  </div>
+                )}
+                
+                {/* Client Self-Collection Option */}
+                <div className="flex items-center">
+                  <input
+                    id="client-collection"
+                    name="delivery-method"
+                    type="radio"
+                    value="client-collection"
+                    checked={deliveryMethod === 'client-collection'}
+                    onChange={(e) => setDeliveryMethod(e.target.value)}
+                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
+                  />
+                  <label htmlFor="client-collection" className="ml-3 block text-sm font-medium text-gray-700">
+                    Client Self-Collection
+                  </label>
+                </div>
+                
+                {/* Shipping Company Option */}
+                <div className="flex items-center">
+                  <input
+                    id="shipping-company"
+                    name="delivery-method"
+                    type="radio"
+                    value="shipping-company"
+                    checked={deliveryMethod === 'shipping-company'}
+                    onChange={(e) => setDeliveryMethod(e.target.value)}
+                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
+                  />
+                  <label htmlFor="shipping-company" className="ml-3 block text-sm font-medium text-gray-700">
+                    Shipping Company (Middle East)
+                  </label>
+                </div>
+                
+                {/* Client Address Display for Direct Delivery */}
+                {deliveryMethod === 'direct' && order.client?.address && (
+                  <div className="ml-7 p-3 bg-gray-50 rounded-md">
+                    <p className="text-sm font-medium text-gray-700 mb-1">Client's Registered Address:</p>
+                    <p className="text-sm text-gray-600">
+                      {order.client.address.street && `${order.client.address.street}, `}
+                      {order.client.address.city && `${order.client.address.city}, `}
+                      {order.client.address.state && `${order.client.address.state} `}
+                      {order.client.address.postalCode && `${order.client.address.postalCode}, `}
+                      {order.client.address.country}
+                    </p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowDeliveryModal(false);
+                    setDeliveryMethod('direct');
+                    setShipmentCompany('');
+                    setTempAddress('');
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleChooseDeliveryMethod}
+                  disabled={choosingDelivery}
+                  className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                >
+                  {choosingDelivery ? 'Processing...' : 'Confirm Delivery Method'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* File Ripping Modal */}
+      {showRippingModal && (
+        <div className="fixed z-10 inset-0 overflow-y-auto">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            
+            <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+              <div>
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
+                  <svg className="h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div className="mt-3 text-center sm:mt-5">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">File Ripping</h3>
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-500">
+                      Please upload your ripped files OR provide a ripping link (or both) before completing this stage.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 sm:mt-6">
+                <div className="mb-4">
+                  <label htmlFor="rippingNotes" className="block text-sm font-medium text-gray-700">
+                    Notes (optional)
+                  </label>
+                  <textarea
+                    id="rippingNotes"
+                    name="rippingNotes"
+                    rows={3}
+                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border border-gray-300 rounded-md"
+                    placeholder="Add any notes about the ripped files"
+                    value={rippingNote}
+                    onChange={(e) => setRippingNote(e.target.value)}
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label htmlFor="rippingLink" className="block text-sm font-medium text-gray-700">
+                    Ripping Link (optional)
+                  </label>
+                  <input
+                    type="url"
+                    id="rippingLink"
+                    name="rippingLink"
+                    value={rippingLink}
+                    onChange={(e) => setRippingLink(e.target.value)}
+                    placeholder="e.g., https://www.dropbox.com/s/abc123/ripped-files.pdf?dl=0"
+                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Upload Ripped Files (optional)
+                  </label>
+                  <div
+                    {...getRippingRootProps()}
+                    className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md cursor-pointer ${
+                      isRippingDragActive ? 'bg-gray-50 border-primary-500' : ''
+                    }`}
+                  >
+                    <div className="space-y-1 text-center">
+                      <svg
+                        className="mx-auto h-12 w-12 text-gray-400"
+                        stroke="currentColor"
+                        fill="none"
+                        viewBox="0 0 48 48"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                          strokeWidth={2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <div className="flex text-sm text-gray-600">
+                        <input {...getRippingInputProps()} />
+                        <p className="pl-1">Drag and drop ripped files here, or click to select files</p>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        PNG, JPG, GIF, PDF, AI, PSD, EPS up to 50MB
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {rippingFiles.length > 0 && (
+                  <ul className="mt-4 border border-gray-200 rounded-md divide-y divide-gray-200">
+                    {rippingFiles.map((file, index) => (
+                      <li key={index} className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
+                        <div className="w-0 flex-1 flex items-center">
+                          <PaperClipIcon className="flex-shrink-0 h-5 w-5 text-gray-400" aria-hidden="true" />
+                          <span className="ml-2 flex-1 w-0 truncate">{file.name}</span>
+                        </div>
+                        <div className="ml-4 flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => removeRippingFile(file)}
+                            className="font-medium text-red-600 hover:text-red-500"
+                          >
+                            <XMarkIcon className="h-5 w-5" />
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+                <button
+                  type="button"
+                  onClick={uploadRippingFilesAndComplete}
+                  disabled={uploadingRipping || (rippingFiles.length === 0 && !rippingLink.trim())}
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:col-start-2 sm:text-sm disabled:opacity-50"
+                >
+                  {uploadingRipping ? 'Uploading...' : 'Complete Ripping Stage'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowRippingModal(false)}
+                  disabled={uploadingRipping}
                   className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:col-start-1 sm:text-sm"
                 >
                   Cancel

@@ -163,6 +163,9 @@ export const AuthProvider = ({ children }) => {
       case 'prepress':
         navigate('/prepress');
         break;
+      case 'courier':
+        navigate('/courier');
+        break;
       case 'manager':
       case 'admin':
         navigate('/manager');

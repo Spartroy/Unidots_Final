@@ -267,6 +267,12 @@ const OrderReceiptDocument = ({ order }) => {
         {/* Technical Specifications */}
         <View style={styles.section}>
           <Text style={styles.subheader}>Technical Specifications</Text>
+          {order.specifications?.packageType && (
+            <View style={styles.row}>
+              <Text style={styles.label}>Package Type:</Text>
+              <Text style={styles.value}>{order.specifications.packageType}</Text>
+            </View>
+          )}
           <View style={styles.row}>
             <Text style={styles.label}>Material:</Text>
             <Text style={styles.value}>{order.specifications?.material || 'N/A'}</Text>

@@ -106,6 +106,15 @@ const prepressOrManager = (req, res, next) => {
   }
 };
 
+// Courier-only middleware
+const courier = asyncHandler(async (req, res, next) => {
+  if (req.user.role !== 'courier') {
+    res.status(403);
+    throw new Error('Only couriers can access this resource');
+  }
+  next();
+});
+
 // Staff middleware (employee or manager)
 const staff = asyncHandler(async (req, res, next) => {
   if (req.user.role !== 'employee' && req.user.role !== 'manager' && req.user.role !== 'admin' && req.user.role !== 'prepress') {
@@ -115,4 +124,4 @@ const staff = asyncHandler(async (req, res, next) => {
   next();
 });
 
-export { protect, authorize, client, employee, manager, staff, prepress, prepressOrManager };
+export { protect, authorize, client, employee, manager, staff, prepress, prepressOrManager, courier };

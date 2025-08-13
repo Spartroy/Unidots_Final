@@ -18,9 +18,11 @@ const getUserProfile = asyncHandler(async (req, res) => {
       company: user.company,
       phone: user.phone,
       address: user.address,
+      geoLocation: user.geoLocation,
       department: user.department,
       profileImage: user.profileImage,
       createdAt: user.createdAt,
+      defaultDesigner: user.defaultDesigner,
     });
   } else {
     res.status(404);
@@ -77,6 +79,15 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       };
     }
 
+    // GeoLocation update if provided
+    if (req.body.geoLocation) {
+      const { latitude, longitude } = req.body.geoLocation;
+      user.geoLocation = {
+        latitude: latitude !== undefined ? latitude : user.geoLocation?.latitude,
+        longitude: longitude !== undefined ? longitude : user.geoLocation?.longitude,
+      };
+    }
+
     // Update password if provided
     if (req.body.password) {
       user.password = req.body.password;
@@ -85,6 +96,23 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     // Client-specific fields
     if (user.role === 'client') {
       user.company = req.body.company || user.company;
+      // Allow client to set default designer (must be an employee)
+      if (req.body.defaultDesigner) {
+        try {
+          const designer = await User.findById(req.body.defaultDesigner);
+          if (designer && designer.role === 'employee') {
+            user.defaultDesigner = designer._id;
+          } else {
+            throw new Error('Invalid default designer');
+          }
+        } catch (e) {
+          res.status(400);
+          throw new Error('Invalid default designer');
+        }
+      }
+      if (req.body.defaultDesigner === null) {
+        user.defaultDesigner = undefined;
+      }
     }
 
     // Save updated user
@@ -98,7 +126,9 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       company: updatedUser.company,
       phone: updatedUser.phone,
       address: updatedUser.address,
+      geoLocation: updatedUser.geoLocation,
       department: updatedUser.department,
+      defaultDesigner: updatedUser.defaultDesigner,
     });
   } else {
     res.status(404);
@@ -204,6 +234,22 @@ const getUsers = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Public list of employees (for clients to choose preferred designer)
+// @route   GET /api/users/public/employees
+// @access  Private (any authenticated user)
+const getEmployeesPublic = asyncHandler(async (req, res) => {
+  const query = { role: 'employee', isActive: true };
+  if (req.query.search) {
+    query.$or = [
+      { name: { $regex: req.query.search, $options: 'i' } },
+      { email: { $regex: req.query.search, $options: 'i' } },
+    ];
+  }
+  const employees = await User.find(query)
+    .select('_id name email department')
+    .sort({ name: 1 });
+  res.json({ users: employees });
+});
 
 const getUserById = asyncHandler(async (req, res) => {
   if (req.user.role !== 'manager' && req.user.role !== 'admin') {
@@ -401,6 +447,40 @@ const createEmployee = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Create new courier
+// @route   POST /api/users/couriers
+// @access  Private/Manager
+const createCourier = asyncHandler(async (req, res) => {
+  if (req.user.role !== 'manager' && req.user.role !== 'admin') {
+    res.status(403);
+    throw new Error('Not authorized to create couriers');
+  }
+  const { name, email, password, phone } = req.body;
+  if (!name || !email || !password) {
+    res.status(400);
+    throw new Error('Please add all required fields');
+  }
+  const userExists = await User.findOne({ email });
+  if (userExists) {
+    res.status(400);
+    throw new Error('User already exists');
+  }
+  const user = await User.create({
+    name,
+    email,
+    password,
+    role: 'courier',
+    department: 'none',
+    phone,
+  });
+  if (user) {
+    res.status(201).json({ _id: user._id, name: user.name, email: user.email, role: user.role });
+  } else {
+    res.status(400);
+    throw new Error('Invalid user data');
+  }
+});
+
 
 const updateUserStatus = asyncHandler(async (req, res) => {
   // Only managers and admins can update user status
@@ -532,6 +612,8 @@ export {
   updateUser,
   deleteUser,
   createEmployee,
+  createCourier,
   updateUserStatus,
-  getDashboardStats
+  getDashboardStats,
+  getEmployeesPublic
 };

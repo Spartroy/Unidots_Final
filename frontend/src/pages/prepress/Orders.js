@@ -128,7 +128,7 @@ const PrepressOrders = () => {
     let count = 0;
     const subProcesses = order.stages.prepress.subProcesses;
     
-    if (subProcesses.ripping?.status === 'Completed') count++;
+    if (subProcesses.positioning?.status === 'Completed') count++;
     if (subProcesses.laserImaging?.status === 'Completed') count++;
     if (subProcesses.exposure?.status === 'Completed') count++;
     if (subProcesses.washout?.status === 'Completed') count++;
@@ -140,19 +140,8 @@ const PrepressOrders = () => {
 
   // Get total number of sub-processes for an order
   const getTotalProcessCount = (order) => {
-    if (!order.stages?.prepress?.subProcesses) return 6; // Default to 6 if not defined
-    
-    let count = 0;
-    const subProcesses = order.stages.prepress.subProcesses;
-    
-    if (subProcesses.ripping) count++;
-    if (subProcesses.laserImaging) count++;
-    if (subProcesses.exposure) count++;
-    if (subProcesses.washout) count++;
-    if (subProcesses.drying) count++;
-    if (subProcesses.finishing) count++;
-    
-    return count > 0 ? count : 6; // Default to 6 if none are defined
+    // Always return 6 since there are 6 prepress sub-processes
+    return 6;
   };
 
   if (loading) {

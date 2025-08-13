@@ -13,9 +13,7 @@ const EmployeeDetail = () => {
     name: '',
     email: '',
     department: '',
-    position: '',
     phone: '',
-    specialization: '',
     status: ''
   });
   const navigate = useNavigate();
@@ -29,9 +27,7 @@ const EmployeeDetail = () => {
           name: response.data.name,
           email: response.data.email,
           department: response.data.department || '',
-          position: response.data.position || '',
           phone: response.data.phone || '',
-          specialization: response.data.specialization || '',
           status: response.data.status || 'active'
         });
       } catch (error) {
@@ -171,18 +167,12 @@ const EmployeeDetail = () => {
                 <dt className="text-sm font-medium text-gray-500">Department</dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 capitalize">{employee.department || 'Not specified'}</dd>
               </div>
-              <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">Position</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{employee.position || 'Not specified'}</dd>
-              </div>
+              {/* Position removed as per request */}
               <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">Phone number</dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{employee.phone || 'Not specified'}</dd>
               </div>
-              <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">Specialization</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{employee.specialization || 'Not specified'}</dd>
-              </div>
+              {/* Specialization removed as per request */}
               <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">Joined on</dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{formatDate(employee.createdAt)}</dd>
@@ -385,21 +375,7 @@ const EmployeeDetail = () => {
                             </div>
                           </div>
 
-                          <div className="sm:col-span-3">
-                            <label htmlFor="edit-position" className="block text-sm font-medium text-gray-700">
-                              Position
-                            </label>
-                            <div className="mt-1">
-                              <input
-                                type="text"
-                                name="position"
-                                id="edit-position"
-                                value={editData.position}
-                                onChange={handleInputChange}
-                                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                              />
-                            </div>
-                          </div>
+                          {/* Position edit removed */}
 
                           <div className="sm:col-span-3">
                             <label htmlFor="edit-phone" className="block text-sm font-medium text-gray-700">
@@ -417,21 +393,7 @@ const EmployeeDetail = () => {
                             </div>
                           </div>
 
-                          <div className="sm:col-span-3">
-                            <label htmlFor="edit-specialization" className="block text-sm font-medium text-gray-700">
-                              Specialization
-                            </label>
-                            <div className="mt-1">
-                              <input
-                                type="text"
-                                name="specialization"
-                                id="edit-specialization"
-                                value={editData.specialization}
-                                onChange={handleInputChange}
-                                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                              />
-                            </div>
-                          </div>
+                          {/* Specialization edit removed */}
 
                           <div className="sm:col-span-3">
                             <label htmlFor="edit-status" className="block text-sm font-medium text-gray-700">

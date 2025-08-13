@@ -413,11 +413,55 @@ export const uploadMultipleFiles = asyncHandler(async (req, res) => {
       throw new Error(`Error: ${err.message}`);
     }
 
-    // If no files were uploaded
+    // If no files were uploaded, check if a design link was provided
     if (!req.files || req.files.length === 0) {
-      console.error('No files found in request');
+      const { designLink, relatedOrder, notes, fileType } = req.body;
+      
+      // If it's a design file upload, check if either files or design link is provided
+      if (fileType === 'design') {
+        if (!designLink || !designLink.trim()) {
+          console.error('No files or design link found in design upload request');
+          res.status(400);
+          throw new Error('Please upload at least one file OR provide a design link to complete the design stage');
+        }
+      }
+      
+      // Handle design link submission
+      if (designLink && relatedOrder) {
+        console.log('Design link provided without files:', designLink);
+        
+        // Update the order with the design link
+        const order = await Order.findById(relatedOrder);
+        if (order) {
+          // Store the design link in the order
+          if (!order.designLinks) {
+            order.designLinks = [];
+          }
+          order.designLinks.push({
+            link: designLink,
+            addedBy: req.user.id,
+            addedAt: new Date(),
+            notes: notes || ''
+          });
+          
+          await order.save();
+          
+          console.log('Design link saved to order:', relatedOrder);
+          
+          return res.status(200).json({
+            message: 'Design link saved successfully',
+            designLink: designLink,
+            orderId: relatedOrder
+          });
+        } else {
+          res.status(404);
+          throw new Error('Order not found');
+        }
+      }
+      
+      console.error('No files found in request and no design link provided');
       res.status(400);
-      throw new Error('Please upload at least one file');
+      throw new Error('Please upload at least one file OR provide a design link');
     }
 
     console.log(`${req.files.length} files received for upload`);
@@ -473,7 +517,7 @@ export const uploadMultipleFiles = asyncHandler(async (req, res) => {
         uploadedFiles.push(fileRecord);
       }
 
-      // Update order record to include these files
+      // Update order record to include these files and notify client when courier label is uploaded
       if (relatedOrder) {
         console.log('Updating order with uploaded files:', relatedOrder);
         const order = await Order.findById(relatedOrder);
@@ -485,6 +529,49 @@ export const uploadMultipleFiles = asyncHandler(async (req, res) => {
             relatedOrder,
             { $push: { files: { $each: fileIds } } }
           );
+
+          // If the uploaded type is courier, mark order as "Delivering" and notify the client
+          if ((req.body.fileType || '').toLowerCase() === 'courier') {
+            try {
+              // Update order status to Delivering
+              order.status = 'Delivering';
+              
+              // Update delivery stage status to In Progress
+              if (!order.stages.delivery) {
+                order.stages.delivery = {};
+              }
+              order.stages.delivery.status = 'In Progress';
+              order.stages.delivery.startDate = new Date();
+              
+              // Add to history
+              order.history.push({
+                action: 'Shipment Label Uploaded',
+                user: req.user.id,
+                details: 'Courier uploaded shipment label. Order marked as Delivering.',
+                timestamp: new Date()
+              });
+              
+              await order.save();
+
+              // Create notification to client
+              try {
+                const { createSystemNotification } = await import('./notificationController.js');
+                await createSystemNotification(
+                  order.client,
+                  'Your order has been shipped',
+                  `Order ${order.orderNumber} is now on the way.`,
+                  'order',
+                  order._id,
+                  'success',
+                  `/client/orders/${order._id}`
+                );
+              } catch (notifyErr) {
+                console.warn('Failed to create shipment notification:', notifyErr?.message || notifyErr);
+              }
+            } catch (statusErr) {
+              console.warn('Failed to update order to Delivering:', statusErr?.message || statusErr);
+            }
+          }
         }
       }
 

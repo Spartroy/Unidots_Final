@@ -44,7 +44,7 @@ const PrepressDashboard = () => {
     let count = 0;
     const subProcesses = order.stages.prepress.subProcesses;
     
-    if (subProcesses.ripping?.status === 'Completed') count++;
+    if (subProcesses.positioning?.status === 'Completed') count++;
     if (subProcesses.laserImaging?.status === 'Completed') count++;
     if (subProcesses.exposure?.status === 'Completed') count++;
     if (subProcesses.washout?.status === 'Completed') count++;

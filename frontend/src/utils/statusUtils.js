@@ -77,35 +77,24 @@ export const getStatusColor = (status) => {
  */
 export const calculateProgressPercentage = (order) => {
   if (!order || !order.status || !order.stages) return 0;
-  
-  // Define status weights for the 4-step workflow
-  const TOTAL_STEPS = 4;
-  
-  // Determine step based on order status and stage statuses
-  let completedSteps = 1; // Start with 1 (Submission is always completed)
-  
-  // Design step completed if either the status indicates it or the production stage is completed
-  if (['Design Done', 'In Prepress', 'Ready for Delivery', 'Delivered', 'Completed'].includes(order.status) || 
-      order.stages?.production?.status === 'Completed') {
-    completedSteps = 2; // Design step completed
+  // 5-step workflow: Submission, Design, Ripping, Prepress, Delivery
+  const TOTAL_STEPS = 5;
+  let completedSteps = 1; // Submission
+  if (order.stages?.production?.status === 'In Progress' || order.status === 'Designing') {
+    completedSteps = Math.max(completedSteps, 1);
   }
-  
-  // Prepress step completed if the status indicates it or the prepress stage is completed
-  if (['Ready for Delivery', 'Delivered', 'Completed'].includes(order.status) || 
-      order.stages?.prepress?.status === 'Completed') {
-    completedSteps = 3; // Prepress step completed
+  if (order.stages?.production?.status === 'Completed' || ['In Prepress', 'Ready for Delivery', 'Completed'].includes(order.status)) {
+    completedSteps = Math.max(completedSteps, 2);
   }
-  
-  // Delivery step completed if the order is fully completed or the delivery stage is completed
-  if (['Delivered', 'Completed'].includes(order.status) || order.stages?.delivery?.status === 'Completed') {
-    completedSteps = 4; // Delivery step completed (fully completed order)
+  if (order.stages?.production?.subProcesses?.ripping?.status === 'Completed' || order.status === 'In Prepress') {
+    completedSteps = Math.max(completedSteps, 3);
   }
-  
-  // If status is Ready for Delivery, show 75% completion (3/4 steps)
-  if (order.status === 'Ready for Delivery' && order.stages?.delivery?.status !== 'Completed') {
-    completedSteps = 3;
+  if (order.stages?.prepress?.status === 'Completed' || ['Ready for Delivery', 'Completed'].includes(order.status)) {
+    completedSteps = Math.max(completedSteps, 4);
   }
-  
+  if (order.stages?.delivery?.status === 'Completed' || order.status === 'Completed') {
+    completedSteps = Math.max(completedSteps, 5);
+  }
   return (completedSteps / TOTAL_STEPS) * 100;
 };
 
@@ -119,40 +108,23 @@ export const getOrderSteps = (order) => {
     return { steps: [], currentStep: 0 };
   }
   
-  // Standardized steps for all portals
+  // Standardized steps for all portals (5-step)
   const steps = [
-    { label: 'Submission', completed: true }, // Always completed
-    { 
-      label: 'Design', 
-      completed: ['Design Done', 'In Prepress', 'Ready for Delivery', 'Delivered', 'Completed'].includes(order.status) ||
-                 order.stages?.production?.status === 'Completed'
-    },
-    { 
-      label: 'Prepress', 
-      completed: ['Ready for Delivery', 'Delivered', 'Completed'].includes(order.status) ||
-                 order.stages?.prepress?.status === 'Completed'
-    },
-    { 
-      label: 'Delivery', 
-      completed: order.status === 'Completed' || order.status === 'Delivered' || 
-                order.stages?.delivery?.status === 'Completed'
-    }
+    { label: 'Submission', completed: true },
+    { label: 'Design', completed: ['In Prepress', 'Ready for Delivery', 'Completed'].includes(order.status) || order.stages?.production?.status === 'Completed' },
+    { label: 'Ripping', completed: order.stages?.production?.subProcesses?.ripping?.status === 'Completed' || order.status === 'In Prepress' },
+    { label: 'Prepress', completed: ['Ready for Delivery', 'Completed'].includes(order.status) || order.stages?.prepress?.status === 'Completed' },
+    { label: 'Delivery', completed: order.status === 'Completed' || order.stages?.delivery?.status === 'Completed' }
   ];
 
   // Determine current step - this indicates where we are in the workflow
   let currentStep = 0;
   
-  if (order.status === 'Submitted') {
-    currentStep = 0;
-  } else if (order.status === 'Designing') {
-    currentStep = 1; // In design
-  } else if (order.status === 'Design Done' || order.status === 'In Prepress') {
-    currentStep = 2; // At prepress stage
-  } else if (order.status === 'Ready for Delivery') {
-    currentStep = 3;
-  } else if (['Completed', 'Delivered'].includes(order.status) || order.stages?.delivery?.status === 'Completed') {
-    currentStep = 4; // Complete all steps
-  }
+  if (order.status === 'Submitted') currentStep = 0;
+  else if (order.status === 'Designing') currentStep = 1;
+  else if (order.status === 'In Prepress') currentStep = 3;
+  else if (order.status === 'Ready for Delivery') currentStep = 4;
+  else if (['Completed', 'Delivered'].includes(order.status) || order.stages?.delivery?.status === 'Completed') currentStep = 5;
 
   return { steps, currentStep };
 };
@@ -199,7 +171,7 @@ export const arePrepressSubprocessesCompleted = (order) => {
   
   const subProcesses = order.stages.prepress.subProcesses;
   return (
-    subProcesses.ripping?.status === 'Completed' &&
+    subProcesses.positioning?.status === 'Completed' &&
     subProcesses.laserImaging?.status === 'Completed' &&
     subProcesses.exposure?.status === 'Completed' &&
     subProcesses.washout?.status === 'Completed' &&

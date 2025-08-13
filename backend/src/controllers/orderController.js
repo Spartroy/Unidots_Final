@@ -66,6 +66,19 @@ const createOrder = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('Printing mode is required');
   }
+  
+  // Optional: package type exists but not required
+  if (specifications.packageType && ![
+    'Central Seal',
+    '2 Side Seal',
+    '3 Side Seal',
+    'Custom Pouch',
+    'Label',
+    'Other'
+  ].includes(specifications.packageType)) {
+    res.status(400);
+    throw new Error('Invalid package type');
+  }
 
   try {
     // Calculate estimated price
@@ -128,6 +141,35 @@ const createOrder = asyncHandler(async (req, res) => {
     if (order) {
       console.log('Order created successfully:', order._id);
       
+      // Auto-assign designer if client has a defaultDesigner set
+      try {
+        const clientUser = await User.findById(req.user.id);
+        if (clientUser?.defaultDesigner) {
+          const designer = await User.findById(clientUser.defaultDesigner);
+          if (designer && designer.role === 'employee') {
+            order.assignedTo = designer._id;
+            order.history.push({
+              action: 'Order Assigned',
+              user: req.user.id,
+              details: `Auto-assigned to ${designer.name} (client default designer)`
+            });
+            await order.save();
+            // Notify the assigned designer
+            await createSystemNotification(
+              designer._id,
+              'New Order Assignment',
+              `You have been auto-assigned to order #${order.orderNumber}`,
+              'order',
+              order._id,
+              'info',
+              `/employee/orders/${order._id}`
+            );
+          }
+        }
+      } catch (autoAssignErr) {
+        console.error('Auto-assign default designer failed:', autoAssignErr.message);
+      }
+      
       try {
         // Create notification for managers about new order
         const managers = await User.find({ role: { $in: ['manager', 'admin'] } });
@@ -157,6 +199,110 @@ const createOrder = asyncHandler(async (req, res) => {
     res.status(500);
     throw new Error(`Error creating order: ${error.message}`);
   }
+});
+
+// @desc    Designer declares ripping complete and moves order to Prepress
+// @route   PUT /api/orders/:id/ripping-complete
+// @access  Private/Employee
+const completeRippingAndStartPrepress = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (!order) {
+    res.status(404);
+    throw new Error('Order not found');
+  }
+  // Must be assigned designer or manager/admin
+  if (
+    !(req.user.role === 'manager' || req.user.role === 'admin') &&
+    order.assignedTo?.toString() !== req.user.id
+  ) {
+    res.status(403);
+    throw new Error('Order not assigned to you');
+  }
+  // Ensure design is completed first
+  if (order.status !== 'Design Done' && order.status !== 'Designing') {
+    res.status(400);
+    throw new Error('Complete the design before declaring ripping');
+  }
+
+  // Mark production subprocess ripping as completed
+  if (!order.stages.production.subProcesses) {
+    order.stages.production.subProcesses = { ripping: {} };
+  }
+  order.stages.production.subProcesses.ripping.status = 'Completed';
+  order.stages.production.subProcesses.ripping.completedAt = Date.now();
+  order.stages.production.subProcesses.ripping.completedBy = req.user._id;
+
+  // Update production stage status to completed
+  order.stages.production.status = 'Completed';
+  if (!order.stages.production.completionDate) {
+    order.stages.production.completionDate = Date.now();
+  }
+
+  // Move to Prepress
+  order.status = 'In Prepress';
+  order.stages.prepress.status = 'In Progress';
+  if (!order.stages.prepress.startDate) {
+    order.stages.prepress.startDate = Date.now();
+  }
+
+  order.history.push({
+    action: 'Ripping Completed',
+    user: req.user.id,
+    details: 'Designer completed ripping and moved order to Prepress',
+  });
+
+  await order.save();
+  res.json(order);
+});
+
+// @desc    Courier claims an order for delivery
+// @route   PUT /api/orders/:id/courier/claim
+// @access  Private/Courier
+const courierClaimOrder = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (!order) {
+    res.status(404);
+    throw new Error('Order not found');
+  }
+  if (order.status !== 'Ready for Delivery') {
+    res.status(400);
+    throw new Error('Order is not ready for delivery');
+  }
+  order.stages.delivery.courierInfo = order.stages.delivery.courierInfo || {};
+  order.stages.delivery.courierInfo.courier = req.user._id;
+  order.history.push({ action: 'Courier Claimed', user: req.user.id, details: 'Courier assigned themselves to the order' });
+  await order.save();
+  res.json(order);
+});
+
+// @desc    Courier updates delivery mode and details
+// @route   PUT /api/orders/:id/courier/update
+// @access  Private/Courier
+const courierUpdateDelivery = asyncHandler(async (req, res) => {
+  const { mode, destination, shipmentCompany, shipmentLabelFileId } = req.body;
+  const order = await Order.findById(req.params.id);
+  if (!order) {
+    res.status(404);
+    throw new Error('Order not found');
+  }
+  if (order.status !== 'Ready for Delivery' && order.stages.delivery.status !== 'In Progress') {
+    res.status(400);
+    throw new Error('Order not in delivery stage');
+  }
+  order.stages.delivery.courierInfo = order.stages.delivery.courierInfo || {};
+  order.stages.delivery.courierInfo.mode = mode;
+  order.stages.delivery.courierInfo.createdAt = new Date();
+  if (mode === 'direct') {
+    order.stages.delivery.courierInfo.destination = destination || {};
+  } else if (mode === 'shipping-company') {
+    order.stages.delivery.courierInfo.shipmentCompany = shipmentCompany || '';
+    if (shipmentLabelFileId) {
+      order.stages.delivery.courierInfo.shipmentLabelFileId = shipmentLabelFileId;
+    }
+  }
+  order.history.push({ action: 'Courier Update', user: req.user.id, details: `Courier set mode: ${mode}` });
+  await order.save();
+  res.json(order);
 });
 
 // @desc    Get all orders
@@ -238,6 +384,11 @@ const getOrders = asyncHandler(async (req, res) => {
     ];
   }
 
+  // Filter orders that have delivery method chosen
+  if (req.query.hasDeliveryMethod === 'true') {
+    query['stages.delivery.courierInfo.mode'] = { $exists: true, $ne: null };
+  }
+
   // Pagination
   const page = parseInt(req.query.page, 10) || 1;
   const limit = parseInt(req.query.limit, 10) || 10;
@@ -245,8 +396,8 @@ const getOrders = asyncHandler(async (req, res) => {
 
   const orders = await Order.find(query)
     .populate('client', 'name email company')
-    .populate('assignedTo', 'name email department position')
-    .populate('stages.prepress.subProcesses.ripping.completedBy', 'name')
+    .populate('assignedTo', 'name email department')
+    .populate('stages.prepress.subProcesses.positioning.completedBy', 'name')
     .populate('stages.prepress.subProcesses.laserImaging.completedBy', 'name')
     .populate('stages.prepress.subProcesses.exposure.completedBy', 'name')
     .populate('stages.prepress.subProcesses.washout.completedBy', 'name')
@@ -272,11 +423,11 @@ const getOrders = asyncHandler(async (req, res) => {
 // @access  Private
 const getOrderById = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id)
-    .populate('client', 'name email company')
+    .populate('client', 'name email company phone address geoLocation')
     .populate('assignedTo', 'name email department position')
     .populate('stages.review.assignedTo', 'name email')
     .populate('stages.prepress.assignedTo', 'name email')
-    .populate('stages.prepress.subProcesses.ripping.completedBy', 'name email department')
+    .populate('stages.prepress.subProcesses.positioning.completedBy', 'name email department')
     .populate('stages.prepress.subProcesses.laserImaging.completedBy', 'name email department')
     .populate('stages.prepress.subProcesses.exposure.completedBy', 'name email department')
     .populate('stages.prepress.subProcesses.washout.completedBy', 'name email department')
@@ -487,23 +638,37 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
       return uploadedByCurrentUser && isCompletionFile;
     });
     
-    console.log('Checking for completion files:', {
+    // Check if order has design links added by this employee
+    const hasDesignLinks = freshOrder.designLinks && freshOrder.designLinks.length > 0 && 
+      freshOrder.designLinks.some(designLink => 
+        designLink.addedBy && designLink.addedBy.toString() === req.user.id
+      );
+    
+    console.log('Checking for completion files or design links:', {
       hasFiles: !!freshOrder.files && freshOrder.files.length > 0,
       filesCount: freshOrder.files?.length || 0,
+      hasDesignLinks: !!freshOrder.designLinks && freshOrder.designLinks.length > 0,
+      designLinksCount: freshOrder.designLinks?.length || 0,
       employeeId: req.user.id,
       hasCompletionFiles,
+      hasDesignLinks,
       files: freshOrder.files?.map(f => ({
         id: f._id,
         uploadedBy: f.uploadedBy?._id || f.uploadedBy,
         isCurrentUser: f.uploadedBy?._id?.toString() === req.user.id || f.uploadedBy?.toString() === req.user.id,
         fileType: f.fileType,
         notes: f.notes
+      })),
+      designLinks: freshOrder.designLinks?.map(dl => ({
+        link: dl.link,
+        addedBy: dl.addedBy,
+        isCurrentUser: dl.addedBy?.toString() === req.user.id
       }))
     });
     
-    if (!hasCompletionFiles) {
+    if (!hasCompletionFiles && !hasDesignLinks) {
       res.status(400);
-      throw new Error('You must upload completion files before marking a design as completed');
+      throw new Error('You must upload completion files OR provide a design link before marking a design as completed');
     }
     
     // Update order status to Design Done
@@ -562,9 +727,15 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
       return uploadedByCurrentUser && isCompletionFile;
     });
     
-    if (!hasCompletionFiles) {
+    // Check if order has design links added by this employee
+    const hasDesignLinks = freshOrder.designLinks && freshOrder.designLinks.length > 0 && 
+      freshOrder.designLinks.some(designLink => 
+        designLink.addedBy && designLink.addedBy.toString() === req.user.id
+      );
+    
+    if (!hasCompletionFiles && !hasDesignLinks) {
       res.status(400);
-      throw new Error('You must upload completion files before marking an order as completed');
+      throw new Error('You must upload completion files OR provide a design link before marking an order as completed');
     }
     
     // Mark the design/production stage as completed and update the order status to "Design Done"
@@ -622,7 +793,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
       order.stages.prepress.completionDate = Date.now();
     }
     
-    // The delivery stage is only started when manager explicitly marks it
+    // The delivery stage starts when manager marks Ready for Delivery
     order.stages.delivery.status = 'In Progress';
     if (!order.stages.delivery.startDate) {
       order.stages.delivery.startDate = Date.now();
@@ -1133,8 +1304,8 @@ const getRecentOrders = asyncHandler(async (req, res) => {
       const recentOrders = await Order.find({ client: req.user.id })
         .sort({ createdAt: -1 })
         .limit(limit)
-        .populate('client', 'name email company')
-        .populate('stages.prepress.subProcesses.ripping.completedBy', 'name')
+    .populate('client', 'name email company phone address geoLocation')
+        .populate('stages.prepress.subProcesses.positioning.completedBy', 'name')
         .populate('stages.prepress.subProcesses.laserImaging.completedBy', 'name')
         .populate('stages.prepress.subProcesses.exposure.completedBy', 'name')
         .populate('stages.prepress.subProcesses.washout.completedBy', 'name')
@@ -1149,7 +1320,7 @@ const getRecentOrders = asyncHandler(async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(limit)
       .populate('client', 'name email company')
-      .populate('stages.prepress.subProcesses.ripping.completedBy', 'name')
+      .populate('stages.prepress.subProcesses.positioning.completedBy', 'name')
       .populate('stages.prepress.subProcesses.laserImaging.completedBy', 'name')
       .populate('stages.prepress.subProcesses.exposure.completedBy', 'name')
       .populate('stages.prepress.subProcesses.washout.completedBy', 'name')
@@ -1371,7 +1542,7 @@ const cancelOrder = asyncHandler(async (req, res) => {
 
 // @desc    Update prepress sub-process status
 // @route   PUT /api/orders/:id/prepress-process
-// @access  Private/Prepress/Manager
+// @access  Private/Prepress only
 const updatePrepressProcess = asyncHandler(async (req, res) => {
   const { subProcess, status } = req.body;
   
@@ -1391,7 +1562,7 @@ const updatePrepressProcess = asyncHandler(async (req, res) => {
   }
   
   // Validate sub-process
-  const validSubProcesses = ['ripping', 'laserImaging', 'exposure', 'washout', 'drying', 'finishing'];
+  const validSubProcesses = ['positioning', 'laserImaging', 'exposure', 'washout', 'drying', 'finishing'];
   if (!validSubProcesses.includes(subProcess)) {
     console.log('Invalid sub-process:', subProcess);
     res.status(400);
@@ -1418,11 +1589,19 @@ const updatePrepressProcess = asyncHandler(async (req, res) => {
   console.log('Order current status:', order.status);
   
   // Ensure order is in the prepress stage
-  if (order.status !== 'In Prepress' && order.status !== 'In Review') {
+  if (order.status !== 'In Prepress') {
     res.status(400);
-    throw new Error('Order must be in "In Prepress" or "In Review" stage to update prepress processes');
+    throw new Error('Order must be in "In Prepress" stage to update prepress processes');
   }
   
+  // Permissions: Prepress staff or managers/admins can update prepress subprocesses
+  // Designers should not update any prepress subprocess (they handle ripping under production)
+  const isPrepressUser = req.user.role === 'prepress' || req.user.department === 'prepress';
+  if (!isPrepressUser) {
+    res.status(403);
+    throw new Error('Only prepress can update this prepress process');
+  }
+
   // Update the sub-process status
   order.stages.prepress.subProcesses[subProcess].status = status;
   
@@ -1499,6 +1678,19 @@ const updatePrepressProcess = asyncHandler(async (req, res) => {
         `/manager/orders/${order._id}`
       );
     }
+    
+    // Notify the assigned designer that prepress is complete and they can choose delivery method
+    if (order.assignedTo) {
+      await createSystemNotification(
+        order.assignedTo,
+        'Prepress Complete - Choose Delivery Method',
+        `Prepress work for order #${order.orderNumber} has been completed. You can now choose the delivery method.`,
+        'order',
+        order._id,
+        'success',
+        `/employee/orders/${order._id}`
+      );
+    }
   }
   
   res.json(order);
@@ -1526,7 +1718,7 @@ const completePrepressStage = asyncHandler(async (req, res) => {
   // Make sure all prepress subprocesses are completed
   const subProcesses = order.stages.prepress.subProcesses;
   const allSubProcessesCompleted = 
-    subProcesses.ripping?.status === 'Completed' &&
+    subProcesses.positioning?.status === 'Completed' &&
     subProcesses.laserImaging?.status === 'Completed' &&
     subProcesses.exposure?.status === 'Completed' &&
     subProcesses.washout?.status === 'Completed' &&
@@ -1610,7 +1802,7 @@ const getChatbotOrderData = asyncHandler(async (req, res) => {
     const orders = await Order.find(query)
       .populate('client', 'name email company')
       .populate('assignedTo', 'name email department position')
-      .populate('stages.prepress.subProcesses.ripping.completedBy', 'name')
+      .populate('stages.prepress.subProcesses.positioning.completedBy', 'name')
       .populate('stages.prepress.subProcesses.laserImaging.completedBy', 'name')
       .populate('stages.prepress.subProcesses.exposure.completedBy', 'name')
       .populate('stages.prepress.subProcesses.washout.completedBy', 'name')
@@ -1663,9 +1855,9 @@ const calculatePrepressProgress = (order) => {
   let totalCount = 0;
   
   // Check each subprocess
-  if (subProcesses.ripping) {
+  if (subProcesses.positioning) {
     totalCount++;
-    if (subProcesses.ripping.status === 'Completed') completedCount++;
+    if (subProcesses.positioning.status === 'Completed') completedCount++;
   }
   if (subProcesses.laserImaging) {
     totalCount++;
@@ -1982,12 +2174,190 @@ const downloadMonthlyReportsCSV = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Designer chooses delivery method after prepress completion
+// @route   POST /api/orders/:id/choose-delivery
+// @access  Private/Employee
+const chooseDeliveryMethod = asyncHandler(async (req, res) => {
+  const { deliveryMethod, shipmentCompany, tempAddress } = req.body;
+  
+  if (!deliveryMethod || !['direct', 'shipping-company', 'client-collection'].includes(deliveryMethod)) {
+    res.status(400);
+    throw new Error('Valid delivery method is required (direct, shipping-company, or client-collection)');
+  }
+  
+  if (deliveryMethod === 'shipping-company') {
+    // Set Middle East as the fixed shipment company
+    shipmentCompany = 'Middle East';
+  }
+  
+  const order = await Order.findById(req.params.id)
+    .populate('client', 'name email address')
+    .populate('assignedTo', 'name role department');
+    
+  if (!order) {
+    res.status(404);
+    throw new Error('Order not found');
+  }
+  
+  console.log('Debug - Order ID:', order._id);
+  console.log('Debug - Order Assigned To:', order.assignedTo);
+  console.log('Debug - Order Assigned To Type:', typeof order.assignedTo);
+  
+  // Check if the user is the assigned designer
+  console.log('Debug - User ID:', req.user.id);
+  console.log('Debug - User Role:', req.user.role);
+  console.log('Debug - Assigned To:', order.assignedTo?._id?.toString());
+  console.log('Debug - Assigned To String:', order.assignedTo?.toString());
+  console.log('Debug - Comparison:', order.assignedTo?.toString() === req.user.id);
+  
+  // Check if the user is the assigned designer or has manager/admin role
+  const isAssignedDesigner = order.assignedTo && (
+    order.assignedTo._id?.toString() === req.user.id || 
+    order.assignedTo.toString() === req.user.id
+  );
+  const isManagerOrAdmin = req.user.role === 'manager' || req.user.role === 'admin';
+  const isStaffMember = ['employee', 'manager', 'admin', 'prepress'].includes(req.user.role);
+  
+  // Allow any staff member to choose delivery method (reasonable workflow)
+  if (!isStaffMember) {
+    res.status(403);
+    throw new Error('Only staff members can choose delivery method');
+  }
+  
+  // Log who is choosing the delivery method
+  console.log('Debug - User choosing delivery method:', req.user.name, req.user.role, 'Assigned to:', order.assignedTo?.name);
+  
+  // Check if prepress is completed
+  if (order.stages.prepress.status !== 'Completed') {
+    res.status(400);
+    throw new Error('Prepress must be completed before choosing delivery method');
+  }
+  
+  // Update order status and delivery information
+  order.status = 'Ready for Delivery';
+  order.stages.delivery.status = 'In Progress';
+  order.stages.delivery.startDate = Date.now();
+  
+  // Set delivery method in courierInfo
+  if (!order.stages.delivery.courierInfo) {
+    order.stages.delivery.courierInfo = {};
+  }
+  order.stages.delivery.courierInfo.mode = deliveryMethod;
+  order.stages.delivery.courierInfo.createdAt = new Date();
+  
+  if (deliveryMethod === 'direct') {
+    // For direct delivery, use temporary address if provided, otherwise use client address
+    if (tempAddress && tempAddress.trim()) {
+      order.stages.delivery.courierInfo.destination = {
+        street: tempAddress.trim(),
+        city: '',
+        state: '',
+        postalCode: '',
+        country: '',
+      };
+    } else if (order.client.address) {
+      order.stages.delivery.courierInfo.destination = {
+        street: order.client.address.street || '',
+        city: order.client.address.city || '',
+        state: order.client.address.state || '',
+        postalCode: order.client.address.postalCode || '',
+        country: order.client.address.country || '',
+      };
+    }
+  } else if (deliveryMethod === 'client-collection') {
+    // For client self-collection, use client address
+    if (order.client.address) {
+      order.stages.delivery.courierInfo.destination = {
+        street: order.client.address.street || '',
+        city: order.client.address.city || '',
+        state: order.client.address.state || '',
+        postalCode: order.client.address.postalCode || '',
+        country: order.client.address.country || '',
+      };
+    }
+  } else if (deliveryMethod === 'shipping-company') {
+    order.stages.delivery.courierInfo.shipmentCompany = 'Middle East';
+  }
+  
+  // Add to history
+  const deliveryMethodText = deliveryMethod === 'direct' ? 'direct handover' : 
+                            deliveryMethod === 'client-collection' ? 'client self-collection' : 
+                            'shipping company (Middle East)';
+  
+  order.history.push({
+    action: 'Delivery Method Chosen',
+    user: req.user.id,
+    details: `Designer chose ${deliveryMethodText}${deliveryMethod === 'direct' && tempAddress ? ` with temporary address: ${tempAddress}` : ''}`,
+  });
+  
+  await order.save();
+  
+  // Notify client about delivery method choice
+  const notificationMessage = deliveryMethod === 'direct' ? 
+    `Your order #${order.orderNumber} will be delivered via direct handover${tempAddress ? ` to: ${tempAddress}` : ''}` :
+    deliveryMethod === 'client-collection' ? 
+    `Your order #${order.orderNumber} is ready for self-collection` :
+    `Your order #${order.orderNumber} will be delivered via Middle East shipping company`;
+  
+  await createSystemNotification(
+    order.client._id,
+    'Delivery Method Selected',
+    notificationMessage,
+    'order',
+    order._id,
+    'info',
+    `/client/orders/${order._id}`
+  );
+  
+
+  
+  // Notify managers
+  const managers = await User.find({ role: { $in: ['manager', 'admin'] } });
+  for (const manager of managers) {
+    await createSystemNotification(
+      manager._id,
+      'Delivery Method Chosen',
+      `${req.user.name} has chosen ${deliveryMethod} delivery for order #${order.orderNumber}`,
+      'order',
+      order._id,
+      'info',
+      `/manager/orders/${order._id}`
+    );
+  }
+  
+  // Notify couriers about new delivery orders
+  const couriers = await User.find({ role: 'courier' });
+  for (const courier of couriers) {
+    let courierMessage = '';
+    if (deliveryMethod === 'direct') {
+      courierMessage = `Order #${order.orderNumber} is ready for direct handover delivery`;
+    } else if (deliveryMethod === 'client-collection') {
+      courierMessage = `Order #${order.orderNumber} is ready for client self-collection`;
+    } else if (deliveryMethod === 'shipping-company') {
+      courierMessage = `Order #${order.orderNumber} is ready for delivery via Middle East`;
+    }
+    
+    await createSystemNotification(
+      courier._id,
+      'New Delivery Order',
+      courierMessage,
+      'order',
+      order._id,
+      'info',
+      `/courier/orders/${order._id}`
+    );
+  }
+  
+  res.json(order);
+});
+
 export {
   createOrder,
   getOrders,
   getOrderById,
   updateOrder,
   updateOrderStatus,
+  // add new export once created
   assignOrderStage,
   assignOrder,
   calculateOrderCost,
@@ -2000,5 +2370,9 @@ export {
   getChatbotOrderData,
   submitDesignToOrder,
   getMonthlyReports,
-  downloadMonthlyReportsCSV
+  downloadMonthlyReportsCSV,
+  completeRippingAndStartPrepress,
+  courierClaimOrder,
+  courierUpdateDelivery,
+  chooseDeliveryMethod
 };

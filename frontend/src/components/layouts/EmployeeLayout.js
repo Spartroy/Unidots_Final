@@ -17,8 +17,8 @@ const EmployeeLayout = () => {
 
   const navigation = [
     { name: 'Dashboard', href: '/employee', current: location.pathname === '/employee' },
-    { name: 'Tasks', href: '/employee/tasks', current: location.pathname.startsWith('/employee/tasks') },
     { name: 'Orders', href: '/employee/orders', current: location.pathname.startsWith('/employee/orders') },
+    { name: 'Tasks', href: '/employee/tasks', current: location.pathname.startsWith('/employee/tasks') },
     // { name: 'Templates', href: '/employee/templates', current: location.pathname.startsWith('/employee/templates') },
     { name: 'Claims', href: '/employee/claims', current: location.pathname.startsWith('/employee/claims') },
    

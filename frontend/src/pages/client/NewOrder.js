@@ -26,6 +26,7 @@ const NewOrder = () => {
     description: '',
     orderType: 'New Order',
     specifications: {
+      packageType: 'Other',
       dimensions: {
     width: '',
     height: '',
@@ -47,6 +48,92 @@ const NewOrder = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [estimatedPrice, setEstimatedPrice] = useState(0);
+
+  // Quick test data filler
+  const fillWithRandomData = () => {
+    const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+    const titles = [
+      'Coffee Pouch 250g',
+      'Rice Bag 5kg',
+      'Snack Pack 50g',
+      'Tea Label Set',
+      'Juice Pouch 1L',
+      'Custom Pouch Sample'
+    ];
+    const descriptions = [
+      'Test order for QA – auto generated.',
+      'Sample project for layout and colors.',
+      'Benchmark file for turnaround test.',
+      'Mockup order with random specs.'
+    ];
+    const packageTypes = ['Central Seal', '2 Side Seal', '3 Side Seal', 'Custom Pouch', 'Label', 'Other'];
+    const materials = ['Flint', 'Strong', 'Taiwan'];
+    const printingModes = ['Surface Printing', 'Reverse Printing'];
+    const priorities = ['Low', 'Medium', 'High', 'Urgent'];
+    const customColorPool = ['Turquoise', 'Navy', 'Bronze', 'Violet', 'Lime', 'Orange'];
+
+    // Random used colors (1-4 colors, sometimes CMYK Combined)
+    const colorPool = standardColorOptions.map((c) => c.value);
+    const includeCMYK = Math.random() < 0.3; // 30% chance to include CMYK Combined
+    const poolWithoutCombined = colorPool.filter((c) => c !== 'CMYK Combined');
+    const usedColorsCount = randomInt(1, 4);
+    const used = new Set();
+    while (used.size < usedColorsCount) {
+      used.add(randomFrom(poolWithoutCombined));
+    }
+    if (includeCMYK) used.add('CMYK Combined');
+    const usedColors = Array.from(used);
+
+    // Random custom colors (0-2)
+    const customCount = randomInt(0, 2);
+    const customColors = Array.from({ length: customCount }, () => randomFrom(customColorPool));
+
+    // Calculate total colors with CMYK rule
+    const cmykWeight = usedColors.includes('CMYK Combined') ? 4 : 0;
+    const otherColorsCount = usedColors.filter((c) => c !== 'CMYK Combined').length;
+    const customColorsCount = customColors.length;
+    const totalColors = Math.max(cmykWeight + otherColorsCount + customColorsCount, 1);
+
+    // Random dimensions and repeats
+    const width = randomInt(80, 380); // mm
+    const height = randomInt(100, 500); // mm
+    const widthRepeatCount = randomInt(1, 4);
+    const heightRepeatCount = randomInt(1, 4);
+
+    // Random deadline 5-20 days from now
+    const d = new Date();
+    d.setDate(d.getDate() + randomInt(5, 20));
+    const randomDeadline = d.toISOString().split('T')[0];
+
+    const nextForm = {
+      title: randomFrom(titles),
+      description: randomFrom(descriptions),
+      orderType: 'New Order',
+      specifications: {
+        packageType: randomFrom(packageTypes),
+        dimensions: {
+          width,
+          height,
+          widthRepeatCount,
+          heightRepeatCount,
+          unit: 'mm',
+        },
+        colors: totalColors,
+        usedColors,
+        customColors,
+        printingMode: randomFrom(printingModes),
+        material: randomFrom(materials),
+        materialThickness: randomFrom([1.14, 1.7, 2.54]),
+        additionalDetails: 'Auto-filled notes for quick testing.',
+      },
+      priority: randomFrom(priorities),
+      deadline: randomDeadline,
+    };
+
+    setFormData(nextForm);
+  };
 
   // Standard color options with color codes
   const standardColorOptions = [
@@ -330,8 +417,16 @@ const NewOrder = () => {
         <div className="space-y-12 divide-y divide-gray-200">
           {/* Basic Information */}
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div className="px-6 py-6 sm:px-8">
+            <div className="px-6 py-6 sm:px-8 flex items-center justify-between">
               <h3 className="text-xl leading-7 font-semibold text-gray-900">Basic Information</h3>
+              <button
+                type="button"
+                onClick={fillWithRandomData}
+                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                title="Fill form with random test data"
+              >
+                Fill Test Data
+              </button>
             </div>
             <div className="border-t border-gray-200 px-6 py-8 sm:p-8">
             <div className="grid grid-cols-1 gap-y-8 gap-x-6 sm:grid-cols-6">
@@ -435,6 +530,28 @@ const NewOrder = () => {
             </div>
             <div className="border-t border-gray-200 px-6 py-8 sm:p-8">
               <div className="grid grid-cols-1 gap-y-8 gap-x-6 sm:grid-cols-6">
+                {/* Package Type */}
+                <div className="sm:col-span-3">
+                  <label htmlFor="packageType" className="block text-base font-semibold text-gray-700 mb-2">
+                    Package Type
+                  </label>
+                  <div className="mt-2">
+                    <select
+                      id="packageType"
+                      name="specifications.packageType"
+                      value={formData.specifications.packageType}
+                      onChange={handleChange}
+                      className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-base border-gray-300 rounded-md px-4 py-3"
+                    >
+                      <option value="Central Seal">Central Seal</option>
+                      <option value="2 Side Seal">2 Side Seal</option>
+                      <option value="3 Side Seal">3 Side Seal</option>
+                      <option value="Custom Pouch">Custom Pouch</option>
+                      <option value="Label">Label</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
                 {/* Dimensions */}
                 <div className="sm:col-span-6">
                   <h4 className="text-lg font-semibold text-gray-700 mb-6">Dimensions</h4>

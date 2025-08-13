@@ -24,7 +24,7 @@ const fileSchema = mongoose.Schema(
     },
     fileType: {
       type: String,
-      enum: ['design', 'reference', 'proof', 'claim', 'manager', 'prepress', 'employee', 'other'],
+      enum: ['design', 'reference', 'proof', 'claim', 'manager', 'prepress', 'employee', 'courier', 'other'],
       default: 'other',
     },
     uploadedBy: {

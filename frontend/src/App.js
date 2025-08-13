@@ -52,22 +52,30 @@ import ManagerClientDetail from './pages/manager/ClientDetail';
 import ManagerProfile from './pages/manager/Profile';
 import MonthlyReports from './pages/manager/MonthlyReports';
 import BarrelManagement from './pages/manager/BarrelManagement';
+import ManagerPlateMonitoring from './pages/manager/PlateMonitoring';
 
 // New imports for Prepress
 import PrepressLayout from './components/layouts/PrepressLayout';
 import PrepressDashboard from './pages/prepress/Dashboard';
 import PrepressOrders from './pages/prepress/Orders';
+import PrepressOrderHistory from './pages/prepress/OrderHistory';
 import PrepressOrderDetail from './pages/prepress/OrderDetail';
 import PrepressProfile from './pages/prepress/Profile';
 import AcidSolutionMonitor from './pages/prepress/AcidSolutionMonitor';
+import PrepressPlateMonitoring from './pages/prepress/PlateMonitoring';
 
+// Courier Portal
+import ProtectedRoute from './components/common/ProtectedRoute';
+import CourierDashboard from './pages/courier/Dashboard';
+import CourierOrderDetail from './pages/courier/OrderDetail';
+import CourierLayout from './components/layouts/CourierLayout';
+import CourierProfile from './pages/courier/Profile';
 // Layouts
 import ClientLayout from './components/layouts/ClientLayout';
 import EmployeeLayout from './components/layouts/EmployeeLayout';
 import ManagerLayout from './components/layouts/ManagerLayout';
 
 // Protected Route Component
-import ProtectedRoute from './components/common/ProtectedRoute';
 
 // Ai Components
 import DotDeformationDetector from './pages/DotDeformationDetector';
@@ -134,6 +142,7 @@ function App() {
             <Route path="clients" element={<ManagerClients />} />
             <Route path="clients/:id" element={<ManagerClientDetail />} />
             <Route path="barrel-management" element={<BarrelManagement />} />
+            <Route path="plate-monitoring" element={<ManagerPlateMonitoring />} />
             <Route path="reports" element={<MonthlyReports />} />
             <Route path="profile" element={<ManagerProfile />} />
           </Route>
@@ -146,9 +155,22 @@ function App() {
           }>
             <Route index element={<PrepressDashboard />} />
             <Route path="orders" element={<PrepressOrders />} />
+            <Route path="history" element={<PrepressOrderHistory />} />
             <Route path="orders/:id" element={<PrepressOrderDetail />} />
             <Route path="acid-solution" element={<AcidSolutionMonitor />} />
+            <Route path="plate-monitoring" element={<PrepressPlateMonitoring />} />
             <Route path="profile" element={<PrepressProfile />} />
+          </Route>
+
+          {/* Courier Portal Routes */}
+          <Route path="/courier" element={
+            <ProtectedRoute allowedRoles={['courier']}>
+              <CourierLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<CourierDashboard />} />
+            <Route path="orders/:id" element={<CourierOrderDetail />} />
+            <Route path="profile" element={<CourierProfile />} />
           </Route>
 
           {/* Landing Page */}

@@ -16,6 +16,7 @@ import notificationRoutes from './src/routes/notificationRoutes.js';
 import templateRoutes from './src/routes/templateRoutes.js';
 import chatRoutes from './src/routes/chatRoutes.js';
 import acidSolutionRoutes from './src/routes/acidSolutionRoutes.js';
+import plateRoutes from './src/routes/plateRoutes.js';
 
 // Import middleware
 import { errorHandler } from './src/middleware/errorMiddleware.js';
@@ -32,7 +33,12 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? [process.env.FRONTEND_URL, 'https://your-vercel-domain.vercel.app'] 
+    : 'http://localhost:3000',
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -47,6 +53,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/acid-solution', acidSolutionRoutes);
+app.use('/api/plates', plateRoutes);
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -54,29 +61,30 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // Error handler middleware
 app.use(errorHandler);
 
-// Serve frontend in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend/build')));
+// Health check endpoint for Vercel
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'OK', message: 'Server is running' });
+});
 
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../frontend/build', 'index.html'));
-  });
+// Start server (only if not in Vercel environment)
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  const startServer = async () => {
+    try {
+      // Connect to MongoDB
+      await connectDB();
+      
+      // Start Express server
+      app.listen(PORT, () => {
+        console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+      });
+    } catch (error) {
+      console.error(`Failed to start server: ${error.message}`);
+      process.exit(1);
+    }
+  };
+
+  startServer();
 }
 
-// Start server
-const startServer = async () => {
-  try {
-    // Connect to MongoDB
-    await connectDB();
-    
-    // Start Express server
-    app.listen(PORT, () => {
-      console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-    });
-  } catch (error) {
-    console.error(`Failed to start server: ${error.message}`);
-    process.exit(1);
-  }
-};
-
-startServer();
+// Export for Vercel
+export default app;

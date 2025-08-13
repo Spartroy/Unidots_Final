@@ -13,33 +13,59 @@ const OrderProgressBar = ({ order, className = '' }) => {
   if (!order) return null;
   
   const stages = [
-    {
-      label: 'Submission',
-      status: 'Completed',
-      completed: true,
-    },
+    { label: 'Submission', status: 'Completed', completed: true },
     {
       label: 'Design',
-      status: ['Design Done', 'In Prepress', 'Ready for Delivery', 'Delivering', 'Delivered', 'Completed'].includes(order.status) || 
-              order.stages?.production?.status === 'Completed' ? 'Completed' : 'Pending',
-      completed: ['Design Done', 'In Prepress', 'Ready for Delivery', 'Delivering', 'Delivered', 'Completed'].includes(order.status) || 
-                 order.stages?.production?.status === 'Completed',
+      status:
+        order.status === 'Designing'
+          ? 'In Progress'
+          : ['In Prepress', 'Ready for Delivery', 'Completed'].includes(order.status) ||
+            order.stages?.production?.status === 'Completed'
+          ? 'Completed'
+          : 'Pending',
+      completed:
+        ['In Prepress', 'Ready for Delivery', 'Completed'].includes(order.status) ||
+        order.stages?.production?.status === 'Completed',
+    },
+    {
+      label: 'Ripping',
+      status:
+        order.stages?.production?.subProcesses?.ripping?.status === 'Completed'
+          ? 'Completed'
+          : order.status === 'Designing'
+          ? 'Pending'
+          : order.status === 'In Prepress'
+          ? 'Completed'
+          : order.stages?.production?.status === 'Completed'
+          ? 'Completed'
+          : 'Pending',
+      completed:
+        order.stages?.production?.subProcesses?.ripping?.status === 'Completed' ||
+        order.status === 'In Prepress',
     },
     {
       label: 'Prepress',
-      status: ['Ready for Delivery', 'Delivering', 'Delivered', 'Completed'].includes(order.status) || 
-              order.stages?.prepress?.status === 'Completed' ? 'Completed' : 
-              order.stages?.prepress?.status === 'In Progress' ? 'In Prepress' : 'Pending',
-      completed: ['Ready for Delivery', 'Delivering', 'Delivered', 'Completed'].includes(order.status) || 
-                 order.stages?.prepress?.status === 'Completed',
+      status:
+        order.stages?.prepress?.status === 'Completed'
+          ? 'Completed'
+          : order.stages?.prepress?.status === 'In Progress'
+          ? 'In Prepress'
+          : ['Ready for Delivery'].includes(order.status)
+          ? 'Completed'
+          : 'Pending',
+      completed:
+        ['Ready for Delivery', 'Completed'].includes(order.status) ||
+        order.stages?.prepress?.status === 'Completed',
     },
     {
       label: 'Delivery',
-      status: ['Delivered', 'Completed'].includes(order.status) || 
-              order.stages?.delivery?.status === 'Completed' ? 'Completed' : 
-              order.stages?.delivery?.status === 'In Progress' ? 'In Progress' : 'Pending',
-      completed: ['Delivered', 'Completed'].includes(order.status) || 
-                 order.stages?.delivery?.status === 'Completed',
+      status:
+        order.stages?.delivery?.status === 'Completed' || order.status === 'Completed'
+          ? 'Completed'
+          : order.stages?.delivery?.status === 'In Progress'
+          ? 'In Progress'
+          : 'Pending',
+      completed: order.stages?.delivery?.status === 'Completed' || order.status === 'Completed',
     },
   ];
   
@@ -72,7 +98,7 @@ const OrderProgressBar = ({ order, className = '' }) => {
         </div>
         
         {/* Stage indicators */}
-        <div className="grid grid-cols-4 mt-2 gap-1">
+        <div className="grid grid-cols-5 mt-2 gap-1">
           {stages.map((stage, index) => (
             <div key={index} className="flex flex-col items-center">
               <span className="text-sm font-medium text-gray-700">{stage.label}</span>

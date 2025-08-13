@@ -7,6 +7,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 const Employees = () => {
   const [employees, setEmployees] = useState([]);
   const [prepress, setPrepress] = useState([]);
+  const [couriers, setCouriers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
   const filterParam = searchParams.get('filter');
@@ -15,7 +16,7 @@ const Employees = () => {
   const limitParam = searchParams.get('limit');
   
   const [filter, setFilter] = useState(filterParam || 'all'); // all, active, inactive
-  const [viewMode, setViewMode] = useState(viewModeParam || 'employees'); // employees, prepress
+  const [viewMode, setViewMode] = useState(viewModeParam || 'employees'); // employees, prepress, couriers
   const [pagination, setPagination] = useState({
     page: parseInt(pageParam) || 1,
     pages: 1,
@@ -25,6 +26,7 @@ const Employees = () => {
   
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showPrepressModal, setShowPrepressModal] = useState(false);
+  const [showCourierModal, setShowCourierModal] = useState(false);
   const [newEmployee, setNewEmployee] = useState({
     name: '',
     email: '',
@@ -40,13 +42,15 @@ const Employees = () => {
   });
   const [isCreating, setIsCreating] = useState(false);
   const [isCreatingPrepress, setIsCreatingPrepress] = useState(false);
+  const [isCreatingCourier, setIsCreatingCourier] = useState(false);
+  const [newCourier, setNewCourier] = useState({ name: '', email: '', password: '', phone: '' });
 
   useEffect(() => {
     const fetchStaff = async () => {
       try {
         setLoading(true);
         // Fetch employees
-        const role = viewMode === 'employees' ? 'employee' : 'prepress';
+        const role = viewMode === 'employees' ? 'employee' : (viewMode === 'prepress' ? 'prepress' : 'courier');
         let endpoint = `/api/users?role=${role}&page=${pagination.page}&limit=${itemsPerPage}`;
         
         // Add status filter if not "all"
@@ -60,8 +64,10 @@ const Employees = () => {
         
         if (viewMode === 'employees') {
           setEmployees(response.data.users || []);
-        } else {
+        } else if (viewMode === 'prepress') {
           setPrepress(response.data.users || []);
+        } else {
+          setCouriers(response.data.users || []);
         }
         
         setPagination({
@@ -167,6 +173,11 @@ const Employees = () => {
     }));
   };
 
+  const handleCourierInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewCourier(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleCreateEmployee = async (e) => {
     e.preventDefault();
     
@@ -250,6 +261,28 @@ const Employees = () => {
     }
   };
 
+  const handleCreateCourier = async (e) => {
+    e.preventDefault();
+    if (!newCourier.name || !newCourier.email || !newCourier.password) {
+      toast.error('Please fill in all required fields (name, email, password)');
+      return;
+    }
+    try {
+      setIsCreatingCourier(true);
+      await api.post('/api/users/couriers', newCourier);
+      setNewCourier({ name: '', email: '', password: '', phone: '' });
+      setShowCourierModal(false);
+      toast.success('Courier created successfully');
+      const courierResponse = await api.get('/api/users?role=courier');
+      setCouriers(courierResponse.data.users || []);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to create courier');
+      console.error('Error creating courier:', error);
+    } finally {
+      setIsCreatingCourier(false);
+    }
+  };
+
   const getDisplayData = () => {
     if (viewMode === 'employees') {
       return {
@@ -261,7 +294,7 @@ const Employees = () => {
           action: () => setShowCreateModal(true)
         }
       };
-    } else {
+    } else if (viewMode === 'prepress') {
       return {
         title: 'Prepress Staff',
         data: prepress, // No longer need filteredPrepress as filtering is done on the server
@@ -269,6 +302,16 @@ const Employees = () => {
         addButton: {
           text: 'Register Prepress',
           action: () => setShowPrepressModal(true)
+        }
+      };
+    } else {
+      return {
+        title: 'Couriers',
+        data: couriers,
+        emptyMessage: 'No couriers found matching the selected filter.',
+        addButton: {
+          text: 'Add Courier',
+          action: () => setShowCourierModal(true)
         }
       };
     }
@@ -304,6 +347,12 @@ const Employees = () => {
           >
             Prepress Staff
           </button>
+          <button
+            onClick={() => handleViewModeChange('couriers')}
+            className={`px-3 py-2 text-sm font-medium rounded-md ${viewMode === 'couriers' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+          >
+            Couriers
+          </button>
         </div>
 
         <div className="mt-4 flex space-x-2">
@@ -330,7 +379,7 @@ const Employees = () => {
         {/* Staff count display */}
         <div className="mt-4 flex justify-between items-center">
           <div className="text-sm text-gray-500">
-            Showing {displayData.data.length} of {pagination.total} {viewMode === 'employees' ? 'employees' : 'prepress staff'}
+            Showing {displayData.data.length} of {pagination.total} {viewMode === 'employees' ? 'employees' : viewMode === 'prepress' ? 'prepress staff' : 'couriers'}
           </div>
         </div>
 
@@ -773,6 +822,55 @@ const Employees = () => {
                   >
                     Cancel
                   </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Create Courier Modal */}
+        {showCourierModal && (
+          <div className="fixed z-10 inset-0 overflow-y-auto">
+            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+              <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+              </div>
+              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+              <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                  <div className="sm:flex sm:items-start">
+                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                      <h3 className="text-lg leading-6 font-medium text-gray-900">Add Courier</h3>
+                      <div className="mt-4">
+                        <form onSubmit={handleCreateCourier}>
+                          <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                            <div className="sm:col-span-3">
+                              <label className="block text-sm font-medium text-gray-700">Name *</label>
+                              <input type="text" name="name" value={newCourier.name} onChange={handleCourierInputChange} required className="mt-1 shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md" />
+                            </div>
+                            <div className="sm:col-span-3">
+                              <label className="block text-sm font-medium text-gray-700">Email *</label>
+                              <input type="email" name="email" value={newCourier.email} onChange={handleCourierInputChange} required className="mt-1 shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md" />
+                            </div>
+                            <div className="sm:col-span-3">
+                              <label className="block text-sm font-medium text-gray-700">Password *</label>
+                              <input type="password" name="password" value={newCourier.password} onChange={handleCourierInputChange} required className="mt-1 shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md" />
+                            </div>
+                            <div className="sm:col-span-3">
+                              <label className="block text-sm font-medium text-gray-700">Phone</label>
+                              <input type="text" name="phone" value={newCourier.phone} onChange={handleCourierInputChange} className="mt-1 shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-md" />
+                            </div>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                  <button type="button" onClick={handleCreateCourier} disabled={isCreatingCourier} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                    {isCreatingCourier ? 'Creating...' : 'Create'}
+                  </button>
+                  <button type="button" onClick={() => setShowCourierModal(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">Cancel</button>
                 </div>
               </div>
             </div>

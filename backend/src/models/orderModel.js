@@ -30,6 +30,19 @@ const orderSchema = mongoose.Schema(
       default: 'New Order',
     },
     specifications: {
+      // Package type (bag/pouch/label style)
+      packageType: {
+        type: String,
+        enum: [
+          'Central Seal',
+          '2 Side Seal',
+          '3 Side Seal',
+          'Custom Pouch',
+          'Label',
+          'Other'
+        ],
+        default: 'Other',
+      },
       // Color specifications
       colors: {
         type: Number,
@@ -156,7 +169,7 @@ const orderSchema = mongoose.Schema(
         completionDate: Date,
         notes: String,
         subProcesses: {
-          ripping: {
+          positioning: {
             status: {
               type: String,
               enum: ['Pending', 'Completed'],
@@ -243,6 +256,20 @@ const orderSchema = mongoose.Schema(
         startDate: Date,
         completionDate: Date,
         notes: String,
+        subProcesses: {
+          ripping: {
+            status: {
+              type: String,
+              enum: ['Pending', 'Completed'],
+              default: 'Pending'
+            },
+            completedAt: Date,
+            completedBy: {
+              type: mongoose.Schema.Types.ObjectId,
+              ref: 'User'
+            }
+          }
+        }
       },
       delivery: {
         status: {
@@ -259,6 +286,22 @@ const orderSchema = mongoose.Schema(
         trackingNumber: String,
         deliveryMethod: String,
         notes: String,
+      courierInfo: {
+        courier: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        mode: { type: String, enum: ['direct', 'shipping-company'] },
+        // Direct delivery fields
+        destination: {
+          street: String,
+          city: String,
+          state: String,
+          postalCode: String,
+          country: String,
+        },
+        // Shipping company fields
+        shipmentLabelFileId: { type: mongoose.Schema.Types.ObjectId, ref: 'File' },
+        shipmentCompany: String,
+        createdAt: { type: Date },
+      },
       },
     },
     priority: {
@@ -368,6 +411,26 @@ const orderSchema = mongoose.Schema(
       approvedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
+      },
+    }],
+    // Design Links provided by designers
+    designLinks: [{
+      link: {
+        type: String,
+        required: true,
+      },
+      addedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+      },
+      addedAt: {
+        type: Date,
+        default: Date.now,
+      },
+      notes: {
+        type: String,
+        default: '',
       },
     }],
   },
