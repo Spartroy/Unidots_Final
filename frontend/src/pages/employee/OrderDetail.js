@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 import { toast } from 'react-toastify';
@@ -15,6 +15,7 @@ import {
 import { useDropzone } from 'react-dropzone';
 import OrderProgressBar from '../../components/common/OrderProgressBar';
 import OrderChat from '../../components/common/OrderChat';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 const OrderDetail = () => {
   const { id } = useParams();
@@ -75,6 +76,17 @@ const OrderDetail = () => {
 
     fetchOrder();
   }, [id, navigate]);
+
+  const refreshOrder = useCallback(async () => {
+    try {
+      const response = await api.get(`/api/orders/${id}`);
+      setOrder(response.data);
+    } catch (_e) {
+      // silent during background refresh
+    }
+  }, [id]);
+
+  useAutoRefresh(refreshOrder, 10000, [refreshOrder]);
 
   // Format date to readable format
   const formatDate = (dateString) => {

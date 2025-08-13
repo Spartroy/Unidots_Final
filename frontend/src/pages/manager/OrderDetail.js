@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../utils/api';
 import { toast } from 'react-toastify';
@@ -6,6 +6,7 @@ import OrderProgressBar from '../../components/common/OrderProgressBar';
 import { PaperClipIcon, UserCircleIcon, CalculatorIcon, XMarkIcon, DocumentTextIcon, ClipboardIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import OrderReceipt from '../../components/common/OrderReceipt';
 import { useDropzone } from 'react-dropzone';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 const OrderDetail = () => {
   const { id } = useParams();
@@ -139,17 +140,17 @@ const OrderDetail = () => {
     fetchOrder();
     fetchEmployees();
     
-    // Auto-refresh order data every 30 seconds to see updates
-    const refreshInterval = setInterval(() => {
-      // Only fetch if not in the middle of an update
-      if (!updating && !submittingComment && !isAssigning) {
-        fetchOrder();
-      }
-    }, 30000);
-    
-    // Cleanup interval on component unmount
-    return () => clearInterval(refreshInterval);
+    return () => {};
   }, [id, navigate, updating, submittingComment, isAssigning]);
+
+  const refreshOrder = useCallback(async () => {
+    try {
+      const response = await api.get(`/api/orders/${id}`);
+      setOrder(response.data);
+    } catch (_e) {}
+  }, [id]);
+
+  useAutoRefresh(refreshOrder, 10000, [refreshOrder]);
 
   // Format date to readable format
   const formatDate = (dateString) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 import AuthContext from '../../context/AuthContext';
@@ -7,6 +7,7 @@ import OrderProgressBar from '../../components/common/OrderProgressBar';
 import { PaperClipIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useDropzone } from 'react-dropzone';
 import OrderReceipt from '../../components/common/OrderReceipt';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 const PrepressOrderDetail = () => {
   const { id } = useParams();
@@ -46,6 +47,15 @@ const PrepressOrderDetail = () => {
     
     fetchOrderDetails();
   }, [id]);
+
+  const refreshOrder = useCallback(async () => {
+    try {
+      const response = await api.get(`/api/orders/${id}`);
+      setOrder(response.data);
+    } catch (_e) {}
+  }, [id]);
+
+  useAutoRefresh(refreshOrder, 10000, [refreshOrder]);
 
   // Timer management functions
   const startTimer = (processName) => {
