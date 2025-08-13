@@ -832,7 +832,7 @@ const OrderDetail = () => {
                                   <span className="text-sm font-medium text-gray-900">{file.originalname || file.filename}</span>
                                 </div>
                                 <a
-                                  href={`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/files/${file._id}/download`}
+                                  href={`/api/files/${file._id}/download`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -897,7 +897,7 @@ const OrderDetail = () => {
                               </div>
                               <div className="ml-4 flex-shrink-0">
                                 <a
-                                  href={`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/files/${file._id}/download`}
+                                  href={`/api/files/${file._id}/download`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="font-medium text-primary-600 hover:text-primary-500"
@@ -931,7 +931,7 @@ const OrderDetail = () => {
                               </div>
                               <div className="ml-4 flex-shrink-0">
                                 <a
-                                  href={`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/files/${file._id}/download`}
+                                  href={`/api/files/${file._id}/download`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="font-medium text-primary-600 hover:text-primary-500"
@@ -982,7 +982,7 @@ const OrderDetail = () => {
                               </div>
                               <div className="ml-4 flex-shrink-0">
                                 <a
-                                  href={`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/files/${file._id}/download`}
+                                  href={`/api/files/${file._id}/download`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="font-medium text-blue-600 hover:text-blue-500"

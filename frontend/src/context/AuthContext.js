@@ -17,14 +17,25 @@ export const AuthProvider = ({ children }) => {
 
   // Load user from localStorage on initial render
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      setUser(parsedUser);
-      // Set axios default header with token
-      axios.defaults.headers.common['Authorization'] = `Bearer ${parsedUser.token}`;
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          if (parsedUser && parsedUser.token) {
+            setUser(parsedUser);
+            axios.defaults.headers.common['Authorization'] = `Bearer ${parsedUser.token}`;
+          } else {
+            localStorage.removeItem('user');
+          }
+        } catch (e) {
+          // Corrupted JSON, clear and continue unauthenticated
+          localStorage.removeItem('user');
+        }
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   // Login user
