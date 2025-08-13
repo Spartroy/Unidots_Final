@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../utils/api';
 import { toast } from 'react-toastify';
 import AuthContext from '../../context/AuthContext';
 import { ClockIcon, CheckCircleIcon, ExclamationCircleIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 const EmployeeDashboard = () => {
   const { user } = useContext(AuthContext);
@@ -17,32 +18,27 @@ const EmployeeDashboard = () => {
   const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch employee stats
-        const statsResponse = await api.get('/api/tasks/employee-stats');
-        setStats(statsResponse.data);
-        
-        // Fetch recent tasks (limit to 3)
-        const tasksResponse = await api.get('/api/tasks/assigned?limit=3');
-        setRecentTasks(tasksResponse.data.tasks ? tasksResponse.data.tasks.slice(0, 3) : []);
-        
-        // Fetch recent orders assigned to the employee (limit to 3)
-        const ordersResponse = await api.get('/api/orders?limit=3');
-        setRecentOrders(ordersResponse.data.orders ? ordersResponse.data.orders.slice(0, 3) : []);
-      } catch (error) {
-        toast.error('Failed to load dashboard data');
-        console.error('Dashboard data fetch error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const statsResponse = await api.get('/api/tasks/employee-stats');
+      setStats(statsResponse.data);
+      const tasksResponse = await api.get('/api/tasks/assigned?limit=3');
+      setRecentTasks(tasksResponse.data.tasks ? tasksResponse.data.tasks.slice(0, 3) : []);
+      const ordersResponse = await api.get('/api/orders?limit=3');
+      setRecentOrders(ordersResponse.data.orders ? ordersResponse.data.orders.slice(0, 3) : []);
+    } catch (error) {
+      console.error('Dashboard data fetch error:', error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  useAutoRefresh(fetchDashboardData, 10000, [fetchDashboardData]);
 
   // Function to format date
   const formatDate = (dateString) => {

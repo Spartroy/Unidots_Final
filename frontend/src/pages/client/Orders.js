@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../../utils/api';
 import AuthContext from '../../context/AuthContext';
 import { DocumentTextIcon, ArrowTrendingUpIcon, ExclamationCircleIcon, ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 const ClientOrders = () => {
   const { user } = useContext(AuthContext);
@@ -24,43 +25,39 @@ const ClientOrders = () => {
   });
   const [itemsPerPage, setItemsPerPage] = useState(parseInt(limitParam) || 10);
   
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        
-        // Construct the API endpoint based on the filter and pagination
-        let endpoint = `/api/orders?page=${pagination.page}&limit=${itemsPerPage}`;
-        if (activeFilter === 'all') {
-          // Explicitly exclude cancelled orders from 'all' view
-          endpoint += '&status[ne]=Cancelled';
-        } else if (activeFilter !== 'all') {
-          endpoint += `&status=${activeFilter}`;
-        }
-
-        // Add search parameter
-        if (searchTerm) {
-          endpoint += `&search=${encodeURIComponent(searchTerm)}`;
-        }
-        
-        const response = await api.get(endpoint);
-        // Update orders and pagination information
-        setOrders(response.data.orders || []);
-        setPagination({
-          page: response.data.page || 1,
-          pages: response.data.pages || 1,
-          total: response.data.total || 0
-        });
-      } catch (error) {
-        toast.error('Failed to load orders');
-        console.error('Orders fetch error:', error);
-      } finally {
-        setLoading(false);
+  const fetchOrders = useCallback(async () => {
+    try {
+      setLoading(true);
+      let endpoint = `/api/orders?page=${pagination.page}&limit=${itemsPerPage}`;
+      if (activeFilter === 'all') {
+        endpoint += '&status[ne]=Cancelled';
+      } else if (activeFilter !== 'all') {
+        endpoint += `&status=${activeFilter}`;
       }
-    };
+      if (searchTerm) {
+        endpoint += `&search=${encodeURIComponent(searchTerm)}`;
+      }
+      const response = await api.get(endpoint);
+      setOrders(response.data.orders || []);
+      setPagination({
+        page: response.data.page || 1,
+        pages: response.data.pages || 1,
+        total: response.data.total || 0
+      });
+    } catch (error) {
+      // Avoid noisy toasts on polling
+      if (!loading) toast.error('Failed to load orders');
+      console.error('Orders fetch error:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeFilter, itemsPerPage, pagination.page, searchTerm]);
 
+  useEffect(() => {
     fetchOrders();
-  }, [activeFilter, pagination.page, itemsPerPage, searchTerm]);
+  }, [fetchOrders]);
+
+  useAutoRefresh(fetchOrders, 10000, [fetchOrders]);
   
   // Set active filter and pagination based on URL parameters when component mounts
   useEffect(() => {

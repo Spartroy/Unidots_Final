@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../../utils/api';
 import AuthContext from '../../context/AuthContext';
 import { DocumentTextIcon, ArrowTrendingUpIcon, ExclamationCircleIcon, ClipboardDocumentCheckIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 const ClientDashboard = () => {
   const { user } = useContext(AuthContext);
@@ -18,28 +19,25 @@ const ClientDashboard = () => {
   const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch client stats
-        const statsResponse = await api.get('/api/orders/client-stats');
-        setStats(statsResponse.data);
-        
-        // Fetch recent orders (top 3)
-        const ordersResponse = await api.get('/api/orders/recent');
-        setRecentOrders(ordersResponse.data);
-      } catch (error) {
-        toast.error('Failed to load dashboard data');
-        console.error('Dashboard data fetch error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const statsResponse = await api.get('/api/orders/client-stats');
+      setStats(statsResponse.data);
+      const ordersResponse = await api.get('/api/orders/recent');
+      setRecentOrders(ordersResponse.data);
+    } catch (error) {
+      console.error('Dashboard data fetch error:', error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  useAutoRefresh(fetchDashboardData, 10000, [fetchDashboardData]);
 
   // Function to format date
   const formatDate = (dateString) => {

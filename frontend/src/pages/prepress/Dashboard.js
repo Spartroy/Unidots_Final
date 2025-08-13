@@ -1,30 +1,31 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../utils/api';
 import AuthContext from '../../context/AuthContext';
 import { toast } from 'react-toastify';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 const PrepressDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState([]);
   const { user } = useContext(AuthContext);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Get orders that need prepress work
-        const prepressResponse = await api.get('/api/orders?status=In%20Prepress');
-        setOrders(prepressResponse.data.orders || []);
-      } catch (error) {
-        toast.error('Failed to load dashboard data');
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+  const fetchData = useCallback(async () => {
+    try {
+      const prepressResponse = await api.get('/api/orders?status=In%20Prepress');
+      setOrders(prepressResponse.data.orders || []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useAutoRefresh(fetchData, 10000, [fetchData]);
 
   // Format date function
   const formatDate = (dateString) => {

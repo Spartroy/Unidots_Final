@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../../utils/api';
 import AuthContext from '../../context/AuthContext';
 import { toast } from 'react-toastify';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 const PrepressOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -22,43 +23,29 @@ const PrepressOrders = () => {
   });
   const [itemsPerPage, setItemsPerPage] = useState(parseInt(limitParam) || 10);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        
-        // Construct the API endpoint based on the filter and pagination
-        let endpoint = `/api/orders?page=${pagination.page}&limit=${itemsPerPage}`;
-        
-        // Filter orders based on selected filter
-        if (filter === 'active') {
-          // Only show orders currently in prepress stage
-          endpoint += '&status=In Prepress';
-        } else if (filter === 'completed') {
-          // Show only completed orders that went through prepress
-          endpoint += '&status=Completed';
-        } else if (filter === 'all') {
-          // Show all orders for prepress department (active + completed)
-          endpoint += '&status[$in]=In Prepress,Completed';
-        }
-        
-        const response = await api.get(endpoint);
-        setOrders(response.data.orders || []);
-        setPagination({
-          page: response.data.page || 1,
-          pages: response.data.pages || 1,
-          total: response.data.total || 0
-        });
-      } catch (error) {
-        toast.error('Failed to load orders');
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOrders();
+  const fetchOrders = useCallback(async () => {
+    try {
+      setLoading(true);
+      let endpoint = `/api/orders?page=${pagination.page}&limit=${itemsPerPage}`;
+      if (filter === 'active') endpoint += '&status=In Prepress';
+      else if (filter === 'completed') endpoint += '&status=Completed';
+      else if (filter === 'all') endpoint += '&status[$in]=In Prepress,Completed';
+      const response = await api.get(endpoint);
+      setOrders(response.data.orders || []);
+      setPagination({
+        page: response.data.page || 1,
+        pages: response.data.pages || 1,
+        total: response.data.total || 0
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   }, [filter, pagination.page, itemsPerPage]);
+
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
+  useAutoRefresh(fetchOrders, 10000, [fetchOrders]);
 
   // Set active filter and pagination based on URL parameters when component mounts
   useEffect(() => {

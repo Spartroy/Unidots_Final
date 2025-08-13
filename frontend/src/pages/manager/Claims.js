@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../../utils/api';
 import { toast } from 'react-toastify';
 import { ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 const Claims = () => {
   const [claims, setClaims] = useState([]);
@@ -26,59 +27,50 @@ const Claims = () => {
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
 
+  const fetchClaims = useCallback(async () => {
+    try {
+      setLoading(true);
+      let endpoint = `/api/claims?page=${pagination.page}&limit=${itemsPerPage}`;
+      if (filter !== 'all') {
+        const statusMap = {
+          'pending': 'Submitted',
+          'in-progress': 'In Progress',
+          'resolved': 'Resolved',
+          'rejected': 'Rejected'
+        };
+        const formattedStatus = statusMap[filter] || filter;
+        endpoint += `&status=${formattedStatus}`;
+      }
+      if (searchTerm) endpoint += `&search=${encodeURIComponent(searchTerm)}`;
+      const response = await api.get(endpoint);
+      setClaims(response.data.claims || []);
+      setPagination({
+        page: response.data.page || 1,
+        pages: response.data.pages || 1,
+        total: response.data.total || 0
+      });
+    } catch (error) {
+      console.error('Error fetching claims:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [filter, pagination.page, itemsPerPage, searchTerm]);
+
+  const fetchEmployees = useCallback(async () => {
+    try {
+      const response = await api.get('/api/users?role=employee');
+      setEmployees(response.data.users || []);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+    }
+  }, []);
+
   useEffect(() => {
-    const fetchClaims = async () => {
-      try {
-        setLoading(true);
-        
-        // Construct the API endpoint based on the filter and pagination
-        let endpoint = `/api/claims?page=${pagination.page}&limit=${itemsPerPage}`;
-        if (filter !== 'all') {
-          // Convert filter to proper status format
-          const statusMap = {
-            'pending': 'Submitted',
-            'in-progress': 'In Progress',
-            'resolved': 'Resolved',
-            'rejected': 'Rejected'
-          };
-          const formattedStatus = statusMap[filter] || filter;
-          endpoint += `&status=${formattedStatus}`;
-        }
-
-        // Add search parameter
-        if (searchTerm) {
-          endpoint += `&search=${encodeURIComponent(searchTerm)}`;
-        }
-        
-        const response = await api.get(endpoint);
-        // Log the response for debugging
-        console.log('Claims data:', response.data);
-        setClaims(response.data.claims || []);
-        setPagination({
-          page: response.data.page || 1,
-          pages: response.data.pages || 1,
-          total: response.data.total || 0
-        });
-      } catch (error) {
-        toast.error('Failed to fetch claims');
-        console.error('Error fetching claims:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchEmployees = async () => {
-      try {
-        const response = await api.get('/api/users?role=employee');
-        setEmployees(response.data.users || []);
-      } catch (error) {
-        console.error('Error fetching employees:', error);
-      }
-    };
-
     fetchClaims();
     fetchEmployees();
-  }, [filter, pagination.page, itemsPerPage, searchTerm]);
+  }, [fetchClaims, fetchEmployees]);
+
+  useAutoRefresh(fetchClaims, 10000, [fetchClaims]);
 
   // Set active filter and pagination based on URL parameters when component mounts
   useEffect(() => {

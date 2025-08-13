@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../utils/api';
 import { toast } from 'react-toastify';
@@ -6,6 +6,7 @@ import AuthContext from '../../context/AuthContext';
 import { UsersIcon, DocumentTextIcon, TrophyIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, LineElement, PointElement, TimeScale } from 'chart.js';
 import { Pie, Bar, Line } from 'react-chartjs-2';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 import 'chartjs-adapter-date-fns';
 
 // Register ChartJS components
@@ -35,10 +36,9 @@ const ManagerDashboard = () => {
   const [recentClaims, setRecentClaims] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      setLoading(true);
 
         // Initialize with empty data to prevent errors
         let dashboardStats = {
@@ -110,16 +110,18 @@ const ManagerDashboard = () => {
           console.error('Recent claims fetch error:', error);
           // Keep empty claims array
         }
-      } catch (error) {
-        toast.error('Failed to load dashboard data');
-        console.error('Dashboard data fetch error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
+    } catch (error) {
+      console.error('Dashboard data fetch error:', error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  useAutoRefresh(fetchDashboardData, 10000, [fetchDashboardData]);
 
   // Function to format date
   const formatDate = (dateString) => {

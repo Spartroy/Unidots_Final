@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../../utils/api';
 import { toast } from 'react-toastify';
 import { ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -28,70 +29,56 @@ const Orders = () => {
   const [selectedEmployeeForAssign, setSelectedEmployeeForAssign] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
 
+  const fetchOrders = useCallback(async () => {
+    try {
+      setLoading(true);
+      let endpoint = `/api/orders?page=${pagination.page}&limit=${itemsPerPage}`;
+      if (filter === 'all') {
+        endpoint += '&status[ne]=Cancelled';
+      } else if (filter === 'assigned') {
+        endpoint += '&assignedTo[ne]=null';
+      } else if (filter !== 'all') {
+        const statusMap = {
+          'pending': 'Submitted',
+          'designing': 'Designing',
+          'in-prepress': 'In Prepress',
+          'completed': 'Completed',
+          'cancelled': 'Cancelled'
+        };
+        const formattedStatus = statusMap[filter] || filter;
+        endpoint += `&status=${formattedStatus}`;
+      }
+      if (searchTerm) endpoint += `&search=${encodeURIComponent(searchTerm)}`;
+      if (selectedEmployee) endpoint += `&assignedTo=${selectedEmployee}`;
+      const response = await api.get(endpoint);
+      setOrders(response.data.orders || []);
+      setPagination({
+        page: response.data.page || 1,
+        pages: response.data.pages || 1,
+        total: response.data.total || 0
+      });
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [filter, pagination.page, itemsPerPage, searchTerm, selectedEmployee]);
+
+  const fetchEmployees = useCallback(async () => {
+    try {
+      const response = await api.get('/api/users?role=employee');
+      setEmployees(response.data.users || []);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+    }
+  }, []);
+
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        
-        // Construct the API endpoint based on the filter and pagination
-        let endpoint = `/api/orders?page=${pagination.page}&limit=${itemsPerPage}`;
-        
-        if (filter === 'all') {
-          // Explicitly exclude cancelled orders from 'all' view
-          endpoint += '&status[ne]=Cancelled';
-        } else if (filter === 'assigned') {
-          // Filter for orders with assigned employees
-          endpoint += '&assignedTo[ne]=null';
-        } else if (filter !== 'all') {
-          // Convert status to proper case for API
-          const statusMap = {
-            'pending': 'Submitted',
-            'designing': 'Designing',
-            'in-prepress': 'In Prepress',
-            'completed': 'Completed',
-            'cancelled': 'Cancelled'
-          };
-          const formattedStatus = statusMap[filter] || filter;
-          endpoint += `&status=${formattedStatus}`;
-        }
-
-        // Add search parameter
-        if (searchTerm) {
-          endpoint += `&search=${encodeURIComponent(searchTerm)}`;
-        }
-
-        // Add employee filter
-        if (selectedEmployee) {
-          endpoint += `&assignedTo=${selectedEmployee}`;
-        }
-        
-        const response = await api.get(endpoint);
-        setOrders(response.data.orders || []);
-        setPagination({
-          page: response.data.page || 1,
-          pages: response.data.pages || 1,
-          total: response.data.total || 0
-        });
-      } catch (error) {
-        toast.error('Failed to fetch orders');
-        console.error('Error fetching orders:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchEmployees = async () => {
-      try {
-        const response = await api.get('/api/users?role=employee');
-        setEmployees(response.data.users || []);
-      } catch (error) {
-        console.error('Error fetching employees:', error);
-      }
-    };
-
     fetchOrders();
     fetchEmployees();
-  }, [filter, pagination.page, itemsPerPage, searchTerm, selectedEmployee]);
+  }, [fetchOrders, fetchEmployees]);
+
+  useAutoRefresh(fetchOrders, 10000, [fetchOrders]);
 
   // Set active filter and pagination based on URL parameters when component mounts
   useEffect(() => {

@@ -9,6 +9,7 @@ import OrderProgressBar from '../../components/common/OrderProgressBar';
 import OrderReceipt from '../../components/common/OrderReceipt';
 import OrderChat from '../../components/common/OrderChat';
 import { useDropzone } from 'react-dropzone';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
 
 const OrderDetail = () => {
   const { id } = useParams();
@@ -96,6 +97,8 @@ const OrderDetail = () => {
       fetchOrderData();
     }
   }, [id, fetchOrderData, refreshKey]);
+
+  useAutoRefresh(fetchOrderData, 10000, [id]);
   
   // Format date to readable format
   const formatDate = (dateString) => {
