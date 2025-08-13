@@ -4,34 +4,13 @@
     {
       "src": "frontend/package.json",
       "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build"
-      }
-    },
-    {
-      "src": "backend/server.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxDuration": 30
-      }
+      "config": { "distDir": "build" }
     }
   ],
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/backend/server.js"
-    },
-    {
-      "source": "/uploads/(.*)",
-      "destination": "/backend/server.js"
-    },
-    {
-      "source": "/((?!api|uploads|_next|static|favicon.ico|manifest.json).*)",
-      "destination": "/frontend/build/index.html"
-    }
-  ],
-  "env": {
-    "NODE_ENV": "production",
-    "CI": "false"
-  }
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
 }
+
+
