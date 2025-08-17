@@ -109,18 +109,20 @@ const Claims = () => {
   };
 
   return (
-    <div className="py-6">
+    <div className="py-4 sm:py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-semibold text-gray-900">Claims</h1>
-          <div className="flex items-center space-x-4">
-            <div className="relative max-w-sm">
+        {/* Header and Controls - Mobile responsive */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Claims</h1>
+          
+          <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+            <div className="relative w-full sm:max-w-sm">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
               </div>
               <input
                 type="text"
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 text-sm"
                 placeholder="Search claims by title..."
                 value={searchTerm}
                 onChange={handleSearch}
@@ -134,11 +136,11 @@ const Claims = () => {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                Refresh
+                <span className="hidden sm:inline">Refresh</span>
               </button>
               <Link
                 to="/client/claims/new"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 w-full sm:w-auto"
               >
                 New Claim
               </Link>
@@ -184,40 +186,51 @@ const Claims = () => {
             <ul className="divide-y divide-gray-200">
               {claims.map((claim) => (
                 <li key={claim._id}>
-                  <Link to={`/client/claims/${claim._id}`} className="block hover:bg-gray-50">
-                    <div className="px-4 py-4 sm:px-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <p className="text-sm font-medium text-primary-600 truncate">{claim.title}</p>
-                          <span className={`ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(claim.status)}`}>
-                            {claim.status}
-                          </span>
-                        </div>
-                        <div className="ml-2 flex-shrink-0 flex">
-                          <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                  <div className="px-4 py-4 sm:px-6 hover:bg-gray-50">
+                    {/* Claim header - Mobile responsive */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                      <div className="flex items-center space-x-2">
+                        <p className="text-sm font-medium text-primary-600 truncate">{claim.title}</p>
+                        <span className={`px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full ${getStatusColor(claim.status)}`}>
+                          {claim.status}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="flex flex-wrap gap-1">
+                          <p className="px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full bg-gray-100 text-gray-800">
                             {claim.claimNumber || 'No claim number'}
                           </p>
                           {claim.order?.orderNumber && (
-                            <p className="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                            <p className="px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full bg-gray-100 text-gray-800">
                               Order #{claim.order.orderNumber}
                             </p>
                           )}
                         </div>
-                      </div>
-                      <div className="mt-2 sm:flex sm:justify-between">
-                        <div className="sm:flex">
-                          <p className="flex items-center text-sm text-gray-500">
-                            {claim.description.length > 100
-                              ? `${claim.description.substring(0, 100)}...`
-                              : claim.description}
-                          </p>
-                        </div>
-                        <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                          <p>Submitted on {formatDate(claim.createdAt)}</p>
-                        </div>
+                        <Link
+                          to={`/client/claims/${claim._id}`}
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
+                        >
+                          View Details
+                        </Link>
                       </div>
                     </div>
-                  </Link>
+                    
+                    {/* Claim details - Mobile responsive */}
+                    <div className="mt-3 space-y-2 sm:space-y-0 sm:flex sm:justify-between sm:items-start">
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-500 line-clamp-2">
+                          {claim.description.length > 100
+                            ? `${claim.description.substring(0, 100)}...`
+                            : claim.description}
+                        </p>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <p className="text-sm text-gray-500">
+                          Submitted on {formatDate(claim.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </li>
               ))}
             </ul>

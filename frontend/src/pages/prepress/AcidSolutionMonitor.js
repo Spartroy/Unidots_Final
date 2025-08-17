@@ -224,18 +224,18 @@ const AcidSolutionMonitor = () => {
             <BeakerIcon className="h-8 w-8 mr-3 text-blue-600" />
             Solvent Solution Monitor
           </h1>
-          <p className="text-gray-600 mt-1">
-            Monitor washout Solvent solution levels and consumption
-          </p>
+        
         </div>
         <div className="flex space-x-3">
          
           <button
             onClick={() => setShowRefillModal(true)}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            className="inline-flex items-center px-3 py-2 sm:px-4 sm:py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 w-full sm:w-auto mr-2.5"
+            style={{ marginRight: '10px' }}
           >
             <PlusIcon className="h-4 w-4 mr-2" />
-            Add Barrels
+            <span className="hidden xs:inline">Add Barrels</span>
+            <span className="inline xs:hidden">Add Barrels</span>
           </button>
         </div>
       </div>

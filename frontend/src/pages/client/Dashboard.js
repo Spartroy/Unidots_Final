@@ -37,7 +37,7 @@ const ClientDashboard = () => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  useAutoRefresh(fetchDashboardData, 10000, [fetchDashboardData]);
+  useAutoRefresh(fetchDashboardData, 60000, [fetchDashboardData]); // 60 seconds (1 minute)
 
   // Function to format date
   const formatDate = (dateString) => {

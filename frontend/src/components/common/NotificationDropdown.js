@@ -37,13 +37,27 @@ const NotificationDropdown = ({ colorClasses = 'text-primary-200 bg-primary-600'
   const getTypeStyles = (type) => {
     switch (type) {
       case 'success':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-50 text-green-700 border-green-200';
       case 'warning':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
       case 'error':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-50 text-red-700 border-red-200';
       default:
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-50 text-blue-700 border-blue-200';
+    }
+  };
+
+  // Get notification icon
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case 'success':
+        return '✓';
+      case 'warning':
+        return '⚠';
+      case 'error':
+        return '✕';
+      default:
+        return 'ℹ';
     }
   };
 
@@ -65,14 +79,14 @@ const NotificationDropdown = ({ colorClasses = 'text-primary-200 bg-primary-600'
       <div>
         <Menu.Button
           ref={buttonRef}
-          className={`rounded-full p-1 ${colorClasses} hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-600`}
+          className={`rounded-full p-2 ${colorClasses} hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-slate-800 transition-all duration-200 hover:scale-105`}
           onClick={() => setIsOpen(!isOpen)}
         >
           <span className="sr-only">View notifications</span>
           <div className="relative">
-            <BellIcon className="h-6 w-6" aria-hidden="true" />
+            <BellIcon className="h-5 w-5" aria-hidden="true" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 inline-flex items-center justify-center h-4 w-4 rounded-full bg-red-500 text-xs font-bold text-white">
+              <span className="absolute -top-1 -right-1 inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-xs font-bold text-white shadow-lg animate-pulse">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
@@ -83,78 +97,110 @@ const NotificationDropdown = ({ colorClasses = 'text-primary-200 bg-primary-600'
       <Transition
         show={isOpen}
         as={Fragment}
-        enter="transition ease-out duration-100"
-        enterFrom="transform opacity-0 scale-95"
-        enterTo="transform opacity-100 scale-100"
-        leave="transition ease-in duration-75"
-        leaveFrom="transform opacity-100 scale-100"
-        leaveTo="transform opacity-0 scale-95"
+        enter="transition ease-out duration-200"
+        enterFrom="transform opacity-0 scale-95 translate-y-2"
+        enterTo="transform opacity-100 scale-100 translate-y-0"
+        leave="transition ease-in duration-150"
+        leaveFrom="transform opacity-100 scale-100 translate-y-0"
+        leaveTo="transform opacity-0 scale-95 translate-y-2"
       >
         <Menu.Items
           static
-          className="absolute right-0 z-10 mt-2 w-96 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none max-h-[80vh] overflow-y-auto"
+          className="absolute right-0 z-50 mt-3 w-80 sm:w-96 origin-top-right rounded-xl bg-white shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none max-h-[80vh] overflow-hidden border border-gray-100"
         >
-          <div className="px-4 py-2 border-b border-gray-200 flex justify-between items-center">
-            <h3 className="text-sm font-medium text-gray-900">Notifications</h3>
-            {unreadCount > 0 && (
-              <button
-                onClick={markAllAsRead}
-                className="text-xs text-primary-600 hover:text-primary-800"
-              >
-                Mark all as read
-              </button>
-            )}
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <BellIcon className="h-5 w-5 mr-2 text-gray-600" />
+                Notifications
+                {unreadCount > 0 && (
+                  <span className="ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-xs font-bold text-white">
+                    {unreadCount}
+                  </span>
+                )}
+              </h3>
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200"
+                >
+                  Mark all read
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
+          {/* Notifications List */}
+          <div className="max-h-96 overflow-y-auto">
             {notifications.length > 0 ? (
-              notifications.map((notification) => (
-                <div
-                  key={notification._id}
-                  className={`px-4 py-3 hover:bg-gray-50 cursor-pointer flex items-start ${
-                    !notification.read ? 'bg-gray-50' : ''
-                  }`}
-                  onClick={() => handleNotificationClick(notification)}
-                >
-                  <div className="flex-grow">
-                    <div className="flex justify-between">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getTypeStyles(notification.type)}`}>
-                        {notification.type.charAt(0).toUpperCase() + notification.type.slice(1)}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {formatDate(notification.createdAt)}
-                      </span>
+              <div className="divide-y divide-gray-50">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification._id}
+                    className={`px-6 py-4 hover:bg-gray-50 cursor-pointer transition-all duration-200 ${
+                      !notification.read ? 'bg-blue-50/50 border-l-4 border-blue-400' : 'bg-white'
+                    }`}
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    <div className="flex items-start space-x-3">
+                      {/* Notification Icon */}
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${getTypeStyles(notification.type)}`}>
+                        {getNotificationIcon(notification.type)}
+                      </div>
+                      
+                      {/* Notification Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getTypeStyles(notification.type)}`}>
+                            {notification.type.charAt(0).toUpperCase() + notification.type.slice(1)}
+                          </span>
+                          <span className="text-xs text-gray-500 font-medium">
+                            {formatDate(notification.createdAt)}
+                          </span>
+                        </div>
+                        <p className="text-sm font-semibold text-gray-900 mb-1 line-clamp-2">
+                          {notification.title}
+                        </p>
+                        <p className="text-sm text-gray-600 line-clamp-2">
+                          {notification.message}
+                        </p>
+                      </div>
+                      
+                      {/* Action Buttons */}
+                      <div className="flex-shrink-0 flex flex-col gap-1">
+                        {!notification.read && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markAsRead(notification._id);
+                            }}
+                            className="p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors duration-200"
+                            title="Mark as read"
+                          >
+                            <CheckIcon className="h-4 w-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteNotification(notification._id);
+                          }}
+                          className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors duration-200"
+                          title="Delete notification"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
-                    <p className="mt-1 text-sm font-medium text-gray-900">{notification.title}</p>
-                    <p className="mt-1 text-sm text-gray-600">{notification.message}</p>
                   </div>
-                  <div className="flex-shrink-0 ml-3 flex flex-col gap-2">
-                    {!notification.read && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          markAsRead(notification._id);
-                        }}
-                        className="text-gray-400 hover:text-green-500"
-                      >
-                        <CheckIcon className="h-4 w-4" />
-                      </button>
-                    )}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteNotification(notification._id);
-                      }}
-                      className="text-gray-400 hover:text-red-500"
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))
+                ))}
+              </div>
             ) : (
-              <div className="px-4 py-6 text-center text-sm text-gray-500">
-                No notifications yet
+              <div className="px-6 py-12 text-center">
+                <BellIcon className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+                <p className="text-sm font-medium text-gray-900 mb-1">No notifications</p>
+                <p className="text-sm text-gray-500">You're all caught up!</p>
               </div>
             )}
           </div>

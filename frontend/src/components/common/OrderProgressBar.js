@@ -87,13 +87,17 @@ const OrderProgressBar = ({ order, className = '' }) => {
     progressPercentage;
   
   return (
-    <div className={`w-full ${className}`}>
+    <div className={`w-full container-stable ${className}`}>
       {/* Progress bar */}
       <div className="relative mb-1">
         <div className="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
           <div
-            style={{ width: `${adjustedProgressPercentage}%` }}
-            className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500 transition-all duration-300"
+            style={{ 
+              width: `${adjustedProgressPercentage}%`,
+              willChange: 'width',
+              transform: 'translateZ(0)'
+            }}
+            className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500"
           ></div>
         </div>
         

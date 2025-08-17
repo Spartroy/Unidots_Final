@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import api from '../../utils/api';
 import { toast } from 'react-toastify';
 import AuthContext from '../../context/AuthContext';
-import { DocumentTextIcon, ClipboardIcon, PaperClipIcon, ExclamationCircleIcon, ReceiptIcon, DocumentDownloadIcon, CalculatorIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
+import { DocumentTextIcon, ClipboardIcon, PaperClipIcon, ExclamationCircleIcon, ReceiptIcon, DocumentDownloadIcon, CalculatorIcon, ChatBubbleLeftRightIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { getStatusColor, getDisplayStatus, calculateProgressPercentage, getOrderSteps } from '../../utils/statusUtils';
 import OrderProgressBar from '../../components/common/OrderProgressBar';
 import OrderReceipt from '../../components/common/OrderReceipt';
@@ -16,6 +16,7 @@ const OrderDetail = () => {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const [searchParams, setSearchParams] = useSearchParams();
+  const tabsRef = useRef(null);
   
   const [order, setOrder] = useState(null);
   const [tasks, setTasks] = useState([]);
@@ -31,13 +32,15 @@ const OrderDetail = () => {
   // Tab management
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'details');
 
-  // Tab configuration
+  // Tab configuration with mobile-friendly names
   const tabs = [
-    { id: 'details', name: 'Order Details', icon: DocumentTextIcon },
-    { id: 'progress', name: 'Progress', icon: ClipboardIcon },
-    { id: 'files', name: 'Files', icon: PaperClipIcon },
-    { id: 'chat', name: 'Communication', icon: ChatBubbleLeftRightIcon },
+    { id: 'details', name: 'Details', mobileName: 'Details', icon: DocumentTextIcon },
+    { id: 'progress', name: 'Progress', mobileName: 'Progress', icon: ClipboardIcon },
+    { id: 'files', name: 'Files', mobileName: 'Files', icon: PaperClipIcon },
+    { id: 'chat', name: 'Communication', mobileName: 'Chat', icon: ChatBubbleLeftRightIcon },
   ];
+
+
 
   useEffect(() => {
     // Update URL when tab changes
@@ -98,7 +101,7 @@ const OrderDetail = () => {
     }
   }, [id, fetchOrderData, refreshKey]);
 
-  useAutoRefresh(fetchOrderData, 10000, [id]);
+  useAutoRefresh(fetchOrderData, 60000, [id]); // 60 seconds (1 minute)
   
   // Format date to readable format
   const formatDate = (dateString) => {
@@ -334,24 +337,36 @@ const OrderDetail = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Order header - Original header preserved */}
+    <div className="space-y-4 sm:space-y-6">
+      {/* Mobile-optimized Order Header */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="px-4 py-5 sm:px-6 flex justify-between items-start">
-          <div>
-            <h3 className="text-lg leading-6 font-medium text-gray-900">{order.title || 'Order Details'}</h3>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500">
-              Order #{order.orderNumber}
-            </p>
-          </div>
-          <div className="flex flex-col items-end">
-            <div>
-              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}>
-                {getDisplayStatus(order.status, 'client')}
-              </span>
+        {/* Order Title Area - Redesigned for mobile */}
+        <div className="px-4 py-4 sm:px-6 sm:py-5">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-3 sm:space-y-0">
+            {/* Order Title and Number */}
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">
+                {order.title || 'Untitled Order'}
+              </h1>
+              <p className="mt-1 text-sm sm:text-base text-gray-600 font-medium">
+                #{order.orderNumber}
+              </p>
+              <p className="mt-1 text-xs sm:text-sm text-gray-500">
+                Created {formatDate(order.createdAt)}
+                {order.createdAt && <span className="ml-2">{formatTime(order.createdAt)}</span>}
+              </p>
+            </div>
+            
+            {/* Status Badge - Mobile optimized */}
+            <div className="flex flex-col items-start sm:items-end space-y-2">
+              <div className="flex items-center space-x-2">
+                <span className={`px-3 py-1 text-xs sm:text-sm font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                  {getDisplayStatus(order.status, 'client')}
+                </span>
+              </div>
               {process.env.NODE_ENV === 'development' && (
-                <div className="mt-1 text-xs text-gray-500">
-                  Stage: {order.stages?.delivery?.status || 'unknown'} | Status: {order.status || 'unknown'}
+                <div className="text-xs text-gray-500 text-right">
+                  Stage: {order.stages?.delivery?.status || 'unknown'}
                 </div>
               )}
             </div>
@@ -359,38 +374,46 @@ const OrderDetail = () => {
         </div>
         
         {/* Tab Navigation */}
-        <div className="border-t border-gray-200">
-          <nav className="-mb-px flex space-x-8 px-4" aria-label="Tabs">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`${
-                  activeTab === tab.id
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
-              >
-                <tab.icon className="h-5 w-5 mr-2" />
-                {tab.name}
-              </button>
-            ))}
-          </nav>
+        <div className="border-t border-gray-200 bg-white">
+          {/* Scrollable tabs container */}
+          <div
+            ref={tabsRef}
+            className="flex overflow-x-auto scrollbar-hide px-4 sm:px-0 sm:overflow-visible sm:justify-center"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            <nav className="flex space-x-0 sm:space-x-8 sm:justify-center" aria-label="Tabs">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`${
+                    activeTab === tab.id
+                      ? 'border-primary-500 text-primary-600 bg-primary-50 sm:bg-transparent'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  } whitespace-nowrap py-3 px-4 sm:py-4 sm:px-1 border-b-2 font-medium text-sm flex items-center justify-center sm:justify-start min-w-[120px] sm:min-w-0 flex-shrink-0`}
+                >
+                  <tab.icon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+                  <span className="hidden sm:inline">{tab.name}</span>
+                  <span className="sm:hidden">{tab.mobileName}</span>
+                </button>
+              ))}
+            </nav>
+          </div>
         </div>
 
         {/* Tab Content */}
-        <div className="px-4 py-5 sm:px-6">
+        <div className="px-4 py-4 sm:px-6 sm:py-5">
           {/* Order Details Tab */}
           {activeTab === 'details' && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Order details in a cleaner card layout */}
-              <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
-                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                <div className="bg-white px-4 py-3 border-b border-gray-200 flex justify-between items-center">
                   <h4 className="text-base font-medium text-gray-900">Order Information</h4>
                   <OrderReceipt order={order} />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4 p-4">
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                  <div className="bg-white/60 sm:bg-transparent rounded-lg p-3 sm:p-0">
                     <div className="text-sm font-medium text-gray-500">Order Date</div>
                     <div className="mt-1 text-sm text-gray-900">
                       {formatDate(order.createdAt)}
@@ -398,12 +421,12 @@ const OrderDetail = () => {
                     </div>
                   </div>
                   
-                  <div>
+                  <div className="bg-white/60 sm:bg-transparent rounded-lg p-3 sm:p-0">
                     <div className="text-sm font-medium text-gray-500">Order Type</div>
                     <div className="mt-1 text-sm text-gray-900">{order.orderType || 'N/A'}</div>
                   </div>
                   
-                  <div>
+                  <div className="bg-white/60 sm:bg-transparent rounded-lg p-3 sm:p-0">
                     <div className="text-sm font-medium text-gray-500">Estimated Price</div>
                     <div className="mt-1 text-sm text-gray-900 font-bold text-primary-600">
                       {order.cost?.estimatedCost 
@@ -412,29 +435,29 @@ const OrderDetail = () => {
                     </div>
                   </div>
                   
-                  <div>
+                  <div className="bg-white/60 sm:bg-transparent rounded-lg p-3 sm:p-0">
                     <div className="text-sm font-medium text-gray-500">Material</div>
                     <div className="mt-1 text-sm text-gray-900">{order.specifications?.material || 'N/A'}</div>
                   </div>
                   
-                  <div>
+                  <div className="bg-white/60 sm:bg-transparent rounded-lg p-3 sm:p-0">
                     <div className="text-sm font-medium text-gray-500">Material Thickness</div>
                     <div className="mt-1 text-sm text-gray-900">{order.specifications?.materialThickness ? `${order.specifications.materialThickness} microns` : 'N/A'}</div>
                   </div>
                   
-                  <div>
+                  <div className="bg-white/60 sm:bg-transparent rounded-lg p-3 sm:p-0">
                     <div className="text-sm font-medium text-gray-500">Printing Mode</div>
                     <div className="mt-1 text-sm text-gray-900">{order.specifications?.printingMode || 'N/A'}</div>
                   </div>
 
                   {order.assignedTo && (
-                    <div>
+                    <div className="bg-white/60 sm:bg-transparent rounded-lg p-3 sm:p-0">
                       <div className="text-sm font-medium text-gray-500">Assigned Designer</div>
                       <div className="mt-1 text-sm text-gray-900">{order.assignedTo?.name}</div>
                     </div>
                   )}
 
-                  <div>
+                  <div className="bg-white/60 sm:bg-transparent rounded-lg p-3 sm:p-0">
                     <div className="text-sm font-medium text-gray-500">Email</div>
                     <div className="mt-1 text-sm text-gray-900">
                       {user?.email ? (
@@ -445,7 +468,7 @@ const OrderDetail = () => {
                     </div>
                   </div>
 
-                  <div>
+                  <div className="bg-white/60 sm:bg-transparent rounded-lg p-3 sm:p-0">
                     <div className="text-sm font-medium text-gray-500">Phone</div>
                     <div className="mt-1 text-sm text-gray-900">
                       {user?.phone ? (
@@ -459,11 +482,11 @@ const OrderDetail = () => {
               </div>
               
               {/* Technical Specifications */}
-              <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
-                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                <div className="bg-white px-4 py-3 border-b border-gray-200">
                   <h4 className="text-base font-medium text-gray-900">Technical Specifications</h4>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
                   {order.specifications?.packageType && (
                     <div>
                       <div className="text-sm font-medium text-gray-500">Package Type</div>
@@ -508,8 +531,8 @@ const OrderDetail = () => {
               
               {/* Description and Notes */}
               {(order.description || order.specifications?.additionalDetails) && (
-                <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
-                  <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="bg-white px-4 py-3 border-b border-gray-200">
                     <h4 className="text-base font-medium text-gray-900">Description & Notes</h4>
                   </div>
                   <div className="p-4">
@@ -532,11 +555,11 @@ const OrderDetail = () => {
             </div>
           )}
 
-          {/* Progress Tab */}
+          {/* Progress Tab - Mobile optimized */}
           {activeTab === 'progress' && (
-            <div className="space-y-6">
-              <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
-                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                <div className="bg-white px-4 py-3 border-b border-gray-200">
                   <h4 className="text-base font-medium text-gray-900">Order Progress</h4>
                   <p className="mt-1 text-sm text-gray-500">
                     Current status: <span className="font-medium">
@@ -544,158 +567,157 @@ const OrderDetail = () => {
                     </span>
                   </p>
                 </div>
-                <div className="p-6">
-                  {/* Order Progress Bar */}
-                  <div className="mb-8">
+                <div className="p-4 sm:p-6">
+                  {/* Progress Bar - Hidden on mobile, visible on PC */}
+                  <div className="hidden sm:block mb-6">
                     <OrderProgressBar order={order} className="mt-2" />
                   </div>
                   
-                  {/* Detailed Steps */}
-                  <div className="space-y-4 mt-6">
-                    {/* Design/Production Stage */}
-                    <div className={`bg-white border ${
-                      order.status === 'Designing' ? 'border-yellow-400 bg-yellow-50' : 
-                      order.status === 'Design Done' || order.status === 'In Prepress' || 
-                      order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' ? 'border-green-400 bg-green-50' : 'border-gray-200'
-                    } rounded-md overflow-hidden`}>
-                      <div className="px-4 py-4 sm:px-6 flex items-center">
-                        <div className={`flex-shrink-0 h-8 w-8 rounded-full ${
-                          order.status === 'Design Done' || order.status === 'In Prepress' || 
-                          order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' ? 'bg-green-500' : 
-                          order.status === 'Designing' ? 'bg-yellow-400' : 'bg-gray-200'
-                        } flex items-center justify-center mr-3`}>
-                          {order.status === 'Design Done' || order.status === 'In Prepress' || 
-                           order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' ? (
-                            <svg className="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          ) : (
-                            <span className="text-xs text-white font-medium">1</span>
-                          )}
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-900">Designing</h4>
-                          <p className="text-xs text-gray-500">
-                            {order.status === 'Design Done' || order.status === 'In Prepress' || 
-                             order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' 
-                             ? `Completed on ${formatDate(order.stages?.design?.completionDate || order.updatedAt)}` 
-                             : order.status === 'Designing' 
-                             ? 'Designing' 
-                             : 'Not started'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Prepress Stage */}
-                    <div className={`bg-white border ${
-                      order.status === 'In Prepress' ? 'border-yellow-400 bg-yellow-50' : 
-                      order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' ? 'border-green-400 bg-green-50' : 'border-gray-200'
-                    } rounded-md overflow-hidden`}>
-                      <div className="px-4 py-4 sm:px-6 flex items-center">
-                        <div className={`flex-shrink-0 h-8 w-8 rounded-full ${
-                          order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' ? 'bg-green-500' : 
-                          order.status === 'In Prepress' ? 'bg-yellow-400' : 'bg-gray-200'
-                        } flex items-center justify-center mr-3`}>
-                          {order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' ? (
-                            <svg className="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          ) : (
-                            <span className="text-xs text-white font-medium">2</span>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                           <h4 className="text-sm font-medium text-gray-900">Prepress</h4>
-                          <p className="text-xs text-gray-500">
-                            {order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' 
-                             ? `Completed on ${formatDate(order.stages?.prepress?.completionDate || order.updatedAt)}` 
-                             : order.status === 'In Prepress' 
-                             ? 'In progress' 
-                             : 'Not started'}
-                          </p>
-                        </div>
-                      </div>
+                  {/* Mobile-optimized Progress Steps - Vertical Layout */}
+                  <div className="space-y-4">
+                    {/* Progress Steps Container */}
+                    <div className="relative">
+                      {/* Vertical Progress Line */}
+                      <div className="absolute left-6 sm:left-8 top-0 bottom-0 w-0.5 bg-gray-200"></div>
                       
-                      {/* Prepress Sub-processes - visible to client as well for transparency */}
-                      {(order.status === 'In Prepress' || order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed') && order.stages?.prepress?.subProcesses && (
-                        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
-                          <h5 className="text-xs font-medium text-gray-700 mb-2">Prepress Progress</h5>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            <div className="flex items-center">
-                              <div className={`h-4 w-4 rounded-full ${
-                                order.stages?.prepress?.subProcesses?.positioning?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
-                              } mr-2`}></div>
-                              <span className="text-xs text-gray-600">Positioning</span>
-                            </div>
-                            <div className="flex items-center">
-                              <div className={`h-4 w-4 rounded-full ${
-                                order.stages?.prepress?.subProcesses?.laserImaging?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
-                              } mr-2`}></div>
-                              <span className="text-xs text-gray-600">Laser Imaging</span>
-                            </div>
-                            <div className="flex items-center">
-                              <div className={`h-4 w-4 rounded-full ${
-                                order.stages?.prepress?.subProcesses?.exposure?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
-                              } mr-2`}></div>
-                              <span className="text-xs text-gray-600">Exposure</span>
-                            </div>
-                            <div className="flex items-center">
-                              <div className={`h-4 w-4 rounded-full ${
-                                order.stages?.prepress?.subProcesses?.washout?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
-                              } mr-2`}></div>
-                              <span className="text-xs text-gray-600">Washout</span>
-                            </div>
-                            <div className="flex items-center">
-                              <div className={`h-4 w-4 rounded-full ${
-                                order.stages?.prepress?.subProcesses?.drying?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
-                              } mr-2`}></div>
-                              <span className="text-xs text-gray-600">Drying</span>
-                            </div>
-                            <div className="flex items-center">
-                              <div className={`h-4 w-4 rounded-full ${
-                                order.stages?.prepress?.subProcesses?.finishing?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
-                              } mr-2`}></div>
-                              <span className="text-xs text-gray-600">Finishing</span>
-                            </div>
+                      {/* Step 1: Submission */}
+                      <div className="relative flex items-start mb-6">
+                        <div className="flex-shrink-0 w-12 sm:w-16 flex justify-center">
+                          <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
+                        </div>
+                        <div className="ml-4 flex-1 min-w-0">
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
+                            <h4 className="text-sm sm:text-base font-medium text-green-900">Submission</h4>
+                            <p className="text-xs sm:text-sm text-green-700 mt-1">Order submitted successfully</p>
+                            <p className="text-xs text-green-600 mt-1">{formatDate(order.createdAt)}</p>
                           </div>
                         </div>
-                      )}
-                    </div>
-                    
-                    {/* Delivery Stage */}
-                    <div className={`bg-white border ${
-                      order.status === 'Ready for Delivery' || order.status === 'Delivering' ? 'border-yellow-400 bg-yellow-50' : 
-                      order.status === 'Completed' ? 'border-green-400 bg-green-50' : 'border-gray-200'
-                    } rounded-md overflow-hidden`}>
-                      <div className="px-4 py-4 sm:px-6 flex items-center">
-                        <div className={`flex-shrink-0 h-8 w-8 rounded-full ${
-                          order.status === 'Completed' ? 'bg-green-500' : 
-                          order.status === 'Ready for Delivery' || order.status === 'Delivering' ? 'bg-yellow-400' : 'bg-gray-200'
-                        } flex items-center justify-center mr-3`}>
-                          {order.status === 'Completed' ? (
-                            <svg className="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          ) : (
-                            <span className="text-xs text-white font-medium">3</span>
-                          )}
+                      </div>
+
+                      {/* Step 2: Design */}
+                      <div className="relative flex items-start mb-6">
+                        <div className="flex-shrink-0 w-12 sm:w-16 flex justify-center">
+                          <div className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 border-white shadow-sm ${
+                            order.status === 'Design Done' || order.status === 'In Prepress' || 
+                            order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' 
+                            ? 'bg-green-500' : order.status === 'Designing' ? 'bg-yellow-400' : 'bg-gray-300'
+                          }`}></div>
                         </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-900">Delivery</h4>
-                          <p className="text-xs text-gray-500">
-                            {order.status === 'Completed' 
-                             ? `Completed on ${formatDate(order.stages?.delivery?.completionDate || order.updatedAt)}` 
-                             : order.status === 'Ready for Delivery' || order.status === 'Delivering'
-                             ? 'In progress' 
-                             : 'Not started'}
-                          </p>
+                        <div className="ml-4 flex-1 min-w-0">
+                          <div className={`border rounded-lg p-3 sm:p-4 ${
+                            order.status === 'Design Done' || order.status === 'In Prepress' || 
+                            order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' 
+                            ? 'bg-green-50 border-green-200' : order.status === 'Designing' ? 'bg-yellow-50 border-yellow-200' : 'bg-gray-50 border-gray-200'
+                          }`}>
+                            <h4 className={`text-sm sm:text-base font-medium ${
+                              order.status === 'Design Done' || order.status === 'In Prepress' || 
+                              order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' 
+                              ? 'text-green-900' : order.status === 'Designing' ? 'text-yellow-900' : 'text-gray-900'
+                            }`}>Design</h4>
+                            <p className={`text-xs sm:text-sm mt-1 ${
+                              order.status === 'Design Done' || order.status === 'In Prepress' || 
+                              order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' 
+                              ? 'text-green-700' : order.status === 'Designing' ? 'text-yellow-700' : 'text-gray-700'
+                            }`}>
+                              {order.status === 'Design Done' || order.status === 'In Prepress' || 
+                               order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' 
+                               ? 'Design completed' : order.status === 'Designing' ? 'Design in progress' : 'Not started'}
+                            </p>
+                            {order.status === 'Design Done' || order.status === 'In Prepress' || 
+                             order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' && (
+                              <p className="text-xs text-green-600 mt-1">{formatDate(order.stages?.design?.completionDate || order.updatedAt)}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Step 3: Prepress */}
+                      <div className="relative flex items-start mb-6">
+                        <div className="flex-shrink-0 w-12 sm:w-16 flex justify-center">
+                          <div className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 border-white shadow-sm ${
+                            order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' 
+                            ? 'bg-green-500' : order.status === 'In Prepress' ? 'bg-yellow-400' : 'bg-gray-300'
+                          }`}></div>
+                        </div>
+                        <div className="ml-4 flex-1 min-w-0">
+                          <div className={`border rounded-lg p-3 sm:p-4 ${
+                            order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' 
+                            ? 'bg-green-50 border-green-200' : order.status === 'In Prepress' ? 'bg-yellow-50 border-yellow-200' : 'bg-gray-50 border-gray-200'
+                          }`}>
+                            <h4 className={`text-sm sm:text-base font-medium ${
+                              order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' 
+                              ? 'text-green-900' : order.status === 'In Prepress' ? 'text-yellow-900' : 'text-gray-900'
+                            }`}>Prepress</h4>
+                            <p className={`text-xs sm:text-sm mt-1 ${
+                              order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' 
+                              ? 'text-green-700' : order.status === 'In Prepress' ? 'text-yellow-700' : 'text-gray-700'
+                            }`}>
+                              {order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' 
+                               ? 'Prepress completed' : order.status === 'In Prepress' ? 'Prepress in progress' : 'Not started'}
+                            </p>
+                            {order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed' && (
+                              <p className="text-xs text-green-600 mt-1">{formatDate(order.stages?.prepress?.completionDate || order.updatedAt)}</p>
+                            )}
+                            
+                            {/* Prepress Sub-processes - Compact mobile view */}
+                            {(order.status === 'In Prepress' || order.status === 'Ready for Delivery' || order.status === 'Delivering' || order.status === 'Completed') && order.stages?.prepress?.subProcesses && (
+                              <div className="mt-3 pt-3 border-t border-gray-200">
+                                <div className="grid grid-cols-2 gap-2">
+                                  {[
+                                    { key: 'positioning', label: 'Positioning' },
+                                    { key: 'laserImaging', label: 'Laser Imaging' },
+                                    { key: 'exposure', label: 'Exposure' },
+                                    { key: 'washout', label: 'Washout' },
+                                    { key: 'drying', label: 'Drying' },
+                                    { key: 'finishing', label: 'Finishing' }
+                                  ].map((process) => (
+                                    <div key={process.key} className="flex items-center">
+                                      <div className={`h-2 w-2 rounded-full mr-2 ${
+                                        order.stages?.prepress?.subProcesses?.[process.key]?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
+                                      }`}></div>
+                                      <span className="text-xs text-gray-600">{process.label}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Step 4: Delivery */}
+                      <div className="relative flex items-start">
+                        <div className="flex-shrink-0 w-12 sm:w-16 flex justify-center">
+                          <div className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 border-white shadow-sm ${
+                            order.status === 'Completed' ? 'bg-green-500' : 
+                            order.status === 'Ready for Delivery' || order.status === 'Delivering' ? 'bg-yellow-400' : 'bg-gray-300'
+                          }`}></div>
+                        </div>
+                        <div className="ml-4 flex-1 min-w-0">
+                          <div className={`border rounded-lg p-3 sm:p-4 ${
+                            order.status === 'Completed' ? 'bg-green-50 border-green-200' : 
+                            order.status === 'Ready for Delivery' || order.status === 'Delivering' ? 'bg-yellow-50 border-yellow-200' : 'bg-gray-50 border-gray-200'
+                          }`}>
+                            <h4 className={`text-sm sm:text-base font-medium ${
+                              order.status === 'Completed' ? 'text-green-900' : 
+                              order.status === 'Ready for Delivery' || order.status === 'Delivering' ? 'text-yellow-900' : 'text-gray-900'
+                            }`}>Delivery</h4>
+                            <p className={`text-xs sm:text-sm mt-1 ${
+                              order.status === 'Completed' ? 'text-green-700' : 
+                              order.status === 'Ready for Delivery' || order.status === 'Delivering' ? 'text-yellow-700' : 'text-gray-700'
+                            }`}>
+                              {order.status === 'Completed' ? 'Delivery completed' : 
+                               order.status === 'Ready for Delivery' || order.status === 'Delivering' ? 'Delivery in progress' : 'Not started'}
+                            </p>
+                            {order.status === 'Completed' && (
+                              <p className="text-xs text-green-600 mt-1">{formatDate(order.stages?.delivery?.completionDate || order.updatedAt)}</p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                   
-
 
                   {/* Direct Delivery Information - Show when designer chose direct delivery */}
                   {order.status === 'Ready for Delivery' && order.stages?.delivery?.courierInfo?.mode === 'direct' && (
@@ -874,15 +896,15 @@ const OrderDetail = () => {
             </div>
           )}
 
-          {/* Files Tab */}
+          {/* Files Tab - Mobile optimized */}
           {activeTab === 'files' && (
-            <div className="space-y-6">
-              <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
-                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                <div className="bg-white px-4 py-3 border-b border-gray-200">
                   <h4 className="text-base font-medium text-gray-900">Order Files</h4>
                   <p className="mt-1 text-sm text-gray-500">Attachments and documents related to this order</p>
                 </div>
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
                   {/* Your uploaded files section */}
                   {order.files && order.files.some(file => file.uploadedBy?._id === user?.id) && (
                     <div className="mb-6">
@@ -1071,11 +1093,11 @@ const OrderDetail = () => {
             </div>
           )}
 
-          {/* Chat Tab */}
+          {/* Chat Tab - Mobile optimized */}
           {activeTab === 'chat' && (
-            <div className="space-y-6">
-              <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
-                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+            <div className="space-y-4 sm:space-y-6 h-full">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden h-full flex flex-col">
+                <div className="bg-white px-4 py-3 border-b border-gray-200">
                   <h4 className="text-base font-medium text-gray-900">Order Communication</h4>
                   <p className="mt-1 text-sm text-gray-500">
                     {order.assignedTo 
@@ -1084,16 +1106,20 @@ const OrderDetail = () => {
                     }
                   </p>
                 </div>
-                <div className="p-6">
+                <div className="p-2 sm:p-4 flex-1 flex flex-col">
                   {order.assignedTo ? (
-                    <OrderChat orderId={order._id} isVisible={activeTab === 'chat'} />
+                    <div className="flex-1">
+                      <OrderChat orderId={order._id} isVisible={activeTab === 'chat'} />
+                    </div>
                   ) : (
-                    <div className="text-center py-8">
-                      <ChatBubbleLeftRightIcon className="mx-auto h-12 w-12 text-gray-400" />
-                      <h3 className="mt-2 text-sm font-medium text-gray-900">No employee assigned yet</h3>
-                      <p className="mt-1 text-sm text-gray-500">
-                        Chat will become available once a team member is assigned to your order.
-                      </p>
+                    <div className="text-center py-8 flex-1 flex items-center justify-center">
+                      <div>
+                        <ChatBubbleLeftRightIcon className="mx-auto h-12 w-12 text-gray-400" />
+                        <h3 className="mt-2 text-sm font-medium text-gray-900">No employee assigned yet</h3>
+                        <p className="mt-1 text-sm text-gray-500">
+                          Chat will become available once a team member is assigned to your order.
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1102,9 +1128,9 @@ const OrderDetail = () => {
           )}
         </div>
         
-        {/* Original buttons section preserved */}
+        {/* Mobile-optimized buttons section */}
         <div className="border-t border-gray-200 px-4 py-4 sm:px-6 bg-gray-50">
-          <div className="flex space-x-3">
+          <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
             <Link
               to="/client/orders"
               className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
@@ -1144,7 +1170,7 @@ const OrderDetail = () => {
             
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             
-            <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+            <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6 mx-4">
               <div>
                 <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
                   <ExclamationCircleIcon className="h-6 w-6 text-red-600" aria-hidden="true" />

@@ -112,7 +112,7 @@ const OrderChat = ({ orderId, isVisible = true }) => {
   if (!isVisible) return null;
 
   return (
-    <div className="bg-white rounded-lg shadow-lg border border-gray-200 h-96 flex flex-col">
+    <div className="bg-white rounded-lg shadow-lg border border-gray-200 h-full min-h-[500px] sm:min-h-[600px] lg:min-h-[700px] flex flex-col">
       {/* Chat Header */}
       <div className="px-4 py-3 bg-gray-50 rounded-t-lg border-b border-gray-200 flex items-center">
         <ChatBubbleLeftRightIcon className="h-5 w-5 text-gray-400 mr-2" />

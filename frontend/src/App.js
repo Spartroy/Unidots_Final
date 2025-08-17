@@ -56,7 +56,6 @@ import ManagerPlateMonitoring from './pages/manager/PlateMonitoring';
 
 // New imports for Prepress
 import PrepressLayout from './components/layouts/PrepressLayout';
-import PrepressDashboard from './pages/prepress/Dashboard';
 import PrepressOrders from './pages/prepress/Orders';
 import PrepressOrderHistory from './pages/prepress/OrderHistory';
 import PrepressOrderDetail from './pages/prepress/OrderDetail';
@@ -153,8 +152,7 @@ function App() {
               <PrepressLayout />
             </ProtectedRoute>
           }>
-            <Route index element={<PrepressDashboard />} />
-            <Route path="orders" element={<PrepressOrders />} />
+            <Route index element={<PrepressOrders />} />
             <Route path="history" element={<PrepressOrderHistory />} />
             <Route path="orders/:id" element={<PrepressOrderDetail />} />
             <Route path="acid-solution" element={<AcidSolutionMonitor />} />

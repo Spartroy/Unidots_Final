@@ -2,6 +2,121 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom scrollbar hiding for mobile tab navigation */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+/* Comprehensive ResizeObserver fixes */
+* {
+  box-sizing: border-box;
+}
+
+/* Prevent layout shifts during loading */
+img, video, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Ensure stable heights for containers that might cause ResizeObserver issues */
+.container-stable {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Prevent rapid DOM changes that trigger ResizeObserver loops */
+.animate-stable {
+  will-change: auto;
+  transform: translateZ(0);
+}
+
+/* Additional ResizeObserver stability fixes */
+.resize-observer-stable {
+  contain: layout style paint;
+  will-change: auto;
+}
+
+/* Prevent layout thrashing */
+.layout-stable {
+  contain: layout;
+  transform: translateZ(0);
+}
+
+/* Fix for elements that might cause ResizeObserver loops */
+.resize-observer-fix {
+  overflow: hidden;
+  position: relative;
+}
+
+/* Prevent rapid size changes */
+.size-stable {
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* Fix for flex containers that might cause ResizeObserver issues */
+.flex-stable {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Fix for grid containers */
+.grid-stable {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Prevent ResizeObserver issues with text content */
+.text-stable {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+/* Fix for buttons and interactive elements */
+.interactive-stable {
+  contain: layout style;
+  will-change: auto;
+}
+
+/* Custom styles for better mobile experience */
+@media (max-width: 640px) {
+  /* Ensure proper touch targets on mobile */
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Improve text readability on mobile */
+  .text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+  
+  /* Better spacing for mobile cards */
+  .space-y-4 > * + * {
+    margin-top: 1rem;
+  }
+  
+  .space-y-6 > * + * {
+    margin-top: 1.5rem;
+  }
+  
+  /* Prevent layout shifts on mobile */
+  .mobile-stable {
+    contain: layout style paint;
+  }
+}
+
 /* Custom styles */
 body {
   margin: 0;
@@ -10,6 +125,9 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Prevent ResizeObserver issues on body */
+  overflow-x: hidden;
+  contain: layout style;
 }
 
 code {

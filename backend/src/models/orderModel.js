@@ -283,12 +283,24 @@ const orderSchema = mongoose.Schema(
         },
         startDate: Date,
         completionDate: Date,
+        completedBy: {
+          _id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+          name: String,
+          email: String,
+          role: String
+        },
         trackingNumber: String,
         deliveryMethod: String,
         notes: String,
       courierInfo: {
         courier: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-        mode: { type: String, enum: ['direct', 'shipping-company'] },
+        assignedCourier: {
+          _id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+          name: String,
+          email: String,
+          phone: String
+        },
+        mode: { type: String, enum: ['direct', 'shipping-company', 'client-collection'] },
         // Direct delivery fields
         destination: {
           street: String,

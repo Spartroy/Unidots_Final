@@ -435,6 +435,7 @@ const getOrderById = asyncHandler(async (req, res) => {
     .populate('stages.prepress.subProcesses.finishing.completedBy', 'name email department')
     .populate('stages.production.assignedTo', 'name email')
     .populate('stages.delivery.assignedTo', 'name email')
+    .populate('stages.delivery.completedBy._id', 'name email role')
     .populate({
       path: 'files',
       populate: {
@@ -442,7 +443,8 @@ const getOrderById = asyncHandler(async (req, res) => {
         select: 'name email role'
       }
     })
-    .populate('comments.author', 'name email role');
+    .populate('comments.author', 'name email role')
+    .populate('history.user', 'name email role');
 
   if (order) {
     // Check if user has permission to view this order
@@ -596,6 +598,13 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     if (!order.stages.delivery.completionDate) {
       order.stages.delivery.completionDate = Date.now();
     }
+    // Store who completed the delivery
+    order.stages.delivery.completedBy = {
+      _id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      role: req.user.role
+    };
     
     // Add history entry
     order.history.push({
@@ -812,6 +821,13 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     if (!order.stages.delivery.completionDate) {
       order.stages.delivery.completionDate = Date.now();
     }
+    // Store who completed the delivery
+    order.stages.delivery.completedBy = {
+      _id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      role: req.user.role
+    };
   } else if (status === 'Completed') {
       // For managers, mark all relevant stages as completed
       order.stages.production.status = 'Completed';
@@ -831,6 +847,13 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     if (order.stages.delivery.status === 'In Progress') {
       order.stages.delivery.status = 'Completed';
       order.stages.delivery.completionDate = Date.now();
+      // Store who completed the delivery
+      order.stages.delivery.completedBy = {
+        _id: req.user._id,
+        name: req.user.name,
+        email: req.user.email,
+        role: req.user.role
+      };
       }
       
       // Only manager can set overall order status to Completed

@@ -114,7 +114,10 @@ const ClientLayout = () => {
                     </Menu>
                   </div>
                 </div>
-                <div className="-mr-2 flex md:hidden">
+                <div className="flex items-center md:hidden space-x-2">
+                  {/* Mobile notification center - positioned next to hamburger menu */}
+                  <NotificationDropdown colorClasses="bg-slate-700 text-slate-200 hover:bg-slate-600" />
+                  
                   {/* Mobile menu button */}
                   <Disclosure.Button className="inline-flex items-center justify-center rounded-md bg-slate-700 p-2 text-slate-200 hover:bg-slate-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-slate-800">
                     <span className="sr-only">Open main menu</span>
@@ -160,7 +163,6 @@ const ClientLayout = () => {
                     <div className="text-base font-medium text-white">{user?.name}</div>
                     <div className="text-sm font-medium text-slate-300">{user?.email}</div>
                   </div>
-                  <NotificationDropdown colorClasses="bg-slate-700 text-slate-200 hover:bg-slate-600" />
                 </div>
                 <div className="mt-3 space-y-1 px-2">
                   <Disclosure.Button

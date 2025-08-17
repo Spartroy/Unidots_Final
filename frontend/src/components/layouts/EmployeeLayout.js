@@ -17,11 +17,10 @@ const EmployeeLayout = () => {
 
   const navigation = [
     { name: 'Dashboard', href: '/employee', current: location.pathname === '/employee' },
+    // { name: 'Tasks', href: '/employee/tasks', current: location.pathname.startsWith('/employee/tasks') },
     { name: 'Orders', href: '/employee/orders', current: location.pathname.startsWith('/employee/orders') },
-    { name: 'Tasks', href: '/employee/tasks', current: location.pathname.startsWith('/employee/tasks') },
     // { name: 'Templates', href: '/employee/templates', current: location.pathname.startsWith('/employee/templates') },
     { name: 'Claims', href: '/employee/claims', current: location.pathname.startsWith('/employee/claims') },
-   
   ];
 
   return (
@@ -43,7 +42,7 @@ const EmployeeLayout = () => {
                           to={item.href}
                           className={classNames(
                             item.current
-                              ? 'bg-slate-700 text-white border-b-2 border-purple-400'
+                              ? 'bg-slate-700 text-white border-b-2 border-green-400'
                               : 'text-slate-200 hover:bg-slate-700 hover:text-white',
                             'rounded-md px-4 py-2 text-sm font-medium transition-colors duration-200'
                           )}
@@ -112,7 +111,10 @@ const EmployeeLayout = () => {
                     </Menu>
                   </div>
                 </div>
-                <div className="-mr-2 flex md:hidden">
+                <div className="flex items-center md:hidden space-x-2">
+                  {/* Mobile notification center - positioned next to hamburger menu */}
+                  <NotificationDropdown colorClasses="bg-slate-700 text-slate-200 hover:bg-slate-600" />
+                  
                   {/* Mobile menu button */}
                   <Disclosure.Button className="inline-flex items-center justify-center rounded-md bg-slate-700 p-2 text-slate-200 hover:bg-slate-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-slate-800">
                     <span className="sr-only">Open main menu</span>
@@ -157,9 +159,7 @@ const EmployeeLayout = () => {
                   <div className="ml-3">
                     <div className="text-base font-medium text-white">{user?.name}</div>
                     <div className="text-sm font-medium text-slate-300">{user?.email}</div>
-                    <div className="text-sm font-medium text-slate-300">{user?.department} Department</div>
                   </div>
-                  <NotificationDropdown colorClasses="bg-slate-700 text-slate-200 hover:bg-slate-600" />
                 </div>
                 <div className="mt-3 space-y-1 px-2">
                   <Disclosure.Button

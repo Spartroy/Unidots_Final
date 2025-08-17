@@ -843,7 +843,7 @@ const NewOrder = () => {
           </div>
 
           {/* Price Estimation */}
-          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+          {/* <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             <div className="px-6 py-6 sm:px-8">
               <h3 className="text-xl leading-7 font-semibold text-gray-900">Estimated Price</h3>
               <p className="mt-2 max-w-2xl text-base text-gray-600">
@@ -864,7 +864,7 @@ const NewOrder = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
           
           {/* Submit Button */}
           <div className="pt-8">
@@ -889,16 +889,7 @@ const NewOrder = () => {
         </div>
       </form>
 
-      {/* Info Section */}
-      <div className="mt-10 bg-gray-50 rounded-lg p-4 text-sm text-gray-500">
-        <p className="font-medium text-gray-700">What happens next?</p>
-        <ol className="mt-2 list-decimal list-inside space-y-1">
-          <li>Your order will be reviewed by our team.</li>
-          <li>We'll process your request and estimate delivery times.</li>
-          <li>You can check the status of your order in the Orders page.</li>
-          <li>You can upload reference files in the order details page after submission.</li>
-        </ol>
-      </div>
+    
     </div>
   );
 };

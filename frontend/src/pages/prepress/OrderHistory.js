@@ -3,7 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import api from '../../utils/api';
 import AuthContext from '../../context/AuthContext';
 import { toast } from 'react-toastify';
-import { ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon, DocumentTextIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
+import '../../utils/resizeObserverFix'; // Import ResizeObserver fix
 
 const PrepressOrderHistory = () => {
   const [orders, setOrders] = useState([]);
@@ -201,9 +202,10 @@ const PrepressOrderHistory = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-gray-900">Order History</h1>
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header and Back button - Mobile responsive */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Order History</h1>
         <Link
           to="/prepress/orders"
           className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
@@ -212,12 +214,12 @@ const PrepressOrderHistory = () => {
         </Link>
       </div>
 
-      {/* Search and Filter Section */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Search */}
+      {/* Search and Filter Section - Mobile responsive */}
+      <div className="bg-white shadow rounded-lg p-4 sm:p-6">
+        <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-1 sm:gap-4">
+          {/* Search - Full width on mobile */}
           <div>
-            <form onSubmit={handleSearchSubmit} className="flex">
+            <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
@@ -227,41 +229,41 @@ const PrepressOrderHistory = () => {
                   value={search}
                   onChange={handleSearchChange}
                   placeholder="Search by order number, title, or client name..."
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 text-sm"
                 />
               </div>
               <button
                 type="submit"
-                className="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
               >
                 Search
               </button>
             </form>
           </div>
 
-          {/* Filter Buttons */}
-          <div className="flex space-x-2">
+          {/* Filter Buttons - Horizontal scrollable on mobile */}
+          <div className="flex overflow-x-auto scrollbar-hide space-x-2 pb-2 sm:pb-0">
             <button
               onClick={() => handleFilterChange('all')}
-              className={`px-3 py-2 text-sm font-medium rounded-md ${filter === 'all' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
+              className={`px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap flex-shrink-0 ${filter === 'all' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
             >
               All Orders
             </button>
             <button
               onClick={() => handleFilterChange('prepress')}
-              className={`px-3 py-2 text-sm font-medium rounded-md ${filter === 'prepress' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
+              className={`px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap flex-shrink-0 ${filter === 'prepress' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
             >
               Prepress Orders
             </button>
             <button
               onClick={() => handleFilterChange('completed')}
-              className={`px-3 py-2 text-sm font-medium rounded-md ${filter === 'completed' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
+              className={`px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap flex-shrink-0 ${filter === 'completed' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
             >
               Completed
             </button>
             <button
               onClick={() => handleFilterChange('delivered')}
-              className={`px-3 py-2 text-sm font-medium rounded-md ${filter === 'delivered' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
+              className={`px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap flex-shrink-0 ${filter === 'delivered' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
             >
               Delivered
             </button>
@@ -269,8 +271,8 @@ const PrepressOrderHistory = () => {
         </div>
       </div>
       
-      {/* Order count display */}
-      <div className="flex justify-between items-center">
+      {/* Order count display - Mobile responsive */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0">
         <div className="text-sm text-gray-500">
           Showing {orders.length} of {pagination.total} orders
           {search && ` for "${search}"`}
@@ -282,52 +284,67 @@ const PrepressOrderHistory = () => {
           <ul className="divide-y divide-gray-200">
             {orders.map((order) => (
               <li key={order._id}>
-                <Link to={`/prepress/orders/${order._id}`} className="block hover:bg-gray-50">
-                  <div className="px-4 py-4 sm:px-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
+                <div className="px-4 py-4 sm:px-6">
+                  {/* Order card layout with centered button */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                    {/* Left side content */}
+                    <div className="flex-1 space-y-2">
+                      {/* Order header */}
+                      <div className="flex items-center space-x-2">
                         <div className="text-sm font-medium text-primary-600 truncate">
                           Order #{order.orderNumber}: {order.title}
                         </div>
-                        <div className="ml-2 flex-shrink-0 flex">
+                        <div className="flex-shrink-0">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(order.status)}`}>
                             {order.status}
                           </span>
                         </div>
                         {order.status === 'Completed' && (
-                          <div className="ml-2 flex-shrink-0 flex">
+                          <div className="flex-shrink-0">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                               {getCompletedProcessCount(order)}/{getTotalProcessCount(order)} Processes Done
                             </span>
                           </div>
                         )}
                       </div>
-                      <div className="ml-2 flex-shrink-0 flex">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          {order.priority}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mt-2 sm:flex sm:justify-between">
-                      <div className="sm:flex">
+                      
+                      {/* Order details */}
+                      <div className="space-y-1 sm:space-y-0 sm:flex sm:space-x-6">
                         <div className="flex items-center text-sm text-gray-500">
-                          <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm3 1h6v4H7V5zm6 6H7v2h6v-2z" clipRule="evenodd" />
-                          </svg>
-                          Client: {order.client?.name || 'Unknown'}
+                          <DocumentTextIcon className="flex-shrink-0 mr-1.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" aria-hidden="true" />
+                          <span className="truncate">{order.title || 'Untitled Order'}</span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-500">
+                          <ArrowTrendingUpIcon className="flex-shrink-0 mr-1.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" aria-hidden="true" />
+                          <span className="truncate">{order.status || 'Unknown Status'}</span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-500">
+                          <span>Client: {order.client?.name || 'Unknown'}</span>
                         </div>
                       </div>
-                      <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                        <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                        </svg>
-                        <span>
-                          Completed: {formatDate(order.updatedAt)}
-                        </span>
+                      
+                      {/* Additional details */}
+                      <div className="space-y-1 sm:space-y-0 sm:flex sm:space-x-6">
+                        <div className="flex items-center text-sm text-gray-500">
+                          <span>Priority: {order.priority}</span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-500">
+                          <span>Completed: {formatDate(order.updatedAt)}</span>
+                        </div>
                       </div>
                     </div>
+                    
+                    {/* Right side - centered button */}
+                    <div className="flex-shrink-0 flex justify-end sm:justify-center sm:items-center">
+                      <Link
+                        to={`/prepress/orders/${order._id}`}
+                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
+                      >
+                        View Details
+                      </Link>
+                    </div>
                   </div>
-                </Link>
+                </div>
               </li>
             ))}
           </ul>
@@ -481,3 +498,4 @@ const PrepressOrderHistory = () => {
 };
 
 export default PrepressOrderHistory;
+

@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../utils/api';
 import { toast } from 'react-toastify';
 import OrderProgressBar from '../../components/common/OrderProgressBar';
-import { PaperClipIcon, UserCircleIcon, CalculatorIcon, XMarkIcon, DocumentTextIcon, ClipboardIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
+import { PaperClipIcon, UserCircleIcon, CalculatorIcon, XMarkIcon, DocumentTextIcon, ClipboardIcon, ChatBubbleLeftRightIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import OrderReceipt from '../../components/common/OrderReceipt';
 import { useDropzone } from 'react-dropzone';
 import useAutoRefresh from '../../hooks/useAutoRefresh';
+import '../../utils/resizeObserverFix'; // Import ResizeObserver fix
 
 const OrderDetail = () => {
   const { id } = useParams();
@@ -28,13 +29,16 @@ const OrderDetail = () => {
   // Tab management
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'details');
 
-  // Tab configuration
+  // Tab configuration with mobile names
   const tabs = [
-    { id: 'details', name: 'Order Details', icon: DocumentTextIcon },
-    { id: 'progress', name: 'Progress', icon: ClipboardIcon },
-    { id: 'files', name: 'Files', icon: PaperClipIcon },
-    { id: 'comments', name: 'Comments', icon: ChatBubbleLeftRightIcon },
+    { id: 'details', name: 'Order Details', mobileName: 'Details', icon: DocumentTextIcon },
+    { id: 'progress', name: 'Progress', mobileName: 'Progress', icon: ClipboardIcon },
+    { id: 'files', name: 'Files', mobileName: 'Files', icon: PaperClipIcon },
+    { id: 'comments', name: 'Comments', mobileName: 'Comments', icon: ChatBubbleLeftRightIcon },
   ];
+
+  // Tab scrolling ref
+  const tabsRef = useRef(null);
 
   useEffect(() => {
     // Update URL when tab changes
@@ -150,7 +154,7 @@ const OrderDetail = () => {
     } catch (_e) {}
   }, [id]);
 
-  useAutoRefresh(refreshOrder, 10000, [refreshOrder]);
+  useAutoRefresh(refreshOrder, 60000, [refreshOrder]); // 60 seconds (1 minute)
 
   // Format date to readable format
   const formatDate = (dateString) => {
@@ -424,30 +428,38 @@ const OrderDetail = () => {
         </div>
         
         {/* Tab Navigation */}
-        <div className="border-t border-gray-200">
-          <nav className="-mb-px flex space-x-8 px-4" aria-label="Tabs">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`${
-                  activeTab === tab.id
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
-              >
-                <tab.icon className="h-5 w-5 mr-2" />
-                {tab.name}
-              </button>
-            ))}
-          </nav>
+        <div className="border-t border-gray-200 bg-white">
+          {/* Scrollable tabs container */}
+          <div
+            ref={tabsRef}
+            className="flex overflow-x-auto scrollbar-hide px-4 sm:px-0 sm:overflow-visible sm:justify-center"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            <nav className="flex space-x-0 sm:space-x-8 sm:justify-center" aria-label="Tabs">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`${
+                    activeTab === tab.id
+                      ? 'border-primary-500 text-primary-600 bg-primary-50 sm:bg-transparent'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  } whitespace-nowrap py-3 px-4 sm:py-4 sm:px-1 border-b-2 font-medium text-sm flex items-center justify-center sm:justify-start min-w-[120px] sm:min-w-0 flex-shrink-0`}
+                >
+                  <tab.icon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+                  <span className="hidden sm:inline">{tab.name}</span>
+                  <span className="sm:hidden">{tab.mobileName}</span>
+                </button>
+              ))}
+            </nav>
+          </div>
         </div>
 
         {/* Tab Content */}
-        <div className="px-4 py-5 sm:px-6">
+        <div className="px-3 py-4 sm:px-6 sm:py-5">
           {/* Details Tab */}
           {activeTab === 'details' && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Customer Information */}
               <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
                 <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
@@ -457,7 +469,7 @@ const OrderDetail = () => {
                   </h4>
                   <OrderReceipt order={order} />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 sm:gap-y-4 p-3 sm:p-4">
                   <div>
                     <div className="text-sm font-medium text-gray-500">Customer Name</div>
                     <div className="mt-1 text-sm text-gray-900">{order.client?.name || order.customer?.name || 'N/A'}</div>
@@ -492,7 +504,7 @@ const OrderDetail = () => {
                 <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
                   <h4 className="text-base font-medium text-gray-900">Order Information</h4>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4 p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3 sm:gap-y-4 p-3 sm:p-4">
                   <div>
                     <div className="text-sm font-medium text-gray-500">Order Type</div>
                     <div className="mt-1 text-sm text-gray-900">{order.orderType || 'N/A'}</div>
@@ -601,17 +613,17 @@ const OrderDetail = () => {
 
           {/* Progress Tab */}
           {activeTab === 'progress' && (
-            <div className="space-y-6">
-              <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
-                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                <div className="bg-white px-4 py-3 border-b border-gray-200">
                   <h4 className="text-base font-medium text-gray-900">Order Progress</h4>
                   <p className="mt-1 text-sm text-gray-500">
                     Current status: <span className="font-medium">{order.status}</span>
                   </p>
                 </div>
-                <div className="p-6">
-                  {/* Order Progress Bar */}
-                  <div className="mb-8">
+                <div className="p-4 sm:p-6">
+                  {/* Progress Bar - Hidden on mobile, visible on PC */}
+                  <div className="hidden sm:block mb-6">
                     <OrderProgressBar order={order} className="mt-2" />
                   </div>
 
@@ -1220,8 +1232,9 @@ const OrderDetail = () => {
         </div>
         
         {/* Actions Section */}
-        <div className="border-t border-gray-200 px-4 py-4 sm:px-6 bg-gray-50">
-          <div className="flex flex-wrap gap-3">
+        <div className="border-t border-gray-200 px-3 py-4 sm:px-6 bg-gray-50">
+          {/* Navigation and Assignment Section */}
+          <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mb-4">
             <Link
               to="/manager/orders"
               className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
@@ -1231,9 +1244,9 @@ const OrderDetail = () => {
             
             {/* Employee Assignment Dropdown */}
             {!['Completed', 'Cancelled'].includes(order.status) && (
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                 <select
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm"
                   value={selectedEmployee}
                   onChange={(e) => setSelectedEmployee(e.target.value)}
                 >
@@ -1247,54 +1260,56 @@ const OrderDetail = () => {
                 <button
                   onClick={handleAssignOrder}
                   disabled={isAssigning || !selectedEmployee}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+                  className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 text-center"
                 >
                   {isAssigning ? 'Assigning...' : 'Assign'}
                 </button>
               </div>
             )}
-            
-            {/* Status update buttons */}
-            <div className="flex-grow"></div>
-            
-            {!['Completed', 'Cancelled'].includes(order.status) && (
-              <>
-                {order.status !== 'In Prepress' && (
-                  <button
-                    onClick={() => handleStatusUpdate('In Prepress')}
-                    disabled={updating}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                    Mark as In Prepress
-                  </button>
-                )}
-                
-                <button
-                  onClick={() => handleStatusUpdate('Ready for Delivery')}
-                  disabled={updating}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Ready for Delivery
-                </button>
-                
-                <button
-                  onClick={() => handleStatusUpdate('Completed')}
-                  disabled={updating}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                >
-                  Complete Order
-                </button>
-                
-                <button
-                  onClick={() => handleStatusUpdate('Cancelled')}
-                  disabled={updating}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                >
-                  Cancel Order
-                </button>
-              </>
-            )}
           </div>
+          
+          {/* Status Update Buttons */}
+          {!['Completed', 'Cancelled'].includes(order.status) && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+              {order.status !== 'In Prepress' && (
+                <button
+                  onClick={() => handleStatusUpdate('In Prepress')}
+                  disabled={updating}
+                  className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                >
+                  <span className="hidden sm:inline">Mark as In Prepress</span>
+                  <span className="sm:hidden">In Prepress</span>
+                </button>
+              )}
+              
+              <button
+                onClick={() => handleStatusUpdate('Ready for Delivery')}
+                disabled={updating}
+                className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                <span className="hidden sm:inline">Ready for Delivery</span>
+                <span className="sm:hidden">Ready</span>
+              </button>
+              
+              <button
+                onClick={() => handleStatusUpdate('Completed')}
+                disabled={updating}
+                className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+              >
+                <span className="hidden sm:inline">Complete Order</span>
+                <span className="sm:hidden">Complete</span>
+              </button>
+              
+              <button
+                onClick={() => handleStatusUpdate('Cancelled')}
+                disabled={updating}
+                className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+              >
+                <span className="hidden sm:inline">Cancel Order</span>
+                <span className="sm:hidden">Cancel</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

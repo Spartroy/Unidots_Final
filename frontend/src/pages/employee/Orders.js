@@ -58,7 +58,7 @@ const Orders = () => {
   }, [filter, pagination.page, itemsPerPage, searchTerm]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
-  useAutoRefresh(fetchOrders, 10000, [fetchOrders]);
+  useAutoRefresh(fetchOrders, 60000, [fetchOrders]); // 60 seconds (1 minute)
 
   // Set active filter and pagination based on URL parameters when component mounts
   useEffect(() => {
@@ -256,6 +256,7 @@ const Orders = () => {
                         <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
                           <p>Due: {formatDate(order.deadline)}</p>
                         </div>
+
                       </div>
                       {order.currentStage && (
                         <div className="mt-2">

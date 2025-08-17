@@ -37,7 +37,7 @@ const CourierLayout = () => {
                           to={item.href}
                           className={classNames(
                             item.current
-                              ? 'bg-slate-700 text-white border-b-2 border-purple-400'
+                              ? 'bg-slate-700 text-white border-b-2 border-green-400'
                               : 'text-slate-200 hover:bg-slate-700 hover:text-white',
                             'rounded-md px-4 py-2 text-sm font-medium transition-colors duration-200'
                           )}
@@ -61,18 +61,37 @@ const CourierLayout = () => {
                           </div>
                         </Menu.Button>
                       </div>
-                      <Transition as={Fragment} enter="transition ease-out duration-100" enterFrom="transform opacity-0 scale-95" enterTo="transform opacity-100 scale-100" leave="transition ease-in duration-75" leaveFrom="transform opacity-100 scale-100" leaveTo="transform opacity-0 scale-95">
+                      <Transition as={Fragment}
+                        enter="transition ease-out duration-100"
+                        enterFrom="transform opacity-0 scale-95"
+                        enterTo="transform opacity-100 scale-100"
+                        leave="transition ease-in duration-75"
+                        leaveFrom="transform opacity-100 scale-100"
+                        leaveTo="transform opacity-0 scale-95"
+                      >
                         <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                           <Menu.Item>
                             {({ active }) => (
-                              <Link to="/courier/profile" className={classNames(active ? 'bg-gray-100' : '', 'block px-4 py-2 text-sm text-gray-700')}>
+                              <Link
+                                to="/courier/profile"
+                                className={classNames(
+                                  active ? 'bg-gray-100' : '',
+                                  'block px-4 py-2 text-sm text-gray-700'
+                                )}
+                              >
                                 Your Profile
                               </Link>
                             )}
                           </Menu.Item>
                           <Menu.Item>
                             {({ active }) => (
-                              <button onClick={logout} className={classNames(active ? 'bg-gray-100' : '', 'block w-full text-left px-4 py-2 text-sm text-gray-700')}>
+                              <button
+                                onClick={logout}
+                                className={classNames(
+                                  active ? 'bg-gray-100' : '',
+                                  'block w-full text-left px-4 py-2 text-sm text-gray-700'
+                                )}
+                              >
                                 Sign out
                               </button>
                             )}
@@ -82,10 +101,18 @@ const CourierLayout = () => {
                     </Menu>
                   </div>
                 </div>
-                <div className="-mr-2 flex md:hidden">
+                <div className="flex items-center md:hidden space-x-2">
+                  {/* Mobile notification center - positioned next to hamburger menu */}
+                  <NotificationDropdown colorClasses="bg-slate-700 text-slate-200 hover:bg-slate-600" />
+                  
+                  {/* Mobile menu button */}
                   <Disclosure.Button className="inline-flex items-center justify-center rounded-md bg-slate-700 p-2 text-slate-200 hover:bg-slate-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-slate-800">
                     <span className="sr-only">Open main menu</span>
-                    {open ? <XMarkIcon className="block h-6 w-6" aria-hidden="true" /> : <Bars3Icon className="block h-6 w-6" aria-hidden="true" />}
+                    {open ? (
+                      <XMarkIcon className="block h-6 w-6" aria-hidden="true" />
+                    ) : (
+                      <Bars3Icon className="block h-6 w-6" aria-hidden="true" />
+                    )}
                   </Disclosure.Button>
                 </div>
               </div>
@@ -94,7 +121,18 @@ const CourierLayout = () => {
             <Disclosure.Panel className="md:hidden">
               <div className="space-y-1 px-2 pb-3 pt-2 sm:px-3">
                 {navigation.map((item) => (
-                  <Disclosure.Button key={item.name} as={Link} to={item.href} className={classNames(item.current ? 'bg-slate-700 text-white' : 'text-slate-200 hover:bg-slate-700 hover:text-white', 'block rounded-md px-3 py-2 text-base font-medium')} aria-current={item.current ? 'page' : undefined}>
+                  <Disclosure.Button
+                    key={item.name}
+                    as={Link}
+                    to={item.href}
+                    className={classNames(
+                      item.current
+                        ? 'bg-slate-700 text-white'
+                        : 'text-slate-200 hover:bg-slate-700 hover:text-white',
+                      'block rounded-md px-3 py-2 text-base font-medium'
+                    )}
+                    aria-current={item.current ? 'page' : undefined}
+                  >
                     {item.name}
                   </Disclosure.Button>
                 ))}
@@ -110,7 +148,6 @@ const CourierLayout = () => {
                     <div className="text-base font-medium text-white">{user?.name}</div>
                     <div className="text-sm font-medium text-slate-300">{user?.email}</div>
                   </div>
-                  <NotificationDropdown colorClasses="bg-slate-700 text-slate-200 hover:bg-slate-600" />
                 </div>
                 <div className="mt-3 space-y-1 px-2">
                   <Disclosure.Button as={Link} to="/courier/profile" className="block rounded-md px-3 py-2 text-base font-medium text-slate-200 hover:bg-slate-700 hover:text-white">

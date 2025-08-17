@@ -5,6 +5,7 @@ import api from '../../utils/api';
 import AuthContext from '../../context/AuthContext';
 import { DocumentTextIcon, ArrowTrendingUpIcon, ExclamationCircleIcon, ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import useAutoRefresh from '../../hooks/useAutoRefresh';
+import '../../utils/resizeObserverFix'; // Import ResizeObserver fix
 
 const ClientOrders = () => {
   const { user } = useContext(AuthContext);
@@ -25,6 +26,9 @@ const ClientOrders = () => {
   });
   const [itemsPerPage, setItemsPerPage] = useState(parseInt(limitParam) || 10);
   
+  // Add debouncing for search
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchParam || '');
+  
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
@@ -34,8 +38,8 @@ const ClientOrders = () => {
       } else if (activeFilter !== 'all') {
         endpoint += `&status=${activeFilter}`;
       }
-      if (searchTerm) {
-        endpoint += `&search=${encodeURIComponent(searchTerm)}`;
+      if (debouncedSearchTerm) {
+        endpoint += `&search=${encodeURIComponent(debouncedSearchTerm)}`;
       }
       const response = await api.get(endpoint);
       setOrders(response.data.orders || []);
@@ -51,13 +55,22 @@ const ClientOrders = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeFilter, itemsPerPage, pagination.page, searchTerm]);
+  }, [activeFilter, itemsPerPage, pagination.page, debouncedSearchTerm]);
 
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
 
-  useAutoRefresh(fetchOrders, 10000, [fetchOrders]);
+  // Debounce search term changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useAutoRefresh(fetchOrders, 60000, [fetchOrders]); // 60 seconds (1 minute)
   
   // Set active filter and pagination based on URL parameters when component mounts
   useEffect(() => {
@@ -75,7 +88,7 @@ const ClientOrders = () => {
     }
   }, [statusFilter, pageParam, limitParam, searchParam]);
 
-  // Handle search
+  // Handle search with debouncing
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
@@ -92,7 +105,7 @@ const ClientOrders = () => {
     setSearchParams(newParams);
   };
 
-  // Handle filter change
+  // Handle filter change with debouncing
   const handleFilterChange = (filter) => {
     setActiveFilter(filter);
     setPagination(prev => ({...prev, page: 1})); // Reset to page 1 when changing filters
@@ -174,63 +187,65 @@ const ClientOrders = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Filter buttons */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-gray-900">My Orders</h1>
-        <div className="flex space-x-2">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header and Filter buttons - Mobile responsive */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">My Orders</h1>
+        
+        {/* Filter buttons - Horizontal scrollable on mobile */}
+        <div className="flex overflow-x-auto scrollbar-hide space-x-2 pb-2 sm:pb-0">
           <button
             onClick={() => handleFilterChange('all')}
-            className={`px-3 py-2 text-sm font-medium rounded-md ${activeFilter === 'all' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+            className={`px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap flex-shrink-0 ${activeFilter === 'all' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
           >
             All Orders
           </button>
           <button
             onClick={() => handleFilterChange('Submitted')}
-            className={`px-3 py-2 text-sm font-medium rounded-md ${activeFilter === 'Submitted' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+            className={`px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap flex-shrink-0 ${activeFilter === 'Submitted' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
           >
             Submitted
           </button>
           <button
             onClick={() => handleFilterChange('Designing')}
-            className={`px-3 py-2 text-sm font-medium rounded-md ${activeFilter === 'Designing' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+            className={`px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap flex-shrink-0 ${activeFilter === 'Designing' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
           >
             Designing
           </button>
           <button
             onClick={() => handleFilterChange('In Prepress')}
-            className={`px-3 py-2 text-sm font-medium rounded-md ${activeFilter === 'In Prepress' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+            className={`px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap flex-shrink-0 ${activeFilter === 'In Prepress' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
           >
             In Prepress
           </button>
           <button
             onClick={() => handleFilterChange('Completed')}
-            className={`px-3 py-2 text-sm font-medium rounded-md ${activeFilter === 'Completed' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+            className={`px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap flex-shrink-0 ${activeFilter === 'Completed' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
           >
             Completed
           </button>
           <button
             onClick={() => handleFilterChange('Cancelled')}
-            className={`px-3 py-2 text-sm font-medium rounded-md ${activeFilter === 'Cancelled' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+            className={`px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap flex-shrink-0 ${activeFilter === 'Cancelled' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
           >
             Cancelled
           </button>
         </div>
       </div>
 
-      {/* Search, Order count and Create new order button */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-4">
+      {/* Search, Order count and Create new order button - Mobile responsive */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
+        <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
           <div className="text-sm text-gray-500">
             Showing {orders.length} of {pagination.total} orders
           </div>
-          <div className="relative max-w-sm">
+          <div className="relative w-full sm:max-w-sm">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
             </div>
             <input
               type="text"
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 text-sm"
               placeholder="Search orders by number or title..."
               value={searchTerm}
               onChange={handleSearch}
@@ -239,7 +254,7 @@ const ClientOrders = () => {
         </div>
         <Link
           to="/client/orders/new"
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+          className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 w-full sm:w-auto"
         >
           Create New Order
         </Link>
@@ -252,46 +267,46 @@ const ClientOrders = () => {
             orders.map((order) => (
               <li key={order._id}>
                 <div className="px-4 py-4 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <p className="text-sm font-medium text-primary-600 truncate">
-                        Order #{order.orderNumber}
-                      </p>
-                      <div className="ml-2 flex-shrink-0 flex">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}>
-                          {(order.status || 'Unknown').toString().replace('_', ' ').toUpperCase()}
-                        </span>
+                  {/* Order card layout with centered button */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                    {/* Left side content - moved up slightly */}
+                    <div className="flex-1 space-y-2">
+                      {/* Order header */}
+                      <div className="flex items-center space-x-2">
+                        <p className="text-sm font-medium text-primary-600 truncate">
+                          Order #{order.orderNumber}
+                        </p>
+                        <div className="flex-shrink-0">
+                          <span className={`px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                            {(order.status || 'Unknown').toString().replace('_', ' ').toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Order details */}
+                      <div className="space-y-1 sm:space-y-0 sm:flex sm:space-x-6">
+                        <div className="flex items-center text-sm text-gray-500">
+                          <DocumentTextIcon className="flex-shrink-0 mr-1.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" aria-hidden="true" />
+                          <span className="truncate">{order.title || 'Untitled Order'}</span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-500">
+                          <ArrowTrendingUpIcon className="flex-shrink-0 mr-1.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" aria-hidden="true" />
+                          <span className="truncate">{order.printType ? `${order.printType.charAt(0).toUpperCase() + order.printType.slice(1)} Printing` : 'Printing Order'}</span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-500">
+                          <span>Ordered on {formatDate(order.createdAt)}</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="ml-2 flex-shrink-0 flex">
+                    
+                    {/* Right side - centered button */}
+                    <div className="flex-shrink-0 flex justify-end sm:justify-center sm:items-center">
                       <Link
                         to={`/client/orders/${order._id}`}
-                        className="font-medium text-primary-600 hover:text-primary-500 text-sm"
+                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
                       >
                         View Details
                       </Link>
-                    </div>
-                  </div>
-                  <div className="mt-2 sm:flex sm:justify-between">
-                    <div className="sm:flex">
-                      <p className="flex items-center text-sm text-gray-500">
-                        <DocumentTextIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" aria-hidden="true" />
-                        {order.title || 'Untitled Order'}
-                      </p>
-                      <p className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
-                        <ArrowTrendingUpIcon className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" aria-hidden="true" />
-                        {order.printType ? `${order.printType.charAt(0).toUpperCase() + order.printType.slice(1)} Printing` : 'Printing Order'}
-                      </p>
-                    </div>
-                    <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                      <p>
-                        Ordered on {formatDate(order.createdAt)}
-                      </p>
-                      <p className="ml-6 font-medium">
-                        {order.cost && typeof order.cost.estimatedCost === 'number'
-                          ? `$${order.cost.estimatedCost.toFixed(0)}`
-                          : '$0.00'}
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -329,25 +344,31 @@ const ClientOrders = () => {
         </ul>
       </div>
 
-      {/* Pagination controls */}
+      {/* Pagination controls - Mobile responsive */}
       {pagination.pages > 1 && (
         <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-md shadow">
+          {/* Mobile pagination */}
           <div className="flex flex-1 justify-between sm:hidden">
             <button
               onClick={() => handlePageChange(pagination.page - 1)}
               disabled={pagination.page === 1}
-              className={`relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 ${pagination.page === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}
+              className={`relative inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 ${pagination.page === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}
             >
               Previous
             </button>
+            <span className="text-sm text-gray-700 px-3 py-2">
+              Page {pagination.page} of {pagination.pages}
+            </span>
             <button
               onClick={() => handlePageChange(pagination.page + 1)}
               disabled={pagination.page === pagination.pages}
-              className={`relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 ${pagination.page === pagination.pages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}
+              className={`relative inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 ${pagination.page === pagination.pages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}
             >
               Next
             </button>
           </div>
+          
+          {/* Desktop pagination */}
           <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
             <div>
               <p className="text-sm text-gray-700">
@@ -356,8 +377,8 @@ const ClientOrders = () => {
                 <span className="font-medium">{pagination.total}</span> results
               </p>
             </div>
-            <div className="flex items-center">
-              <div className="mr-4">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center">
                 <label htmlFor="pageSize" className="mr-2 text-sm text-gray-700">
                   Show:
                 </label>

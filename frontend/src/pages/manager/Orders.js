@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../../utils/api';
 import { toast } from 'react-toastify';
-import { ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon, DocumentTextIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
 import useAutoRefresh from '../../hooks/useAutoRefresh';
+import '../../utils/resizeObserverFix'; // Import ResizeObserver fix
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -78,7 +79,7 @@ const Orders = () => {
     fetchEmployees();
   }, [fetchOrders, fetchEmployees]);
 
-  useAutoRefresh(fetchOrders, 10000, [fetchOrders]);
+  useAutoRefresh(fetchOrders, 60000, [fetchOrders]); // 60 seconds (1 minute)
 
   // Set active filter and pagination based on URL parameters when component mounts
   useEffect(() => {
@@ -231,119 +232,99 @@ const Orders = () => {
   };
 
   return (
-    <div className="py-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900">Orders</h1>
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header and Filter buttons - Mobile responsive */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Orders</h1>
+        
+        {/* Filter buttons - Horizontal scrollable on mobile */}
+        <div className="flex overflow-x-auto scrollbar-hide space-x-2 pb-2 sm:pb-0">
+          <button
+            onClick={() => handleFilterChange('all')}
+            className={`px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap flex-shrink-0 ${filter === 'all' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
+          >
+            All Orders
+          </button>
+          <button
+            onClick={() => handleFilterChange('assigned')}
+            className={`px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap flex-shrink-0 ${filter === 'assigned' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
+          >
+            Assigned Orders
+          </button>
+          <button
+            onClick={() => handleFilterChange('pending')}
+            className={`px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap flex-shrink-0 ${filter === 'pending' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
+          >
+            Pending
+          </button>
+          <button
+            onClick={() => handleFilterChange('designing')}
+            className={`px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap flex-shrink-0 ${filter === 'designing' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
+          >
+            Designing
+          </button>
+          <button
+            onClick={() => handleFilterChange('in-prepress')}
+            className={`px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap flex-shrink-0 ${filter === 'in-prepress' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
+          >
+            In Prepress
+          </button>
+          <button
+            onClick={() => handleFilterChange('completed')}
+            className={`px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap flex-shrink-0 ${filter === 'completed' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
+          >
+            Completed
+          </button>
         </div>
+      </div>
 
-        {/* Filters and Search */}
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            {/* Search */}
-            <div className="relative">
-              <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
-                Search Orders
-              </label>
-              <div className="relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  id="search"
-                  placeholder="Search by order ID or name..."
-                  value={searchTerm}
-                  onChange={handleSearch}
-                  className="pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 w-full"
-                />
-              </div>
-            </div>
-
-            {/* Employee Filter */}
-            <div>
-              <label htmlFor="employee-filter" className="block text-sm font-medium text-gray-700 mb-2">
-                Filter by Employee
-              </label>
-              <select
-                id="employee-filter"
-                value={selectedEmployee}
-                onChange={handleEmployeeFilter}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 w-full"
-              >
-                <option value="">All Employees</option>
-                {employees.map((employee) => (
-                  <option key={employee._id} value={employee._id}>
-                    {employee.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Items per page */}
-            <div>
-              <label htmlFor="items-per-page" className="block text-sm font-medium text-gray-700 mb-2">
-                Items per page
-              </label>
-              <select
-                id="items-per-page"
-                value={itemsPerPage}
-                onChange={handlePageSizeChange}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 w-full"
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Status Filters */}
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => handleFilterChange('all')}
-              className={`px-3 py-2 text-sm font-medium rounded-md ${filter === 'all' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
-            >
-              All Orders
-            </button>
-            <button
-              onClick={() => handleFilterChange('assigned')}
-              className={`px-3 py-2 text-sm font-medium rounded-md ${filter === 'assigned' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
-            >
-              Assigned Orders
-            </button>
-            <button
-              onClick={() => handleFilterChange('pending')}
-              className={`px-3 py-2 text-sm font-medium rounded-md ${filter === 'pending' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
-            >
-              Pending
-            </button>
-            <button
-              onClick={() => handleFilterChange('designing')}
-              className={`px-3 py-2 text-sm font-medium rounded-md ${filter === 'designing' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
-            >
-              Designing
-            </button>
-            <button
-              onClick={() => handleFilterChange('in-prepress')}
-              className={`px-3 py-2 text-sm font-medium rounded-md ${filter === 'in-prepress' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
-            >
-              In Prepress
-            </button>
-            <button
-              onClick={() => handleFilterChange('completed')}
-              className={`px-3 py-2 text-sm font-medium rounded-md ${filter === 'completed' ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'}`}
-            >
-              Completed
-            </button>
-          </div>
-        </div>
-
-        {/* Order count display */}
-        <div className="mt-4 flex justify-between items-center">
+      {/* Search, Order count and filters - Mobile responsive */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
+        <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
           <div className="text-sm text-gray-500">
             Showing {orders.length} of {pagination.total} orders
           </div>
+          <div className="relative w-full sm:max-w-sm">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+            </div>
+            <input
+              type="text"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 text-sm"
+              placeholder="Search orders by number or title..."
+              value={searchTerm}
+              onChange={handleSearch}
+            />
+          </div>
         </div>
+        
+        {/* Employee Filter and Items per page - Stack on mobile */}
+        <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+          <select
+            value={selectedEmployee}
+            onChange={handleEmployeeFilter}
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm"
+          >
+            <option value="">All Employees</option>
+            {employees.map((employee) => (
+              <option key={employee._id} value={employee._id}>
+                {employee.name}
+              </option>
+            ))}
+          </select>
+          
+          <select
+            value={itemsPerPage}
+            onChange={handlePageSizeChange}
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm"
+          >
+            <option value={5}>5 per page</option>
+            <option value={10}>10 per page</option>
+            <option value={25}>25 per page</option>
+            <option value={50}>50 per page</option>
+          </select>
+                </div>
+      </div>
 
         {loading ? (
           <div className="flex justify-center items-center h-64">
@@ -358,61 +339,63 @@ const Orders = () => {
             <ul className="divide-y divide-gray-200">
               {filteredOrders.map((order) => (
                 <li key={order._id}>
-                  <div className="block hover:bg-gray-50">
-                    <div className="px-4 py-4 sm:px-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <Link to={`/manager/orders/${order._id}`} className="text-sm font-medium text-primary-600 truncate hover:underline">
+                  <div className="px-4 py-4 sm:px-6">
+                    {/* Order card layout with centered button */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                      {/* Left side content - moved up slightly */}
+                      <div className="flex-1 space-y-2">
+                        {/* Order header */}
+                        <div className="flex items-center space-x-2">
+                          <p className="text-sm font-medium text-primary-600 truncate">
                             Order #{order.orderNumber}
-                          </Link>
-                          <span className={`ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}>
-                            {order.status}
-                          </span>
+                          </p>
+                          <div className="flex-shrink-0">
+                            <span className={`px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                              {(order.status || 'Unknown').toString().replace('_', ' ').toUpperCase()}
+                            </span>
+                          </div>
                         </div>
-                        <div className="ml-2 flex-shrink-0 flex">
-                          {order.assignedTo ? (
-                            <p className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                              Assigned to: {order.assignedTo.name}
-                            </p>
-                          ) : (
-                            <button
-                              onClick={() => setAssigningOrder(order._id)}
-                              className="px-2 py-1 text-xs font-medium rounded border border-primary-600 text-primary-600 hover:bg-primary-50"
-                            >
-                              Assign
-                            </button>
+                        
+                        {/* Order details */}
+                        <div className="space-y-1 sm:space-y-0 sm:flex sm:space-x-6">
+                          <div className="flex items-center text-sm text-gray-500">
+                            <DocumentTextIcon className="flex-shrink-0 mr-1.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" aria-hidden="true" />
+                            <span className="truncate">{order.title || 'Untitled Order'}</span>
+                          </div>
+                          <div className="flex items-center text-sm text-gray-500">
+                            <ArrowTrendingUpIcon className="flex-shrink-0 mr-1.5 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" aria-hidden="true" />
+                            <span className="truncate">{order.orderType || 'Standard'}</span>
+                          </div>
+                          <div className="flex items-center text-sm text-gray-500">
+                            <span>Client: {order.client?.name || 'Unknown'}</span>
+                          </div>
+                        </div>
+                        
+                        {/* Additional details */}
+                        <div className="space-y-1 sm:space-y-0 sm:flex sm:space-x-6">
+                          <div className="flex items-center text-sm text-gray-500">
+                            <span>Due: {formatDate(order.deadline)}</span>
+                          </div>
+                          <div className="flex items-center text-sm text-gray-500">
+                            <span>Priority: {order.priority || 'Normal'}</span>
+                          </div>
+                          {order.assignedTo && (
+                            <div className="flex items-center text-sm text-gray-500">
+                              <span>Assigned to: {order.assignedTo.name}</span>
+                            </div>
                           )}
                         </div>
                       </div>
-                      <div className="mt-2 sm:flex sm:justify-between">
-                        <div className="sm:flex">
-                          <p className="flex items-center text-sm text-gray-500">
-                            Client: {order.client?.name || 'Unknown'}
-                          </p>
-                          <p className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
-                            Type: {order.orderType || 'Standard'}
-                          </p>
-                          <p className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
-                            Priority: {order.priority || 'Normal'}
-                          </p>
-                        </div>
-                        <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                          <p>Due: {formatDate(order.deadline)}</p>
-                        </div>
+                      
+                      {/* Right side - centered button */}
+                      <div className="flex-shrink-0 flex justify-end sm:justify-center sm:items-center">
+                        <Link
+                          to={`/manager/orders/${order._id}`}
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
+                        >
+                          View Details
+                        </Link>
                       </div>
-                      {order.currentStage && (
-                        <div className="mt-2">
-                          <p className="text-sm text-gray-500">
-                            Current Stage: {order.currentStage}
-                          </p>
-                          <div className="w-full bg-gray-200 rounded-full h-2.5 mt-1">
-                            <div 
-                              className="bg-primary-600 h-2.5 rounded-full" 
-                              style={{ width: `${(order.completedStages?.length / order.totalStages) * 100}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </li>
@@ -614,7 +597,7 @@ const Orders = () => {
           </div>
         )}
       </div>
-    </div>
+   
   );
 };
 

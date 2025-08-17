@@ -11,13 +11,18 @@ import {
   TrashIcon,
   RectangleGroupIcon,
   ChevronDownIcon,
-  ChevronUpIcon
+  ChevronUpIcon,
+  DevicePhoneMobileIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
+import '../../utils/resizeObserverFix'; // Import ResizeObserver fix
 
-const PlateCanvas = ({ plate, placements, previewPlacement }) => {
+const PlateCanvas = ({ plate, placements, previewPlacement, isMobile = false }) => {
   if (!plate) return null;
-  const canvasWidth = 820; // px
-  const canvasHeight = 420; // px
+  
+  // Responsive canvas dimensions
+  const canvasWidth = isMobile ? Math.min(window.innerWidth - 40, 820) : 820; // px
+  const canvasHeight = isMobile ? Math.min((canvasWidth * 420) / 820, 420) : 420; // px
   const border = 2; // border stroke
   const padding = border; // draw content inside the border
   const innerWidth = canvasWidth - padding * 2;
@@ -101,6 +106,9 @@ const PlateMonitoring = () => {
   // Smooth slide-over state
   const [placementsPanelMounted, setPlacementsPanelMounted] = useState(false);
   const [placementsPanelOpen, setPlacementsPanelOpen] = useState(false);
+  // Mobile orientation state
+  const [isLandscape, setIsLandscape] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const openPlacementsPanel = () => {
     if (!placementsPanelMounted) {
@@ -148,6 +156,25 @@ const PlateMonitoring = () => {
         // optional
       }
     })();
+  }, []);
+
+  // Check mobile orientation
+  useEffect(() => {
+    const checkOrientation = () => {
+      const isMobileDevice = window.innerWidth <= 768;
+      const isLandscapeOrientation = window.innerWidth > window.innerHeight;
+      setIsMobile(isMobileDevice);
+      setIsLandscape(isLandscapeOrientation);
+    };
+
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
   }, []);
 
   useEffect(() => {
@@ -275,19 +302,35 @@ const PlateMonitoring = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Landscape Orientation Message for Mobile */}
+      {isMobile && !isLandscape && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6">
+          <div className="flex items-center space-x-3">
+            <DevicePhoneMobileIcon className="h-6 w-6 text-blue-600 flex-shrink-0" />
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-blue-900">Better View in Landscape</h3>
+              <p className="text-sm text-blue-700 mt-1">
+                Rotate your device to landscape mode for a better view of the plate monitoring interface.
+              </p>
+            </div>
+            <ArrowPathIcon className="h-5 w-5 text-blue-600 flex-shrink-0" />
+          </div>
+        </div>
+      )}
+
+      {/* Header - Mobile responsive */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 flex items-center">
-            <Squares2X2Icon className="h-8 w-8 mr-3 text-indigo-600" />
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 flex items-center">
+            <Squares2X2Icon className="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3 text-indigo-600" />
             Plate Monitoring
           </h1>
-          <p className="text-gray-600 mt-1">Position jobs efficiently and minimize plate waste</p>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">Position jobs efficiently and minimize plate waste</p>
         </div>
-        <div className="flex space-x-3 items-center">
+        <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
           <select
-            className="border rounded px-3 py-2 bg-white"
+            className="border rounded px-3 py-2 bg-white text-sm"
             value={activePlateId}
             onChange={(e) => setActivePlateId(e.target.value)}
           >
@@ -300,52 +343,52 @@ const PlateMonitoring = () => {
           </select>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+            className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
           >
             <PlusIcon className="h-4 w-4 mr-2" /> New Plate
           </button>
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary Cards - Mobile responsive */}
       {plate && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white overflow-hidden shadow rounded-lg p-5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+          <div className="bg-white overflow-hidden shadow rounded-lg p-3 sm:p-5">
             <div className="flex items-center">
-              <ChartBarIcon className="h-6 w-6 text-indigo-600" />
-              <div className="ml-4">
-                <p className="text-sm text-gray-500">Used of usable area</p>
-                <p className="text-lg font-semibold text-gray-900">{percentage(usedUsablePct)}</p>
+              <ChartBarIcon className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" />
+              <div className="ml-2 sm:ml-4">
+                <p className="text-xs sm:text-sm text-gray-500">Used of usable area</p>
+                <p className="text-sm sm:text-lg font-semibold text-gray-900">{percentage(usedUsablePct)}</p>
               </div>
             </div>
-            <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${Math.min(100, usedUsablePct)}%` }}></div>
+            <div className="mt-2 sm:mt-3 w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
+              <div className="bg-indigo-600 h-1.5 sm:h-2 rounded-full" style={{ width: `${Math.min(100, usedUsablePct)}%` }}></div>
             </div>
           </div>
-          <div className="bg-white overflow-hidden shadow rounded-lg p-5">
+          <div className="bg-white overflow-hidden shadow rounded-lg p-3 sm:p-5">
             <div className="flex items-center">
-              <ArrowsPointingInIcon className="h-6 w-6 text-emerald-600" />
-              <div className="ml-4">
-                <p className="text-sm text-gray-500">Remaining</p>
-                <p className="text-lg font-semibold text-gray-900">{(plateData.stats.remainingArea / 10000).toFixed(2)} m²</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white overflow-hidden shadow rounded-lg p-5">
-            <div className="flex items-center">
-              <RectangleGroupIcon className="h-6 w-6 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm text-gray-500">Placements</p>
-                <p className="text-lg font-semibold text-gray-900">{plate.placements.length}</p>
+              <ArrowsPointingInIcon className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600" />
+              <div className="ml-2 sm:ml-4">
+                <p className="text-xs sm:text-sm text-gray-500">Remaining</p>
+                <p className="text-sm sm:text-lg font-semibold text-gray-900">{(plateData.stats.remainingArea / 10000).toFixed(2)} m²</p>
               </div>
             </div>
           </div>
-          <div className="bg-white overflow-hidden shadow rounded-lg p-5">
+          <div className="bg-white overflow-hidden shadow rounded-lg p-3 sm:p-5">
             <div className="flex items-center">
-              <ExclamationTriangleIcon className="h-6 w-6 text-amber-600" />
-              <div className="ml-4">
-                <p className="text-sm text-gray-500">Estimated waste (margins)</p>
-                <p className="text-lg font-semibold text-gray-900">{percentage(plateData.stats.wastePct)}</p>
+              <RectangleGroupIcon className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+              <div className="ml-2 sm:ml-4">
+                <p className="text-xs sm:text-sm text-gray-500">Placements</p>
+                <p className="text-sm sm:text-lg font-semibold text-gray-900">{plate.placements.length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white overflow-hidden shadow rounded-lg p-3 sm:p-5">
+            <div className="flex items-center">
+              <ExclamationTriangleIcon className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" />
+              <div className="ml-2 sm:ml-4">
+                <p className="text-xs sm:text-sm text-gray-500">Estimated waste (margins)</p>
+                <p className="text-sm sm:text-lg font-semibold text-gray-900">{percentage(plateData.stats.wastePct)}</p>
               </div>
             </div>
           </div>
@@ -353,37 +396,80 @@ const PlateMonitoring = () => {
       )}
 
       {plate && (
-        <div className="space-y-6">
-          {/* Visualization (full width) */}
-          <div className="bg-white shadow rounded-lg p-6">
+        <div className="space-y-4 sm:space-y-6">
+          {/* Visualization - Mobile responsive */}
+          <div className="bg-white shadow rounded-lg p-4 sm:p-6">
             <div className="mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Current Plate</h3>
+              <h3 className="text-base sm:text-lg font-medium text-gray-900">Current Plate</h3>
             </div>
-            <div className="flex flex-col md:flex-row gap-4 items-start mr-10 ml-10">
-              <div className="w-full overflow-auto">
-                <PlateCanvas plate={plate} placements={plate.placements} previewPlacement={simulation?.position || null} />
+            
+            {/* Mobile Layout - Stacked */}
+            {isMobile && (
+              <div className="space-y-4">
+                <div className="w-full overflow-auto">
+                  <PlateCanvas 
+                    plate={plate} 
+                    placements={plate.placements} 
+                    previewPlacement={simulation?.position || null} 
+                    isMobile={true}
+                  />
+                </div>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={openAddJobModal}
+                    className="w-full px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-md inline-flex items-center justify-center text-sm font-medium"
+                  >
+                    <PlusIcon className="h-4 w-4 mr-2" /> Add Job
+                  </button>
+                  <button
+                    onClick={openPlacementsPanel}
+                    className="w-full px-4 py-3 bg-slate-700 hover:bg-slate-800 text-white rounded-md inline-flex items-center justify-center text-sm font-medium"
+                  >
+                    <RectangleGroupIcon className="h-4 w-4 mr-2" /> Placements
+                  </button>
+                  <button
+                    onClick={onCompletePlate}
+                    className="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md inline-flex items-center justify-center text-sm font-medium"
+                  >
+                    <CheckCircleIcon className="h-4 w-4 mr-2" /> Complete Plate
+                  </button>
+                </div>
               </div>
-              <div className="w-full md:w-60 flex flex-col gap-3 items-start justify-start min-h-[340px]">
-                <button
-                  onClick={openAddJobModal}
-                  className="w-56 px-8 py-5 bg-amber-500 hover:bg-amber-600 text-white rounded-md inline-flex items-center text-base font-medium whitespace-nowrap justify-start text-left"
-                >
-                  <PlusIcon className="h-5 w-5 mr-2" /> Add Job
-                </button>
-                <button
-                  onClick={openPlacementsPanel}
-                  className="w-56 px-8 py-5 bg-slate-700 hover:bg-slate-800 text-white rounded-md inline-flex items-center text-base font-medium whitespace-nowrap justify-start text-left"
-                >
-                  <RectangleGroupIcon className="h-5 w-5 mr-2" /> Placements
-                </button>
-                <button
-                  onClick={onCompletePlate}
-                  className="w-56 px-8 py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md inline-flex items-center text-base font-medium whitespace-nowrap justify-start text-left"
-                >
-                  <CheckCircleIcon className="h-5 w-5 mr-2" /> Complete Plate
-                </button>
+            )}
+            
+            {/* Desktop Layout - Side by side */}
+            {!isMobile && (
+              <div className="flex flex-col lg:flex-row gap-4 items-start">
+                <div className="w-full overflow-auto">
+                  <PlateCanvas 
+                    plate={plate} 
+                    placements={plate.placements} 
+                    previewPlacement={simulation?.position || null} 
+                  />
+                </div>
+                <div className="w-full lg:w-60 flex flex-col gap-3 items-start justify-start min-h-[340px]">
+                  <button
+                    onClick={openAddJobModal}
+                    className="w-full lg:w-56 px-8 py-5 bg-amber-500 hover:bg-amber-600 text-white rounded-md inline-flex items-center text-base font-medium whitespace-nowrap justify-start text-left"
+                  >
+                    <PlusIcon className="h-5 w-5 mr-2" /> Add Job
+                  </button>
+                  <button
+                    onClick={openPlacementsPanel}
+                    className="w-full lg:w-56 px-8 py-5 bg-slate-700 hover:bg-slate-800 text-white rounded-md inline-flex items-center text-base font-medium whitespace-nowrap justify-start text-left"
+                  >
+                    <RectangleGroupIcon className="h-5 w-5 mr-2" /> Placements
+                  </button>
+                  <button
+                    onClick={onCompletePlate}
+                    className="w-full lg:w-56 px-8 py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md inline-flex items-center text-base font-medium whitespace-nowrap justify-start text-left"
+                  >
+                    <CheckCircleIcon className="h-5 w-5 mr-2" /> Complete Plate
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
+            
             {simulation && (
               <div className="mt-3 text-sm">
                 {simulation.fits ? (

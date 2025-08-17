@@ -55,7 +55,7 @@ const PrepressOrderDetail = () => {
     } catch (_e) {}
   }, [id]);
 
-  useAutoRefresh(refreshOrder, 10000, [refreshOrder]);
+  useAutoRefresh(refreshOrder, 60000, [refreshOrder]); // 60 seconds (1 minute)
 
   // Timer management functions
   const startTimer = (processName) => {

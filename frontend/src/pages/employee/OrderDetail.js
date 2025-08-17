@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 import { toast } from 'react-toastify';
@@ -10,12 +10,15 @@ import {
   DocumentTextIcon,
   ChatBubbleLeftRightIcon,
   CloudArrowUpIcon,
-  ClockIcon
+  ClockIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 import { useDropzone } from 'react-dropzone';
 import OrderProgressBar from '../../components/common/OrderProgressBar';
 import OrderChat from '../../components/common/OrderChat';
 import useAutoRefresh from '../../hooks/useAutoRefresh';
+import '../../utils/resizeObserverFix'; // Import ResizeObserver fix
 
 const OrderDetail = () => {
   const { id } = useParams();
@@ -48,14 +51,17 @@ const OrderDetail = () => {
   const [rippingNote, setRippingNote] = useState('');
   const [uploadingRipping, setUploadingRipping] = useState(false);
 
-  // Tabs
+  // Tabs with mobile names
   const tabs = [
-    { id: 'details', name: 'Order Details', icon: InformationCircleIcon },
-    { id: 'progress', name: 'Progress', icon: ClockIcon },
-    { id: 'files', name: 'Files', icon: CloudArrowUpIcon },
-    { id: 'comments', name: 'Comments', icon: DocumentTextIcon },
-    { id: 'chat', name: 'Chat', icon: ChatBubbleLeftRightIcon },
+    { id: 'details', name: 'Order Details', mobileName: 'Details', icon: InformationCircleIcon },
+    { id: 'progress', name: 'Progress', mobileName: 'Progress', icon: ClockIcon },
+    { id: 'files', name: 'Files', mobileName: 'Files', icon: CloudArrowUpIcon },
+    { id: 'comments', name: 'Comments', mobileName: 'Comments', icon: DocumentTextIcon },
+    { id: 'chat', name: 'Chat', mobileName: 'Chat', icon: ChatBubbleLeftRightIcon },
   ];
+
+  // Tab scrolling ref
+  const tabsRef = useRef(null);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -86,7 +92,7 @@ const OrderDetail = () => {
     }
   }, [id]);
 
-  useAutoRefresh(refreshOrder, 10000, [refreshOrder]);
+  useAutoRefresh(refreshOrder, 60000, [refreshOrder]); // 60 seconds (1 minute)
 
   // Format date to readable format
   const formatDate = (dateString) => {
@@ -522,35 +528,43 @@ const OrderDetail = () => {
         </div>
         
         {/* Tab Navigation */}
-        <div className="border-t border-gray-200">
-          <nav className="-mb-px flex space-x-8 px-4" aria-label="Tabs">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`${
-                  activeTab === tab.id
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
-              >
-                <tab.icon className="h-5 w-5 mr-2" />
-                {tab.name}
-              </button>
-            ))}
-          </nav>
+        <div className="border-t border-gray-200 bg-white">
+          {/* Scrollable tabs container */}
+          <div
+            ref={tabsRef}
+            className="flex overflow-x-auto scrollbar-hide px-4 sm:px-0 sm:overflow-visible sm:justify-center"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            <nav className="flex space-x-0 sm:space-x-8 sm:justify-center" aria-label="Tabs">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`${
+                    activeTab === tab.id
+                      ? 'border-primary-500 text-primary-600 bg-primary-50 sm:bg-transparent'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  } whitespace-nowrap py-3 px-4 sm:py-4 sm:px-1 border-b-2 font-medium text-sm flex items-center justify-center sm:justify-start min-w-[120px] sm:min-w-0 flex-shrink-0`}
+                >
+                  <tab.icon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+                  <span className="hidden sm:inline">{tab.name}</span>
+                  <span className="sm:hidden">{tab.mobileName}</span>
+                </button>
+              ))}
+            </nav>
+          </div>
         </div>
 
         {/* Tab Content */}
-        <div className="px-4 py-5 sm:px-6">
+        <div className="px-3 py-4 sm:px-6 sm:py-5">
           {activeTab === 'details' && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Customer info in a cleaner card layout */}
               <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
                 <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
                   <h4 className="text-base font-medium text-gray-900">Customer Information</h4>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 sm:gap-y-4 p-3 sm:p-4">
                   <div>
                     <div className="text-sm font-medium text-gray-500">Customer Name</div>
                     <div className="mt-1 text-sm text-gray-900">{order.client?.name || order.customer?.name || 'N/A'}</div>
@@ -586,7 +600,7 @@ const OrderDetail = () => {
                 <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
                   <h4 className="text-base font-medium text-gray-900">Order Information</h4>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4 p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-3 sm:gap-y-4 p-3 sm:p-4">
                   {order.specifications?.packageType && (
                     <div>
                       <div className="text-sm font-medium text-gray-500">Package Type</div>
@@ -620,7 +634,7 @@ const OrderDetail = () => {
                 <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
                   <h4 className="text-base font-medium text-gray-900">Technical Specifications</h4>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 sm:gap-y-4 p-3 sm:p-4">
                   <div>
                     <div className="text-sm font-medium text-gray-500">Dimensions</div>
                     <div className="mt-1 text-sm text-gray-900">
@@ -663,7 +677,7 @@ const OrderDetail = () => {
                   <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
                     <h4 className="text-base font-medium text-gray-900">Description & Notes</h4>
                   </div>
-                  <div className="p-4">
+                  <div className="p-3 sm:p-4">
                     {order.description && (
                       <div className="mb-4">
                         <div className="text-sm font-medium text-gray-500">Description</div>
@@ -684,25 +698,25 @@ const OrderDetail = () => {
           )}
 
           {activeTab === 'progress' && (
-            <div className="space-y-6">
-              <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
-                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                <div className="bg-white px-4 py-3 border-b border-gray-200">
                   <h4 className="text-base font-medium text-gray-900">Order Progress</h4>
                   <p className="mt-1 text-sm text-gray-500">
                     Current status: <span className="font-medium">{order.status}</span>
                   </p>
                 </div>
-                <div className="p-6">
-                  {/* Order Progress Bar */}
-                  <div className="mb-8">
+                <div className="p-4 sm:p-6">
+                  {/* Progress Bar - Hidden on mobile, visible on PC */}
+                  <div className="hidden sm:block mb-6">
                     <OrderProgressBar order={order} className="mt-2" />
                   </div>
 
                   {/* Detailed Steps */}
-                  <div className="space-y-4 mt-6">
+                  <div className="space-y-3 sm:space-y-4 mt-4 sm:mt-6">
                     {/* Order Submission Step */}
                     <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
-                      <div className="px-4 py-4 sm:px-6 flex items-center">
+                      <div className="px-3 py-3 sm:px-6 sm:py-4 flex items-center">
                         <div className={`flex-shrink-0 h-8 w-8 rounded-full ${
                           true ? 'bg-green-500' : 'bg-gray-200'
                         } flex items-center justify-center mr-3`}>
@@ -729,7 +743,7 @@ const OrderDetail = () => {
                       order.status === 'Design Done' || order.status === 'In Prepress' || 
                       order.status === 'Ready for Delivery' || order.status === 'Completed' ? 'border-green-400' : 'border-gray-200'
                     } rounded-md overflow-hidden`}>
-                      <div className="px-4 py-4 sm:px-6 flex items-center">
+                      <div className="px-3 py-3 sm:px-6 sm:py-4 flex items-center">
                         <div className={`flex-shrink-0 h-8 w-8 rounded-full ${
                           order.status === 'Design Done' || order.status === 'In Prepress' || 
                           order.status === 'Ready for Delivery' || order.status === 'Completed' ? 'bg-green-500' : 
@@ -759,9 +773,9 @@ const OrderDetail = () => {
 
                       {/* Design Sub-processes */}
                       {(order.status === 'Designing' || order.status === 'Design Done' || order.status === 'In Prepress' || order.status === 'Ready for Delivery' || order.status === 'Completed') && (
-                        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                        <div className="px-3 py-3 sm:px-4 sm:py-3 bg-gray-50 border-t border-gray-200">
                           <h5 className="text-sm font-medium text-gray-700 mb-2">Design Sub-processes</h5>
-                          <div className="grid grid-cols-1 gap-3">
+                          <div className="grid grid-cols-1 gap-2 sm:gap-3">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center">
                                 <div className={`h-4 w-4 rounded-full ${
@@ -883,9 +897,86 @@ const OrderDetail = () => {
                             {order.status === 'Completed' 
                              ? `Completed on ${formatDate(order.stages?.delivery?.completionDate || order.updatedAt)}` 
                              : order.status === 'Ready for Delivery' 
-                             ? 'In progress' 
+                             ? `Started on ${formatDate(order.stages?.delivery?.startDate || order.updatedAt)}` 
                              : 'Not started'}
                           </p>
+                          
+                          {/* Enhanced delivery information */}
+                          {order.status === 'Completed' && order.stages?.delivery?.completionDate && (
+                            <div className="mt-2 space-y-1">
+                              <p className="text-sm text-gray-600">
+                                <span className="font-medium">Date:</span> {formatDate(order.stages.delivery.completionDate)}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                <span className="font-medium">Time:</span> {formatTime(order.stages.delivery.completionDate)}
+                              </p>
+
+                              
+                              {/* Try to get completedBy from delivery stage first */}
+                              {order.stages?.delivery?.completedBy ? (
+                                <p className="text-sm text-gray-600">
+                                  <span className="font-medium">Completed by:</span> {order.stages.delivery.completedBy.name || 'Unknown'}
+                                </p>
+                              ) : (
+                                /* Fallback: Try to get from order history */
+                                (() => {
+                                  const completionEntry = order.history?.find(entry => 
+                                    entry.action === 'Status Updated' && 
+                                    (entry.details?.includes('Completed') || entry.details?.includes('completed'))
+                                  );
+                                  return completionEntry && completionEntry.user ? (
+                                    <p className="text-sm text-gray-600">
+                                      <span className="font-medium">Completed by:</span> {completionEntry.user.name || completionEntry.user.email || 'Unknown'}
+                                    </p>
+                                  ) : (
+                                    <p className="text-sm text-gray-500">
+                                      <span className="font-medium">Completed by:</span> Not available
+                                    </p>
+                                  );
+                                })()
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Delivery in progress information */}
+                          {order.status === 'Ready for Delivery' && order.stages?.delivery?.startDate && (
+                            <div className="mt-2 space-y-1">
+                              <p className="text-sm text-gray-600">
+                                <span className="font-medium">Started:</span> {formatDate(order.stages.delivery.startDate)} at {formatTime(order.stages.delivery.startDate)}
+                              </p>
+                              {order.stages?.delivery?.courierInfo?.createdAt && (
+                                <p className="text-sm text-gray-600">
+                                  <span className="font-medium">Method chosen:</span> {formatDate(order.stages.delivery.courierInfo.createdAt)} at {formatTime(order.stages.delivery.courierInfo.createdAt)}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Show delivery method if available */}
+                          {order.stages?.delivery?.courierInfo?.mode && (
+                            <p className="text-sm text-blue-600 mt-1">
+                              <span className="font-medium">Method:</span> {
+                                order.stages.delivery.courierInfo.mode === 'direct' ? 'Direct Handover' :
+                                order.stages.delivery.courierInfo.mode === 'client-collection' ? 'Client Self-Collection' :
+                                order.stages.delivery.courierInfo.mode === 'shipping-company' ? 'Shipping Company' : 
+                                order.stages.delivery.courierInfo.mode
+                              }
+                            </p>
+                          )}
+                          
+                          {/* Show courier information if available */}
+                          {order.stages?.delivery?.courierInfo?.assignedCourier ? (
+                            <p className="text-sm text-green-600 mt-1">
+                              <span className="font-medium">Courier:</span> {order.stages.delivery.courierInfo.assignedCourier.name}
+                              {order.stages.delivery.courierInfo.assignedCourier.phone && (
+                                <span className="ml-2 text-gray-500">({order.stages.delivery.courierInfo.assignedCourier.phone})</span>
+                              )}
+                            </p>
+                          ) : (
+                            <p className="text-sm text-gray-500 mt-1">
+                              <span className="font-medium">Courier:</span> Not assigned
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -896,15 +987,15 @@ const OrderDetail = () => {
           )}
 
           {activeTab === 'files' && (
-            <div className="space-y-6">
-              <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
-                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                <div className="bg-white px-4 py-3 border-b border-gray-200">
                   <h4 className="text-base font-medium text-gray-900">Files</h4>
                   <p className="mt-1 text-sm text-gray-500">
                     Order attachments and design files
                   </p>
                 </div>
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
                   {/* Client files section */}
                   {order.files && order.files.some(file => file.uploadedBy?.role === 'client') && (
                     <div className="mb-6">
@@ -1188,9 +1279,9 @@ const OrderDetail = () => {
           )}
 
           {activeTab === 'comments' && (
-            <div className="space-y-6">
-              <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
-                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                <div className="bg-white px-4 py-3 border-b border-gray-200">
                   <h4 className="text-base font-medium text-gray-900">Comments</h4>
                 </div>
                 <div className="border-t border-gray-200">
@@ -1258,16 +1349,18 @@ const OrderDetail = () => {
           )}
 
           {activeTab === 'chat' && (
-            <div className="space-y-6">
-              <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
-                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+            <div className="space-y-4 sm:space-y-6 h-full">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden h-full flex flex-col">
+                <div className="bg-white px-4 py-3 border-b border-gray-200">
                   <h4 className="text-base font-medium text-gray-900">Order Communication</h4>
                   <p className="mt-1 text-sm text-gray-500">
                     Chat with the client about this order
                   </p>
                 </div>
-                <div className="p-6">
-                  <OrderChat orderId={order._id} isVisible={activeTab === 'chat'} />
+                <div className="p-2 sm:p-4 flex-1 flex flex-col">
+                  <div className="flex-1">
+                    <OrderChat orderId={order._id} isVisible={activeTab === 'chat'} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -1275,8 +1368,8 @@ const OrderDetail = () => {
         </div>
 
         {/* Actions section */}
-        <div className="border-t border-gray-200 px-4 py-4 sm:px-6 bg-gray-50">
-          <div className="flex space-x-3">
+        <div className="border-t border-gray-200 px-3 py-4 sm:px-6 bg-gray-50">
+          <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
             <Link
               to="/employee/orders"
               className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
