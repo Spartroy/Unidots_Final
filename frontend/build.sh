@@ -1,37 +1,22 @@
 #!/bin/bash
 
-# Production Build Script for Unidots Frontend
-echo "🚀 Starting production build..."
-
-# Clean previous build
-echo "🧹 Cleaning previous build..."
-rm -rf build/
-
-# Install dependencies
-echo "📦 Installing dependencies..."
-npm install
-
-# Set production environment variables
-export NODE_ENV=production
-export GENERATE_SOURCEMAP=false
+# Set CI to false to prevent treating warnings as errors
 export CI=false
 
-# Build the application
-echo "🔨 Building application..."
+# Install dependencies if node_modules doesn't exist
+if [ ! -d "node_modules" ]; then
+    echo "Installing dependencies..."
+    npm install
+fi
+
+# Run the build
+echo "Building the application..."
 npm run build
 
 # Check if build was successful
 if [ $? -eq 0 ]; then
     echo "✅ Build completed successfully!"
-    echo "📁 Build output directory: build/"
-    echo "📊 Build size:"
-    du -sh build/
-    
-    # List build contents
-    echo "📋 Build contents:"
-    ls -la build/
-    
-    echo "🎉 Production build ready for deployment!"
+    exit 0
 else
     echo "❌ Build failed!"
     exit 1
