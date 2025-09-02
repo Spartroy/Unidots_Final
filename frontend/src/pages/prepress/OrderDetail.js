@@ -132,7 +132,7 @@ const PrepressOrderDetail = () => {
         if (allCompleted) {
           toast.success('All prepress processes completed! Redirecting to order history...');
           setTimeout(() => {
-            window.location.href = '/prepress/history';
+            window.location.href = '/prepress';
           }, 2000);
         }
       }
