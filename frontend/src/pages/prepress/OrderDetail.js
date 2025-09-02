@@ -121,10 +121,9 @@ const PrepressOrderDetail = () => {
           </div>
         </div>
       </div>
+    );
+  }
 
-
-
-  
   const formatDate = (dateString) => {
     if (!dateString) return 'Not specified';
     
@@ -197,19 +196,8 @@ const PrepressOrderDetail = () => {
         );
         
         if (allCompleted) {
-          toast.success('All prepress processes completed! Redirecting to orders page...');
-          
-          // Use a more reliable redirect method
-          setTimeout(() => {
-            try {
-              // Redirect to the orders page instead of history
-              window.location.href = '/prepress';
-            } catch (redirectError) {
-              console.error('Redirect error:', redirectError);
-              // Fallback: just refresh the current page
-              window.location.reload();
-            }
-          }, 2000);
+          toast.success('All prepress processes completed successfully!');
+          // No redirect - stay on the same page
         }
       }
       

@@ -11,7 +11,7 @@
   - Added proper cleanup on unmount and dependency changes
 
 ### 2. **ResizeObserver Issues**
-- **Problem**: Multiple console errors that could crash production buildsىخ
+- **Problem**: Multiple console errors that could crash production buildsىخ 
 - **Solution**:
   - Created `resizeObserverHandler.js` utility for global error handling
   - Updated `ErrorBoundary.js` to handle ResizeObserver errors gracefully
