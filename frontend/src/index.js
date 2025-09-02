@@ -11,11 +11,9 @@ initializeResizeObserverHandler();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <ErrorBoundary>
-        <App />
-      </ErrorBoundary>
-    </BrowserRouter>
-  </React.StrictMode>
+  <BrowserRouter>
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  </BrowserRouter>
 );
