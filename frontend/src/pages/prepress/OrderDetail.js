@@ -21,20 +21,21 @@ const PrepressOrderDetail = () => {
   const [submittingComment, setSubmittingComment] = useState(false);
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
-  
-
+  const [error, setError] = useState(null);
   
   useEffect(() => {
     const fetchOrderDetails = async () => {
       try {
+        setError(null);
         const response = await api.get(`/api/orders/${id}`);
         setOrder(response.data);
         if (response.data.files) {
           setFiles(response.data.files);
         }
       } catch (error) {
+        console.error('Error fetching order details:', error);
+        setError('Failed to load order details. Please refresh the page.');
         toast.error('Failed to load order details');
-        console.error(error);
       } finally {
         setLoading(false);
       }
@@ -47,13 +48,79 @@ const PrepressOrderDetail = () => {
     try {
       const response = await api.get(`/api/orders/${id}`);
       setOrder(response.data);
-    } catch (_e) {}
+      setError(null);
+    } catch (error) {
+      console.error('Error refreshing order:', error);
+      // Don't set error on refresh failure to avoid disrupting user experience
+    }
   }, [id]);
 
   useAutoRefresh(refreshOrder, 60000, [refreshOrder]); // 60 seconds (1 minute)
 
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-8 w-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-lg font-medium text-gray-900">Error Loading Order</h3>
+              <p className="text-sm text-gray-500 mt-1">{error}</p>
+            </div>
+          </div>
+          <div className="mt-4 space-y-2">
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            >
+              Refresh Page
+            </button>
+            <button
+              onClick={() => navigate('/prepress')}
+              className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            >
+              Back to Orders
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading order details...</p>
+        </div>
+      </div>
+    );
+  }
 
+  // Show error if no order data
+  if (!order) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6">
+          <div className="text-center">
+            <h3 className="text-lg font-medium text-gray-900">Order Not Found</h3>
+            <p className="text-sm text-gray-500 mt-1">The order you're looking for doesn't exist or has been removed.</p>
+            <button
+              onClick={() => navigate('/prepress')}
+              className="mt-4 inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            >
+              Back to Orders
+            </button>
+          </div>
+        </div>
+      </div>
 
 
 
@@ -130,9 +197,18 @@ const PrepressOrderDetail = () => {
         );
         
         if (allCompleted) {
-          toast.success('All prepress processes completed! Redirecting to order history...');
+          toast.success('All prepress processes completed! Redirecting to orders page...');
+          
+          // Use a more reliable redirect method
           setTimeout(() => {
-            window.location.href = '/prepress/history';
+            try {
+              // Redirect to the orders page instead of history
+              window.location.href = '/prepress';
+            } catch (redirectError) {
+              console.error('Redirect error:', redirectError);
+              // Fallback: just refresh the current page
+              window.location.reload();
+            }
           }, 2000);
         }
       }
