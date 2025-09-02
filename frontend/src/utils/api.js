@@ -22,7 +22,8 @@ const explicitBaseUrl = normalizeBaseUrl(process.env.REACT_APP_API_URL);
 const API_URL = explicitBaseUrl ?? (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:4000');
 
 const api = axios.create({
-  baseURL: API_URL
+  baseURL: API_URL,
+  timeout: 30000, // 30 second timeout
 });
 
 // Add a request interceptor to add the auth token to every request
@@ -44,6 +45,11 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   response => response,
   error => {
+    // Don't handle cancellation errors
+    if (axios.isCancel(error)) {
+      return Promise.reject(error);
+    }
+
     const status = error?.response?.status;
     if (status === 401 || status === 403) {
       try {
@@ -57,5 +63,22 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Helper function to create cancellable requests
+export const createCancellableRequest = (config) => {
+  const source = axios.CancelToken.source();
+  return {
+    request: api({
+      ...config,
+      cancelToken: source.token
+    }),
+    cancel: () => source.cancel('Request cancelled')
+  };
+};
+
+// Helper function to check if an error is a cancellation
+export const isCancelledError = (error) => {
+  return axios.isCancel(error);
+};
 
 export default api; 

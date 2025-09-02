@@ -21,8 +21,8 @@ class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     // Check if this is a ResizeObserver error
     if (error && error.message && error.message.includes('ResizeObserver loop completed with undelivered notifications')) {
-      // Suppress ResizeObserver errors
-      console.warn('ResizeObserver error suppressed:', error.message);
+      // Log ResizeObserver errors but don't treat them as fatal
+      console.warn('ResizeObserver error handled:', error.message);
       return;
     }
 
@@ -31,22 +31,23 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidMount() {
-    // Add global error handler for ResizeObserver
-    const originalError = console.error;
-    console.error = (...args) => {
-      if (args[0] && typeof args[0] === 'string' && args[0].includes('ResizeObserver loop completed with undelivered notifications')) {
-        return; // Suppress ResizeObserver errors
-      }
-      originalError.apply(console, args);
-    };
-
-    // Handle unhandled promise rejections
-    window.addEventListener('unhandledrejection', (event) => {
+    // Handle unhandled promise rejections for ResizeObserver
+    this.unhandledRejectionHandler = (event) => {
       if (event.reason && event.reason.message && event.reason.message.includes('ResizeObserver loop completed with undelivered notifications')) {
         event.preventDefault();
+        console.warn('ResizeObserver promise rejection handled:', event.reason.message);
         return false;
       }
-    });
+    };
+
+    window.addEventListener('unhandledrejection', this.unhandledRejectionHandler);
+  }
+
+  componentWillUnmount() {
+    // Clean up event listener
+    if (this.unhandledRejectionHandler) {
+      window.removeEventListener('unhandledrejection', this.unhandledRejectionHandler);
+    }
   }
 
   render() {

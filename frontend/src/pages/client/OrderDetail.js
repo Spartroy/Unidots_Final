@@ -665,10 +665,13 @@ const OrderDetail = () => {
                                 <div className="grid grid-cols-2 gap-2">
                                   {[
                                     { key: 'positioning', label: 'Positioning' },
+                                    { key: 'backExposure', label: 'Back Exposure' },
                                     { key: 'laserImaging', label: 'Laser Imaging' },
-                                    { key: 'exposure', label: 'Exposure' },
+                                    { key: 'mainExposure', label: 'Main Exposure' },
                                     { key: 'washout', label: 'Washout' },
                                     { key: 'drying', label: 'Drying' },
+                                    { key: 'postExposure', label: 'Post Exposure' },
+                                    { key: 'uvcExposure', label: 'UVC Exposure' },
                                     { key: 'finishing', label: 'Finishing' }
                                   ].map((process) => (
                                     <div key={process.key} className="flex items-center">

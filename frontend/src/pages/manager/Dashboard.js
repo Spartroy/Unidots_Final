@@ -174,11 +174,18 @@ const ManagerDashboard = () => {
     let lastCompletedProcess = null;
 
     // Check each subprocess
-    if (subProcesses.ripping?.status === 'Completed') {
+    if (subProcesses.positioning?.status === 'Completed') {
       completedCount++;
       if (!lastCompletedProcess ||
-        new Date(subProcesses.ripping.completedAt) > new Date(lastCompletedProcess.completedAt)) {
-        lastCompletedProcess = subProcesses.ripping;
+        new Date(subProcesses.positioning.completedAt) > new Date(lastCompletedProcess.completedAt)) {
+        lastCompletedProcess = subProcesses.positioning;
+      }
+    }
+    if (subProcesses.backExposure?.status === 'Completed') {
+      completedCount++;
+      if (!lastCompletedProcess ||
+        new Date(subProcesses.backExposure.completedAt) > new Date(lastCompletedProcess.completedAt)) {
+        lastCompletedProcess = subProcesses.backExposure;
       }
     }
     if (subProcesses.laserImaging?.status === 'Completed') {
@@ -188,11 +195,11 @@ const ManagerDashboard = () => {
         lastCompletedProcess = subProcesses.laserImaging;
       }
     }
-    if (subProcesses.exposure?.status === 'Completed') {
+    if (subProcesses.mainExposure?.status === 'Completed') {
       completedCount++;
       if (!lastCompletedProcess ||
-        new Date(subProcesses.exposure.completedAt) > new Date(lastCompletedProcess.completedAt)) {
-        lastCompletedProcess = subProcesses.exposure;
+        new Date(subProcesses.mainExposure.completedAt) > new Date(lastCompletedProcess.completedAt)) {
+        lastCompletedProcess = subProcesses.mainExposure;
       }
     }
     if (subProcesses.washout?.status === 'Completed') {
@@ -209,6 +216,20 @@ const ManagerDashboard = () => {
         lastCompletedProcess = subProcesses.drying;
       }
     }
+    if (subProcesses.postExposure?.status === 'Completed') {
+      completedCount++;
+      if (!lastCompletedProcess ||
+        new Date(subProcesses.postExposure.completedAt) > new Date(lastCompletedProcess.completedAt)) {
+        lastCompletedProcess = subProcesses.postExposure;
+      }
+    }
+    if (subProcesses.uvcExposure?.status === 'Completed') {
+      completedCount++;
+      if (!lastCompletedProcess ||
+        new Date(subProcesses.uvcExposure.completedAt) > new Date(lastCompletedProcess.completedAt)) {
+        lastCompletedProcess = subProcesses.uvcExposure;
+      }
+    }
     if (subProcesses.finishing?.status === 'Completed') {
       completedCount++;
       if (!lastCompletedProcess ||
@@ -218,7 +239,7 @@ const ManagerDashboard = () => {
     }
 
     return {
-      progress: (completedCount / 6) * 100,
+      progress: (completedCount / 9) * 100,
       lastUpdatedBy: lastCompletedProcess?.completedBy || null
     };
   };

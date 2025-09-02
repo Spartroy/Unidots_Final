@@ -79,12 +79,16 @@ const findPlacementPosition = (plate, widthCm, heightCm) => {
 
 // Create a plate
 const createPlate = asyncHandler(async (req, res) => {
-  const { name, widthCm, heightCm, marginLeftCm = 2, marginRightCm = 2 } = req.body;
+  const { name, widthCm, heightCm, marginLeftCm = 2, marginRightCm = 2, material, materialThickness } = req.body;
   if (!widthCm || !heightCm) {
     res.status(400);
     throw new Error('widthCm and heightCm are required');
   }
-  const plate = await Plate.create({ name, widthCm, heightCm, marginLeftCm, marginRightCm });
+  if (!material || !materialThickness) {
+    res.status(400);
+    throw new Error('material and materialThickness are required');
+  }
+  const plate = await Plate.create({ name, widthCm, heightCm, marginLeftCm, marginRightCm, material, materialThickness });
   res.status(201).json(plate);
 });
 
@@ -132,6 +136,29 @@ const addPlacement = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('Plate is not active');
   }
+
+  // If an orderId is provided, validate material and thickness compatibility
+  if (orderId) {
+    const order = await Order.findById(orderId);
+    if (!order) {
+      res.status(404);
+      throw new Error('Order not found');
+    }
+    
+    const orderMaterial = order.specifications?.material;
+    const orderThickness = order.specifications?.materialThickness;
+    
+    if (orderMaterial !== plate.material) {
+      res.status(400);
+      throw new Error(`Order material (${orderMaterial}) does not match plate material (${plate.material})`);
+    }
+    
+    if (orderThickness !== plate.materialThickness) {
+      res.status(400);
+      throw new Error(`Order thickness (${orderThickness}) does not match plate thickness (${plate.materialThickness})`);
+    }
+  }
+
   const pos = findPlacementPosition(plate, widthCm, heightCm);
   if (!pos) {
     res.status(400);

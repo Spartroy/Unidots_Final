@@ -5,7 +5,7 @@ import api from '../../utils/api';
 import AuthContext from '../../context/AuthContext';
 import { DocumentTextIcon, ArrowTrendingUpIcon, ExclamationCircleIcon, ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import useAutoRefresh from '../../hooks/useAutoRefresh';
-import '../../utils/resizeObserverFix'; // Import ResizeObserver fix
+
 
 const ClientOrders = () => {
   const { user } = useContext(AuthContext);

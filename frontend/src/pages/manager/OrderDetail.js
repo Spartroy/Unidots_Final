@@ -7,7 +7,7 @@ import { PaperClipIcon, UserCircleIcon, CalculatorIcon, XMarkIcon, DocumentTextI
 import OrderReceipt from '../../components/common/OrderReceipt';
 import { useDropzone } from 'react-dropzone';
 import useAutoRefresh from '../../hooks/useAutoRefresh';
-import '../../utils/resizeObserverFix'; // Import ResizeObserver fix
+
 
 const OrderDetail = () => {
   const { id } = useParams();
@@ -328,10 +328,13 @@ const OrderDetail = () => {
     const subProcesses = order.stages.prepress.subProcesses;
     return (
       subProcesses.positioning?.status === 'Completed' &&
+      subProcesses.backExposure?.status === 'Completed' &&
       subProcesses.laserImaging?.status === 'Completed' &&
-      subProcesses.exposure?.status === 'Completed' &&
+      subProcesses.mainExposure?.status === 'Completed' &&
       subProcesses.washout?.status === 'Completed' &&
       subProcesses.drying?.status === 'Completed' &&
+      subProcesses.postExposure?.status === 'Completed' &&
+      subProcesses.uvcExposure?.status === 'Completed' &&
       subProcesses.finishing?.status === 'Completed'
     );
   };
@@ -755,6 +758,23 @@ const OrderDetail = () => {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center">
                                 <div className={`h-4 w-4 rounded-full ${
+                                  order.stages?.prepress?.subProcesses?.backExposure?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
+                                } mr-2`}></div>
+                                <span className="text-xs text-gray-600">Back Exposure</span>
+                              </div>
+                              {order.stages?.prepress?.subProcesses?.backExposure?.status === 'Completed' && 
+                                order.stages?.prepress?.subProcesses?.backExposure?.completedBy && (
+                                <span className="text-xs text-gray-500">
+                                  Completed by {order.stages?.prepress?.subProcesses?.backExposure?.completedBy?.name || 'Unknown'} 
+                                  {order.stages?.prepress?.subProcesses?.backExposure?.completedAt && 
+                                    ` on ${formatDate(order.stages?.prepress?.subProcesses?.backExposure?.completedAt)} at ${formatTime(order.stages?.prepress?.subProcesses?.backExposure?.completedAt)}`}
+                                </span>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <div className={`h-4 w-4 rounded-full ${
                                   order.stages?.prepress?.subProcesses?.laserImaging?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
                                 } mr-2`}></div>
                                 <span className="text-xs text-gray-600">Laser Imaging</span>
@@ -772,16 +792,16 @@ const OrderDetail = () => {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center">
                                 <div className={`h-4 w-4 rounded-full ${
-                                  order.stages?.prepress?.subProcesses?.exposure?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
+                                  order.stages?.prepress?.subProcesses?.mainExposure?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
                                 } mr-2`}></div>
-                                <span className="text-xs text-gray-600">Exposure</span>
+                                <span className="text-xs text-gray-600">Main Exposure</span>
                               </div>
-                              {order.stages?.prepress?.subProcesses?.exposure?.status === 'Completed' && 
-                                order.stages?.prepress?.subProcesses?.exposure?.completedBy && (
+                              {order.stages?.prepress?.subProcesses?.mainExposure?.status === 'Completed' && 
+                                order.stages?.prepress?.subProcesses?.mainExposure?.completedBy && (
                                 <span className="text-xs text-gray-500">
-                                  Completed by {order.stages?.prepress?.subProcesses?.exposure?.completedBy?.name || 'Unknown'} 
-                                  {order.stages?.prepress?.subProcesses?.exposure?.completedAt && 
-                                    ` on ${formatDate(order.stages?.prepress?.subProcesses?.exposure?.completedAt)} at ${formatTime(order.stages?.prepress?.subProcesses?.exposure?.completedAt)}`}
+                                  Completed by {order.stages?.prepress?.subProcesses?.mainExposure?.completedBy?.name || 'Unknown'} 
+                                  {order.stages?.prepress?.subProcesses?.mainExposure?.completedAt && 
+                                    ` on ${formatDate(order.stages?.prepress?.subProcesses?.mainExposure?.completedAt)} at ${formatTime(order.stages?.prepress?.subProcesses?.mainExposure?.completedAt)}`}
                                 </span>
                               )}
                             </div>
@@ -816,6 +836,40 @@ const OrderDetail = () => {
                                   Completed by {order.stages?.prepress?.subProcesses?.drying?.completedBy?.name || 'Unknown'} 
                                   {order.stages?.prepress?.subProcesses?.drying?.completedAt && 
                                     ` on ${formatDate(order.stages?.prepress?.subProcesses?.drying?.completedAt)} at ${formatTime(order.stages?.prepress?.subProcesses?.drying?.completedAt)}`}
+                                </span>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <div className={`h-4 w-4 rounded-full ${
+                                  order.stages?.prepress?.subProcesses?.postExposure?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
+                                } mr-2`}></div>
+                                <span className="text-xs text-gray-600">Post Exposure</span>
+                              </div>
+                              {order.stages?.prepress?.subProcesses?.postExposure?.status === 'Completed' && 
+                                order.stages?.prepress?.subProcesses?.postExposure?.completedBy && (
+                                <span className="text-xs text-gray-500">
+                                  Completed by {order.stages?.prepress?.subProcesses?.postExposure?.completedBy?.name || 'Unknown'} 
+                                  {order.stages?.prepress?.subProcesses?.postExposure?.completedAt && 
+                                    ` on ${formatDate(order.stages?.prepress?.subProcesses?.postExposure?.completedAt)} at ${formatTime(order.stages?.prepress?.subProcesses?.postExposure?.completedAt)}`}
+                                </span>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <div className={`h-4 w-4 rounded-full ${
+                                  order.stages?.prepress?.subProcesses?.uvcExposure?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
+                                } mr-2`}></div>
+                                <span className="text-xs text-gray-600">UVC Exposure</span>
+                              </div>
+                              {order.stages?.prepress?.subProcesses?.uvcExposure?.status === 'Completed' && 
+                                order.stages?.prepress?.subProcesses?.uvcExposure?.completedBy && (
+                                <span className="text-xs text-gray-500">
+                                  Completed by {order.stages?.prepress?.subProcesses?.uvcExposure?.completedBy?.name || 'Unknown'} 
+                                  {order.stages?.prepress?.subProcesses?.uvcExposure?.completedAt && 
+                                    ` on ${formatDate(order.stages?.prepress?.subProcesses?.uvcExposure?.completedAt)} at ${formatTime(order.stages?.prepress?.subProcesses?.uvcExposure?.completedAt)}`}
                                 </span>
                               )}
                             </div>

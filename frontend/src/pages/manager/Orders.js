@@ -4,7 +4,7 @@ import api from '../../utils/api';
 import { toast } from 'react-toastify';
 import { ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon, DocumentTextIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
 import useAutoRefresh from '../../hooks/useAutoRefresh';
-import '../../utils/resizeObserverFix'; // Import ResizeObserver fix
+
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);

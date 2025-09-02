@@ -18,7 +18,7 @@ import { useDropzone } from 'react-dropzone';
 import OrderProgressBar from '../../components/common/OrderProgressBar';
 import OrderChat from '../../components/common/OrderChat';
 import useAutoRefresh from '../../hooks/useAutoRefresh';
-import '../../utils/resizeObserverFix'; // Import ResizeObserver fix
+
 
 const OrderDetail = () => {
   const { id } = useParams();
@@ -518,11 +518,19 @@ const OrderDetail = () => {
               Order #{order.orderNumber}
             </p>
           </div>
-          <div className="flex flex-col items-end">
+          <div className="flex flex-col items-end space-y-2">
             <div>
               <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}>
                 {order.status}
               </span>
+            </div>
+            <div>
+              <button
+                onClick={() => navigate(`/employee/orders/${id}/edit`)}
+                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
+                Edit Order
+              </button>
             </div>
           </div>
         </div>
@@ -786,9 +794,6 @@ const OrderDetail = () => {
                               {order.stages?.production?.subProcesses?.ripping?.status === 'Completed' &&
                                 order.stages?.production?.subProcesses?.ripping?.completedBy && (
                                 <span className="text-xs text-gray-500">
-                                  Completed by {order.stages?.production?.subProcesses?.ripping?.completedBy?.name || 'Unknown'}
-                                  {order.stages?.production?.subProcesses?.ripping?.completedAt &&
-                                    ` on ${formatDate(order.stages?.production?.subProcesses?.ripping?.completedAt)}`}
                                 </span>
                               )}
                             </div>
@@ -840,15 +845,21 @@ const OrderDetail = () => {
                             </div>
                             <div className="flex items-center">
                               <div className={`h-4 w-4 rounded-full ${
+                                order.stages?.prepress?.subProcesses?.backExposure?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
+                              } mr-2`}></div>
+                              <span className="text-xs text-gray-600">Back Exposure</span>
+                            </div>
+                            <div className="flex items-center">
+                              <div className={`h-4 w-4 rounded-full ${
                                 order.stages?.prepress?.subProcesses?.laserImaging?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
                               } mr-2`}></div>
                               <span className="text-xs text-gray-600">Laser Imaging</span>
                             </div>
                             <div className="flex items-center">
                               <div className={`h-4 w-4 rounded-full ${
-                                order.stages?.prepress?.subProcesses?.exposure?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
+                                order.stages?.prepress?.subProcesses?.mainExposure?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
                               } mr-2`}></div>
-                              <span className="text-xs text-gray-600">Exposure</span>
+                              <span className="text-xs text-gray-600">Main Exposure</span>
                             </div>
                             <div className="flex items-center">
                               <div className={`h-4 w-4 rounded-full ${
@@ -861,6 +872,18 @@ const OrderDetail = () => {
                                 order.stages?.prepress?.subProcesses?.drying?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
                               } mr-2`}></div>
                               <span className="text-xs text-gray-600">Drying</span>
+                            </div>
+                            <div className="flex items-center">
+                              <div className={`h-4 w-4 rounded-full ${
+                                order.stages?.prepress?.subProcesses?.postExposure?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
+                              } mr-2`}></div>
+                              <span className="text-xs text-gray-600">Post Exposure</span>
+                            </div>
+                            <div className="flex items-center">
+                              <div className={`h-4 w-4 rounded-full ${
+                                order.stages?.prepress?.subProcesses?.uvcExposure?.status === 'Completed' ? 'bg-green-500' : 'bg-gray-300'
+                              } mr-2`}></div>
+                              <span className="text-xs text-gray-600">UVC Exposure</span>
                             </div>
                             <div className="flex items-center">
                               <div className={`h-4 w-4 rounded-full ${

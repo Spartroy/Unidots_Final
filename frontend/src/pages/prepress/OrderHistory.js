@@ -4,7 +4,7 @@ import api from '../../utils/api';
 import AuthContext from '../../context/AuthContext';
 import { toast } from 'react-toastify';
 import { ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon, DocumentTextIcon, ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
-import '../../utils/resizeObserverFix'; // Import ResizeObserver fix
+
 
 const PrepressOrderHistory = () => {
   const [orders, setOrders] = useState([]);
@@ -163,20 +163,23 @@ const PrepressOrderHistory = () => {
     let count = 0;
     const subProcesses = order.stages.prepress.subProcesses;
     
-    if (subProcesses.positioning?.status === 'Completed') count++;
-    if (subProcesses.laserImaging?.status === 'Completed') count++;
-    if (subProcesses.exposure?.status === 'Completed') count++;
-    if (subProcesses.washout?.status === 'Completed') count++;
-    if (subProcesses.drying?.status === 'Completed') count++;
-    if (subProcesses.finishing?.status === 'Completed') count++;
+            if (subProcesses.positioning?.status === 'Completed') count++;
+        if (subProcesses.backExposure?.status === 'Completed') count++;
+        if (subProcesses.laserImaging?.status === 'Completed') count++;
+        if (subProcesses.mainExposure?.status === 'Completed') count++;
+        if (subProcesses.washout?.status === 'Completed') count++;
+        if (subProcesses.drying?.status === 'Completed') count++;
+        if (subProcesses.postExposure?.status === 'Completed') count++;
+        if (subProcesses.uvcExposure?.status === 'Completed') count++;
+        if (subProcesses.finishing?.status === 'Completed') count++;
     
     return count;
   };
 
   // Get total number of sub-processes for an order
   const getTotalProcessCount = (order) => {
-    // Always return 6 since there are 6 prepress sub-processes
-    return 6;
+    // Now return 9 since there are 9 prepress sub-processes
+    return 9;
   };
 
   // Get status badge color

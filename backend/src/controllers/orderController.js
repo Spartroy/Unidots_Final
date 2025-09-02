@@ -21,50 +21,31 @@ const createOrder = asyncHandler(async (req, res) => {
   } = req.body;
 
   // Enhanced validation with specific error messages
-  if (!title) {
-    res.status(400);
-    throw new Error('Order title is required');
-  }
+  // Title is now optional
   
-  if (!orderType) {
-    res.status(400);
-    throw new Error('Order type is required');
-  }
+  // Order type is now optional
   
   if (!specifications) {
     res.status(400);
     throw new Error('Order specifications are required');
   }
   
-  if (!deadline) {
-    res.status(400);
-    throw new Error('Order deadline is required');
-  }
+  // Deadline is now optional
 
-  // Validate specifications
-  if (!specifications.material) {
+  // Validate specifications - all fields are now optional
+  if (specifications.material && !['Flint', 'Strong', 'Taiwan', 'Other'].includes(specifications.material)) {
     res.status(400);
-    throw new Error('Material specification is required');
+    throw new Error('Invalid material specification');
   }
   
-  if (!specifications.materialThickness) {
+  if (specifications.materialThickness && ![1.14, 1.7, 2.54].includes(specifications.materialThickness)) {
     res.status(400);
-    throw new Error('Material thickness is required');
+    throw new Error('Invalid material thickness');
   }
   
-  if (!specifications.dimensions || !specifications.dimensions.width || !specifications.dimensions.height) {
+  if (specifications.distortion && (specifications.distortion < 0 || specifications.distortion > 100)) {
     res.status(400);
-    throw new Error('Dimensions (width and height) are required');
-  }
-  
-  if (!specifications.colors) {
-    res.status(400);
-    throw new Error('Number of colors is required');
-  }
-  
-  if (!specifications.printingMode) {
-    res.status(400);
-    throw new Error('Printing mode is required');
+    throw new Error('Distortion must be between 0 and 100');
   }
   
   // Optional: package type exists but not required
@@ -99,12 +80,18 @@ const createOrder = asyncHandler(async (req, res) => {
     const numberOfCustomColors = specifications.customColors?.length > 0 ? specifications.customColors.filter(color => color.trim() !== '').length : 0;
     const totalColorsUsed = Math.max(cmykWeight + otherColorsCount + numberOfCustomColors, 1);
     
-    // Calculate total area with repeats
-    const totalHeight = specifications.dimensions.height * (specifications.dimensions.heightRepeatCount || 1);
-    const totalWidth = specifications.dimensions.width * (specifications.dimensions.widthRepeatCount || 1);
+    // Calculate total area with repeats - use default values if not provided
+    const height = specifications.dimensions?.height || 0;
+    const width = specifications.dimensions?.width || 0;
+    const heightRepeatCount = specifications.dimensions?.heightRepeatCount || 1;
+    const widthRepeatCount = specifications.dimensions?.widthRepeatCount || 1;
     
-    // Calculate estimated price using the formula
-    const estimatedPrice = ((totalHeight * totalWidth * totalColorsUsed) * materialPriceFactor).toFixed(2);
+    const totalHeight = height * heightRepeatCount;
+    const totalWidth = width * widthRepeatCount;
+    
+    // Calculate estimated price using the formula - only if dimensions are provided
+    const estimatedPrice = totalHeight > 0 && totalWidth > 0 ? 
+      ((totalHeight * totalWidth * totalColorsUsed) * materialPriceFactor).toFixed(2) : 0;
     
     // Generate order number
     const date = new Date();
@@ -398,10 +385,13 @@ const getOrders = asyncHandler(async (req, res) => {
     .populate('client', 'name email company')
     .populate('assignedTo', 'name email department')
     .populate('stages.prepress.subProcesses.positioning.completedBy', 'name')
+    .populate('stages.prepress.subProcesses.backExposure.completedBy', 'name')
     .populate('stages.prepress.subProcesses.laserImaging.completedBy', 'name')
-    .populate('stages.prepress.subProcesses.exposure.completedBy', 'name')
+    .populate('stages.prepress.subProcesses.mainExposure.completedBy', 'name')
     .populate('stages.prepress.subProcesses.washout.completedBy', 'name')
     .populate('stages.prepress.subProcesses.drying.completedBy', 'name')
+    .populate('stages.prepress.subProcesses.postExposure.completedBy', 'name')
+    .populate('stages.prepress.subProcesses.uvcExposure.completedBy', 'name')
     .populate('stages.prepress.subProcesses.finishing.completedBy', 'name')
     .sort({ createdAt: -1 })
     .skip(startIndex)
@@ -428,10 +418,13 @@ const getOrderById = asyncHandler(async (req, res) => {
     .populate('stages.review.assignedTo', 'name email')
     .populate('stages.prepress.assignedTo', 'name email')
     .populate('stages.prepress.subProcesses.positioning.completedBy', 'name email department')
+    .populate('stages.prepress.subProcesses.backExposure.completedBy', 'name email department')
     .populate('stages.prepress.subProcesses.laserImaging.completedBy', 'name email department')
-    .populate('stages.prepress.subProcesses.exposure.completedBy', 'name email department')
+    .populate('stages.prepress.subProcesses.mainExposure.completedBy', 'name email department')
     .populate('stages.prepress.subProcesses.washout.completedBy', 'name email department')
     .populate('stages.prepress.subProcesses.drying.completedBy', 'name email department')
+    .populate('stages.prepress.subProcesses.postExposure.completedBy', 'name email department')
+    .populate('stages.prepress.subProcesses.uvcExposure.completedBy', 'name email department')
     .populate('stages.prepress.subProcesses.finishing.completedBy', 'name email department')
     .populate('stages.production.assignedTo', 'name email')
     .populate('stages.delivery.assignedTo', 'name email')
@@ -1329,10 +1322,13 @@ const getRecentOrders = asyncHandler(async (req, res) => {
         .limit(limit)
     .populate('client', 'name email company phone address geoLocation')
         .populate('stages.prepress.subProcesses.positioning.completedBy', 'name')
+        .populate('stages.prepress.subProcesses.backExposure.completedBy', 'name')
         .populate('stages.prepress.subProcesses.laserImaging.completedBy', 'name')
-        .populate('stages.prepress.subProcesses.exposure.completedBy', 'name')
+        .populate('stages.prepress.subProcesses.mainExposure.completedBy', 'name')
         .populate('stages.prepress.subProcesses.washout.completedBy', 'name')
         .populate('stages.prepress.subProcesses.drying.completedBy', 'name')
+        .populate('stages.prepress.subProcesses.postExposure.completedBy', 'name')
+        .populate('stages.prepress.subProcesses.uvcExposure.completedBy', 'name')
         .populate('stages.prepress.subProcesses.finishing.completedBy', 'name');
 
       return res.json(recentOrders);
@@ -1344,10 +1340,13 @@ const getRecentOrders = asyncHandler(async (req, res) => {
       .limit(limit)
       .populate('client', 'name email company')
       .populate('stages.prepress.subProcesses.positioning.completedBy', 'name')
+      .populate('stages.prepress.subProcesses.backExposure.completedBy', 'name')
       .populate('stages.prepress.subProcesses.laserImaging.completedBy', 'name')
-      .populate('stages.prepress.subProcesses.exposure.completedBy', 'name')
+      .populate('stages.prepress.subProcesses.mainExposure.completedBy', 'name')
       .populate('stages.prepress.subProcesses.washout.completedBy', 'name')
       .populate('stages.prepress.subProcesses.drying.completedBy', 'name')
+      .populate('stages.prepress.subProcesses.postExposure.completedBy', 'name')
+      .populate('stages.prepress.subProcesses.uvcExposure.completedBy', 'name')
       .populate('stages.prepress.subProcesses.finishing.completedBy', 'name');
 
     res.json(recentOrders);
@@ -1585,7 +1584,7 @@ const updatePrepressProcess = asyncHandler(async (req, res) => {
   }
   
   // Validate sub-process
-  const validSubProcesses = ['positioning', 'laserImaging', 'exposure', 'washout', 'drying', 'finishing'];
+  const validSubProcesses = ['positioning', 'backExposure', 'laserImaging', 'mainExposure', 'washout', 'drying', 'postExposure', 'uvcExposure', 'finishing'];
   if (!validSubProcesses.includes(subProcess)) {
     console.log('Invalid sub-process:', subProcess);
     res.status(400);
@@ -1625,6 +1624,15 @@ const updatePrepressProcess = asyncHandler(async (req, res) => {
     throw new Error('Only prepress can update this prepress process');
   }
 
+  // Initialize the sub-process if it doesn't exist (for backward compatibility)
+  if (!order.stages.prepress.subProcesses[subProcess]) {
+    order.stages.prepress.subProcesses[subProcess] = {
+      status: 'Pending',
+      completedAt: null,
+      completedBy: null
+    };
+  }
+  
   // Update the sub-process status
   order.stages.prepress.subProcesses[subProcess].status = status;
   
@@ -1638,6 +1646,15 @@ const updatePrepressProcess = asyncHandler(async (req, res) => {
   // Check if all sub-processes are completed to suggest moving to next stage
   let allCompleted = true;
   for (const process of validSubProcesses) {
+    // Initialize sub-process if it doesn't exist
+    if (!order.stages.prepress.subProcesses[process]) {
+      order.stages.prepress.subProcesses[process] = {
+        status: 'Pending',
+        completedAt: null,
+        completedBy: null
+      };
+    }
+    
     if (order.stages.prepress.subProcesses[process].status !== 'Completed') {
       allCompleted = false;
       break;
@@ -1742,10 +1759,13 @@ const completePrepressStage = asyncHandler(async (req, res) => {
   const subProcesses = order.stages.prepress.subProcesses;
   const allSubProcessesCompleted = 
     subProcesses.positioning?.status === 'Completed' &&
+    subProcesses.backExposure?.status === 'Completed' &&
     subProcesses.laserImaging?.status === 'Completed' &&
-    subProcesses.exposure?.status === 'Completed' &&
+    subProcesses.mainExposure?.status === 'Completed' &&
     subProcesses.washout?.status === 'Completed' &&
     subProcesses.drying?.status === 'Completed' &&
+    subProcesses.postExposure?.status === 'Completed' &&
+    subProcesses.uvcExposure?.status === 'Completed' &&
     subProcesses.finishing?.status === 'Completed';
     
   if (!allSubProcessesCompleted) {
@@ -1826,10 +1846,13 @@ const getChatbotOrderData = asyncHandler(async (req, res) => {
       .populate('client', 'name email company')
       .populate('assignedTo', 'name email department position')
       .populate('stages.prepress.subProcesses.positioning.completedBy', 'name')
+      .populate('stages.prepress.subProcesses.backExposure.completedBy', 'name')
       .populate('stages.prepress.subProcesses.laserImaging.completedBy', 'name')
-      .populate('stages.prepress.subProcesses.exposure.completedBy', 'name')
+      .populate('stages.prepress.subProcesses.mainExposure.completedBy', 'name')
       .populate('stages.prepress.subProcesses.washout.completedBy', 'name')
       .populate('stages.prepress.subProcesses.drying.completedBy', 'name')
+      .populate('stages.prepress.subProcesses.postExposure.completedBy', 'name')
+      .populate('stages.prepress.subProcesses.uvcExposure.completedBy', 'name')
       .populate('stages.prepress.subProcesses.finishing.completedBy', 'name')
       .sort({ createdAt: -1 })
       .limit(5); // Limit to top 5 matches for performance
@@ -1882,13 +1905,17 @@ const calculatePrepressProgress = (order) => {
     totalCount++;
     if (subProcesses.positioning.status === 'Completed') completedCount++;
   }
+  if (subProcesses.backExposure) {
+    totalCount++;
+    if (subProcesses.backExposure.status === 'Completed') completedCount++;
+  }
   if (subProcesses.laserImaging) {
     totalCount++;
     if (subProcesses.laserImaging.status === 'Completed') completedCount++;
   }
-  if (subProcesses.exposure) {
+  if (subProcesses.mainExposure) {
     totalCount++;
-    if (subProcesses.exposure.status === 'Completed') completedCount++;
+    if (subProcesses.mainExposure.status === 'Completed') completedCount++;
   }
   if (subProcesses.washout) {
     totalCount++;
@@ -1897,6 +1924,14 @@ const calculatePrepressProgress = (order) => {
   if (subProcesses.drying) {
     totalCount++;
     if (subProcesses.drying.status === 'Completed') completedCount++;
+  }
+  if (subProcesses.postExposure) {
+    totalCount++;
+    if (subProcesses.postExposure.status === 'Completed') completedCount++;
+  }
+  if (subProcesses.uvcExposure) {
+    totalCount++;
+    if (subProcesses.uvcExposure.status === 'Completed') completedCount++;
   }
   if (subProcesses.finishing) {
     totalCount++;

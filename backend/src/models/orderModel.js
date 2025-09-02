@@ -18,14 +18,12 @@ const orderSchema = mongoose.Schema(
     },
     title: {
       type: String,
-      required: [true, 'Please add a title for the order'],
     },
     description: {
       type: String,
     },
     orderType: {
       type: String,
-      required: [true, 'Please specify the order type'],
       enum: ['New Order', 'Existing', 'Existing With Changes'],
       default: 'New Order',
     },
@@ -46,7 +44,7 @@ const orderSchema = mongoose.Schema(
       // Color specifications
       colors: {
         type: Number,
-        required: [true, 'Please specify the number of colors'],
+        default: 1,
       },
       usedColors: {
         type: [{
@@ -70,7 +68,6 @@ const orderSchema = mongoose.Schema(
       dimensions: {
         width: {
           type: Number,
-          required: [true, 'Please specify the width'],
         },
         widthRepeatCount: {
           type: Number,
@@ -78,7 +75,6 @@ const orderSchema = mongoose.Schema(
         },
         height: {
           type: Number,
-          required: [true, 'Please specify the height'],
         },
         heightRepeatCount: {
           type: Number,
@@ -95,12 +91,22 @@ const orderSchema = mongoose.Schema(
       material: {
         type: String,
         enum: ['Flint', 'Strong', 'Taiwan', 'Other'],
-        required: [true, 'Please specify the material'],
       },
       materialThickness: {
         type: Number,
         enum: [1.14, 1.7, 2.54],
-        required: [true, 'Material thickness is required'],
+      },
+      
+      // Distortion field
+      distortion: {
+        type: Number,
+        min: 0,
+        max: 100,
+      },
+      
+      // Job path field
+      jobPath: {
+        type: String,
       },
       
       // Legacy fields - kept for backward compatibility
@@ -181,6 +187,18 @@ const orderSchema = mongoose.Schema(
               ref: 'User'
             }
           },
+          backExposure: {
+            status: {
+              type: String,
+              enum: ['Pending', 'Completed'],
+              default: 'Pending'
+            },
+            completedAt: Date,
+            completedBy: {
+              type: mongoose.Schema.Types.ObjectId,
+              ref: 'User'
+            }
+          },
           laserImaging: {
             status: {
               type: String,
@@ -193,7 +211,7 @@ const orderSchema = mongoose.Schema(
               ref: 'User'
             }
           },
-          exposure: {
+          mainExposure: {
             status: {
               type: String,
               enum: ['Pending', 'Completed'],
@@ -218,6 +236,30 @@ const orderSchema = mongoose.Schema(
             }
           },
           drying: {
+            status: {
+              type: String,
+              enum: ['Pending', 'Completed'],
+              default: 'Pending'
+            },
+            completedAt: Date,
+            completedBy: {
+              type: mongoose.Schema.Types.ObjectId,
+              ref: 'User'
+            }
+          },
+          postExposure: {
+            status: {
+              type: String,
+              enum: ['Pending', 'Completed'],
+              default: 'Pending'
+            },
+            completedAt: Date,
+            completedBy: {
+              type: mongoose.Schema.Types.ObjectId,
+              ref: 'User'
+            }
+          },
+          uvcExposure: {
             status: {
               type: String,
               enum: ['Pending', 'Completed'],
@@ -323,7 +365,6 @@ const orderSchema = mongoose.Schema(
     },
     deadline: {
       type: Date,
-      required: [true, 'Please specify a deadline'],
     },
     cost: {
       estimatedCost: {

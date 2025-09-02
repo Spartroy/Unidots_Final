@@ -30,6 +30,7 @@ import EmployeeTasks from './pages/employee/Tasks';
 import EmployeeTaskDetail from './pages/employee/TaskDetail';
 import EmployeeOrders from './pages/employee/Orders';
 import EmployeeOrderDetail from './pages/employee/OrderDetail';
+import EmployeeOrderEdit from './pages/employee/OrderEdit';
 import EmployeeClaims from './pages/employee/Claims';
 import EmployeeClaimDetail from './pages/employee/ClaimDetail';
 import EmployeeProfile from './pages/employee/Profile';
@@ -115,6 +116,7 @@ function App() {
             <Route path="tasks/:id" element={<EmployeeTaskDetail />} />
             <Route path="orders" element={<EmployeeOrders />} />
             <Route path="orders/:id" element={<EmployeeOrderDetail />} />
+            <Route path="orders/:id/edit" element={<EmployeeOrderEdit />} />
             <Route path="templates" element={<Templates />} />
             <Route path="templates/:templateId" element={<TemplateCustomize />} />
             <Route path="templates/:templateId/customize" element={<TemplateCustomize />} />

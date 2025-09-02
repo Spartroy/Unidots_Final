@@ -172,10 +172,13 @@ export const arePrepressSubprocessesCompleted = (order) => {
   const subProcesses = order.stages.prepress.subProcesses;
   return (
     subProcesses.positioning?.status === 'Completed' &&
+    subProcesses.backExposure?.status === 'Completed' &&
     subProcesses.laserImaging?.status === 'Completed' &&
-    subProcesses.exposure?.status === 'Completed' &&
+    subProcesses.mainExposure?.status === 'Completed' &&
     subProcesses.washout?.status === 'Completed' &&
     subProcesses.drying?.status === 'Completed' &&
+    subProcesses.postExposure?.status === 'Completed' &&
+    subProcesses.uvcExposure?.status === 'Completed' &&
     subProcesses.finishing?.status === 'Completed'
   );
 }; 

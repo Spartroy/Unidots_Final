@@ -17,10 +17,10 @@ const PrepressLayout = () => {
   const navigate = useNavigate();
 
   const navigation = [
-    { name: 'Orders', href: '/prepress', current: location.pathname === '/prepress' || location.pathname.startsWith('/prepress/orders') },
-    { name: 'History', href: '/prepress/history', current: location.pathname.startsWith('/prepress/history') },
-    { name: 'Acid Solution', href: '/prepress/acid-solution', current: location.pathname.startsWith('/prepress/acid-solution') },
-    { name: 'Plate Monitoring', href: '/prepress/plate-monitoring', current: location.pathname.startsWith('/prepress/plate-monitoring') },
+    { name: 'الأوردرات', href: '/prepress', current: location.pathname === '/prepress' || location.pathname.startsWith('/prepress/orders') },
+    { name: 'الأوردرات السابقة', href: '/prepress/history', current: location.pathname.startsWith('/prepress/history') },
+    // { name: 'Acid Solution', href: '/prepress/acid-solution', current: location.pathname.startsWith('/prepress/acid-solution') },
+    // { name: 'Plate Monitoring', href: '/prepress/plate-monitoring', current: location.pathname.startsWith('/prepress/plate-monitoring') },
   ];
 
   return (

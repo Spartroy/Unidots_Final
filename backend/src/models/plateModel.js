@@ -24,6 +24,8 @@ const plateSchema = new mongoose.Schema(
     heightCm: { type: Number, required: true },
     marginLeftCm: { type: Number, default: 2 },
     marginRightCm: { type: Number, default: 2 },
+    material: { type: String, required: true, enum: ['Flint', 'Strong', 'Taiwan', 'Other'] },
+    materialThickness: { type: Number, required: true, enum: [1.14, 1.7, 2.54] },
     status: { type: String, enum: ['Active', 'Completed'], default: 'Active' },
     placements: [platePlacementSchema],
     completedAt: { type: Date },

@@ -326,11 +326,14 @@ const ChatBot = () => {
       if (order.stages.prepress.status === 'In Progress' && order.stages.prepress.subProcesses) {
         const subProcesses = order.stages.prepress.subProcesses;
         details += '\nPrepress steps:';
-        if (subProcesses.ripping) details += `\n- Ripping: ${subProcesses.ripping.status}`;
+        if (subProcesses.positioning) details += `\n- Positioning: ${subProcesses.positioning.status}`;
+        if (subProcesses.backExposure) details += `\n- Back Exposure: ${subProcesses.backExposure.status}`;
         if (subProcesses.laserImaging) details += `\n- Laser Imaging: ${subProcesses.laserImaging.status}`;
-        if (subProcesses.exposure) details += `\n- Exposure: ${subProcesses.exposure.status}`;
+        if (subProcesses.mainExposure) details += `\n- Main Exposure: ${subProcesses.mainExposure.status}`;
         if (subProcesses.washout) details += `\n- Washout: ${subProcesses.washout.status}`;
         if (subProcesses.drying) details += `\n- Drying: ${subProcesses.drying.status}`;
+        if (subProcesses.postExposure) details += `\n- Post Exposure: ${subProcesses.postExposure.status}`;
+        if (subProcesses.uvcExposure) details += `\n- UVC Exposure: ${subProcesses.uvcExposure.status}`;
         if (subProcesses.finishing) details += `\n- Finishing: ${subProcesses.finishing.status}`;
       }
     }

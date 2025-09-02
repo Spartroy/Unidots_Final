@@ -8,8 +8,10 @@ import { useEffect, useRef, useCallback } from 'react';
  */
 const useAutoRefresh = (callback, interval = 60000, dependencies = []) => {
   const intervalRef = useRef(null);
+  const timeoutRef = useRef(null);
   const callbackRef = useRef(callback);
   const isExecutingRef = useRef(false);
+  const abortControllerRef = useRef(null);
 
   // Update callback ref when callback changes
   useEffect(() => {
@@ -17,7 +19,7 @@ const useAutoRefresh = (callback, interval = 60000, dependencies = []) => {
   }, [callback]);
 
   // Memoize the callback to prevent unnecessary re-renders
-  const memoizedCallback = useCallback(() => {
+  const memoizedCallback = useCallback(async () => {
     // Prevent multiple simultaneous executions
     if (isExecutingRef.current) {
       return;
@@ -25,56 +27,48 @@ const useAutoRefresh = (callback, interval = 60000, dependencies = []) => {
 
     try {
       isExecutingRef.current = true;
-
-      // Suppress ResizeObserver errors during callback execution
-      const originalError = console.error;
-      const originalWarn = console.warn;
       
-      console.error = (...args) => {
-        if (args[0] && typeof args[0] === 'string' && args[0].includes('ResizeObserver loop completed with undelivered notifications')) {
-          return;
-        }
-        originalError.apply(console, args);
-      };
-
-      console.warn = (...args) => {
-        if (args[0] && typeof args[0] === 'string' && args[0].includes('ResizeObserver')) {
-          return;
-        }
-        originalWarn.apply(console, args);
-      };
+      // Create new abort controller for this execution
+      abortControllerRef.current = new AbortController();
 
       // Execute callback with error handling
       const result = callbackRef.current();
       
       // If callback returns a promise, handle it
       if (result && typeof result.then === 'function') {
-        result.catch((error) => {
-          console.warn('Auto-refresh callback promise error:', error);
-        });
+        await result;
       }
-
-      // Restore original console methods
-      console.error = originalError;
-      console.warn = originalWarn;
     } catch (error) {
-      // Handle any errors during callback execution
-      console.warn('Auto-refresh callback error:', error);
+      // Only log non-cancellation errors
+      if (error.name !== 'AbortError') {
+        console.error('Auto-refresh callback error:', error);
+      }
     } finally {
       isExecutingRef.current = false;
     }
   }, dependencies);
 
   useEffect(() => {
-    // Clear existing interval
+    // Clear existing interval and timeout
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
 
-    // Set up new interval with debouncing
+    // Abort any ongoing requests
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Set up new interval
     intervalRef.current = setInterval(() => {
       // Add a small delay to prevent rapid successive calls
-      setTimeout(memoizedCallback, 100);
+      timeoutRef.current = setTimeout(memoizedCallback, 100);
     }, interval);
 
     // Cleanup on unmount or dependency change
@@ -83,18 +77,42 @@ const useAutoRefresh = (callback, interval = 60000, dependencies = []) => {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+
+      // Abort any ongoing requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     };
   }, [memoizedCallback, interval]);
 
-  // Return cleanup function for manual control
+  // Return cleanup function and abort controller for manual control
   const stopAutoRefresh = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
+    
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    // Abort any ongoing requests
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
   }, []);
 
-  return { stopAutoRefresh };
+  const getAbortController = useCallback(() => {
+    return abortControllerRef.current;
+  }, []);
+
+  return { stopAutoRefresh, getAbortController };
 };
 
 export default useAutoRefresh;

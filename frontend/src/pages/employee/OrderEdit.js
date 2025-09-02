@@ -1,20 +1,14 @@
-import React, { useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useContext } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../../utils/api';
 import AuthContext from '../../context/AuthContext';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import axios from 'axios';
 
-const NewOrder = () => {
+const OrderEdit = () => {
+  const { id } = useParams();
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-
-  // Calculate default deadline (7 days from now)
-  const defaultDeadline = new Date();
-  defaultDeadline.setDate(defaultDeadline.getDate() + 7);
-  // Format for input date field: YYYY-MM-DD
-  const formattedDefaultDeadline = defaultDeadline.toISOString().split('T')[0];
 
   // Calculate initial color count
   const calculateInitialColorCount = () => {
@@ -47,86 +41,7 @@ const NewOrder = () => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [estimatedPrice, setEstimatedPrice] = useState(0);
-
-  // Quick test data filler
-  const fillWithRandomData = () => {
-    const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
-    const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-
-    const titles = [
-      'Coffee Pouch 250g',
-      'Rice Bag 5kg',
-      'Snack Pack 50g',
-      'Tea Label Set',
-      'Juice Pouch 1L',
-      'Custom Pouch Sample'
-    ];
-    const descriptions = [
-      'Test order for QA – auto generated.',
-      'Sample project for layout and colors.',
-      'Benchmark file for turnaround test.',
-      'Mockup order with random specs.'
-    ];
-    const packageTypes = ['Central Seal', '2 Side Seal', '3 Side Seal', 'Custom Pouch', 'Label', 'Other'];
-    const printingModes = ['Surface Printing', 'Reverse Printing'];
-    const customColorPool = ['Turquoise', 'Navy', 'Bronze', 'Violet', 'Lime', 'Orange'];
-
-    // Random used colors (1-4 colors, sometimes CMYK Combined)
-    const colorPool = standardColorOptions.map((c) => c.value);
-    const includeCMYK = Math.random() < 0.3; // 30% chance to include CMYK Combined
-    const poolWithoutCombined = colorPool.filter((c) => c !== 'CMYK Combined');
-    const usedColorsCount = randomInt(1, 4);
-    const used = new Set();
-    while (used.size < usedColorsCount) {
-      used.add(randomFrom(poolWithoutCombined));
-    }
-    if (includeCMYK) used.add('CMYK Combined');
-    const usedColors = Array.from(used);
-
-    // Random custom colors (0-2)
-    const customCount = randomInt(0, 2);
-    const customColors = Array.from({ length: customCount }, () => randomFrom(customColorPool));
-
-    // Calculate total colors with CMYK rule
-    const cmykWeight = usedColors.includes('CMYK Combined') ? 4 : 0;
-    const otherColorsCount = usedColors.filter((c) => c !== 'CMYK Combined').length;
-    const customColorsCount = customColors.length;
-    const totalColors = Math.max(cmykWeight + otherColorsCount + customColorsCount, 1);
-
-    // Random dimensions and repeats
-    const width = randomInt(80, 380); // mm
-    const height = randomInt(100, 500); // mm
-    const widthRepeatCount = randomInt(1, 4);
-    const heightRepeatCount = randomInt(1, 4);
-
-    const nextForm = {
-      title: randomFrom(titles),
-      description: randomFrom(descriptions),
-      orderType: 'New Order',
-      specifications: {
-        packageType: randomFrom(packageTypes),
-        dimensions: {
-          width,
-          height,
-          widthRepeatCount,
-          heightRepeatCount,
-          unit: 'mm',
-        },
-        colors: totalColors,
-        usedColors,
-        customColors,
-        printingMode: randomFrom(printingModes),
-        material: randomFrom(['Flint', 'Strong', 'Taiwan', 'Other']),
-        materialThickness: randomFrom([1.14, 1.7, 2.54]),
-        distortion: randomInt(0, 50), // Random distortion between 0-50
-        jobPath: `/jobs/${randomFrom(['coffee', 'juice', 'rice', 'tea'])}_${randomInt(1000, 9999)}.ai`,
-        additionalDetails: 'Auto-filled notes for quick testing.',
-      },
-    };
-
-    setFormData(nextForm);
-  };
+  const [loading, setLoading] = useState(true);
 
   // Standard color options with color codes
   const standardColorOptions = [
@@ -144,54 +59,47 @@ const NewOrder = () => {
     { value: 'Other', label: 'Transparent', color: '#AAAAAA' },
   ];
 
-  // Calculate estimated price whenever relevant form fields change
   useEffect(() => {
-    calculateEstimatedPrice();
-  }, [
-    formData.specifications.dimensions.width,
-    formData.specifications.dimensions.height,
-    formData.specifications.dimensions.widthRepeatCount,
-    formData.specifications.dimensions.heightRepeatCount,
-    formData.specifications.colors,
-    formData.specifications.usedColors,
-    formData.specifications.customColors,
-    formData.specifications.materialThickness,
-  ]);
+    const fetchOrder = async () => {
+      try {
+        const response = await api.get(`/api/orders/${id}`);
+        const order = response.data;
+        
+                 setFormData({
+           title: order.title || '',
+           description: order.description || '',
+           orderType: order.orderType || 'New Order',
+           specifications: {
+             packageType: order.specifications?.packageType || 'Other',
+             dimensions: {
+               width: order.specifications?.dimensions?.width || '',
+               height: order.specifications?.dimensions?.height || '',
+               widthRepeatCount: order.specifications?.dimensions?.widthRepeatCount || 1,
+               heightRepeatCount: order.specifications?.dimensions?.heightRepeatCount || 1,
+               unit: order.specifications?.dimensions?.unit || 'mm',
+             },
+             colors: order.specifications?.colors || 1,
+             usedColors: order.specifications?.usedColors || [],
+             customColors: order.specifications?.customColors || [],
+             printingMode: order.specifications?.printingMode || 'Surface Printing',
+             material: order.specifications?.material || 'Flint',
+             materialThickness: order.specifications?.materialThickness || 1.7,
+             distortion: order.specifications?.distortion || '',
+             jobPath: order.specifications?.jobPath || '',
+             additionalDetails: order.specifications?.additionalDetails || '',
+           },
+         });
+      } catch (error) {
+        toast.error('Failed to fetch order details');
+        console.error('Error fetching order:', error);
+        navigate('/employee/orders');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const calculateEstimatedPrice = () => {
-    const { width, height, widthRepeatCount, heightRepeatCount } = formData.specifications.dimensions;
-    const { usedColors, customColors, materialThickness } = formData.specifications;
-
-    // If any required field is missing, don't calculate
-    if (!width || !height) {
-      setEstimatedPrice(0);
-      return;
-    }
-
-    // Determine material price factor based on thickness
-    let materialPriceFactor = 0.77; // Default to 1.7 thickness
-    if (materialThickness === 1.14) {
-      materialPriceFactor = 0.75;
-    } else if (materialThickness === 1.7) {
-      materialPriceFactor = 0.85;
-    } else if (materialThickness === 2.54) {
-      materialPriceFactor = 0.95;
-    }
-
-    // Count colors - with special handling for CMYK Combined
-    const cmykWeight = usedColors.includes('CMYK Combined') ? 4 : 0;
-    const otherColorsCount = usedColors.filter(c => c !== 'CMYK Combined').length;
-    const numberOfCustomColors = customColors?.length > 0 ? customColors.filter(color => color.trim() !== '').length : 0;
-    const totalColorsUsed = Math.max(cmykWeight + otherColorsCount + numberOfCustomColors, 1); // minimum 1
-
-    // Calculate dimensions with repeat counts
-    const totalWidth = parseFloat(width) * (widthRepeatCount || 1);
-    const totalHeight = parseFloat(height) * (heightRepeatCount || 1);
-
-    // Calculate price
-    const price = ((totalWidth * totalHeight * totalColorsUsed) * materialPriceFactor).toFixed(2);
-    setEstimatedPrice(price);
-  };
+    fetchOrder();
+  }, [id, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -376,36 +284,41 @@ const NewOrder = () => {
           // Filter out empty custom colors
           customColors: formData.specifications.customColors.filter(color => color.trim() !== '')
         },
-        // Set default priority and deadline for backend compatibility
-        priority: 'Medium',
-        deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
       };
       
-      const res = await api.post('/api/orders', formattedOrderData);
+      const res = await api.put(`/api/orders/${id}`, formattedOrderData);
       
-      toast.success('Order submitted successfully');
-      navigate('/client/orders');
+      toast.success('Order updated successfully');
+      navigate(`/employee/orders/${id}`);
     } catch (error) {
-      console.error('Error submitting order:', error);
+      console.error('Error updating order:', error);
       if (error.response?.data?.message) {
         toast.error(error.response.data.message);
       } else {
-        toast.error('Failed to submit order');
+        toast.error('Failed to update order');
       }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading order details...</p>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">New Order</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Edit Order</h1>
         <p className="mt-2 text-sm text-gray-500">
-          Please provide the details for your new order request.
-        </p>
-        <p className="mt-1 text-sm text-gray-500 font-medium">
-          Note: You can upload design files and reference materials after submitting your order from the order details page.
+          Update the order details as needed. All fields are optional.
         </p>
       </div>
 
@@ -413,51 +326,43 @@ const NewOrder = () => {
         <div className="space-y-12 divide-y divide-gray-200">
           {/* Basic Information */}
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div className="px-6 py-6 sm:px-8 flex items-center justify-between">
+            <div className="px-6 py-6 sm:px-8">
               <h3 className="text-xl leading-7 font-semibold text-gray-900">Basic Information</h3>
-              <button
-                type="button"
-                onClick={fillWithRandomData}
-                className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                title="Fill form with random test data"
-              >
-                Fill Test Data
-              </button>
             </div>
             <div className="border-t border-gray-200 px-6 py-8 sm:p-8">
-            <div className="grid grid-cols-1 gap-y-8 gap-x-6 sm:grid-cols-6">
-              <div className="sm:col-span-4">
-                <label htmlFor="title" className="block text-base font-semibold text-gray-700 mb-2">
+              <div className="grid grid-cols-1 gap-y-8 gap-x-6 sm:grid-cols-6">
+                <div className="sm:col-span-4">
+                  <label htmlFor="title" className="block text-base font-semibold text-gray-700 mb-2">
                     Order Name
-                </label>
-                <div className="mt-2">
-                  <input
-                    type="text"
-                    name="title"
-                    id="title"
-                    value={formData.title}
-                    onChange={handleChange}
-                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-base border-gray-300 rounded-md px-4 py-3"
-                  />
+                  </label>
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      name="title"
+                      id="title"
+                      value={formData.title}
+                      onChange={handleChange}
+                      className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-base border-gray-300 rounded-md px-4 py-3"
+                    />
+                  </div>
                 </div>
-              </div>
-              
-              <div className="sm:col-span-6">
-                <label htmlFor="description" className="block text-base font-semibold text-gray-700 mb-2">
+                
+                <div className="sm:col-span-6">
+                  <label htmlFor="description" className="block text-base font-semibold text-gray-700 mb-2">
                     Order Description
-                </label>
-                <div className="mt-2">
-                  <textarea
-                    id="description"
-                    name="description"
-                    rows={4}
-                    value={formData.description}
-                    onChange={handleChange}
-                    className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-base border-gray-300 rounded-md px-4 py-3"
-                  />
-              </div>
-            </div>
-            
+                  </label>
+                  <div className="mt-2">
+                    <textarea
+                      id="description"
+                      name="description"
+                      rows={4}
+                      value={formData.description}
+                      onChange={handleChange}
+                      className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-base border-gray-300 rounded-md px-4 py-3"
+                    />
+                  </div>
+                </div>
+                
                 <div className="sm:col-span-6">
                   <label htmlFor="orderType" className="block text-base font-semibold text-gray-700 mb-2">
                     Order Type
@@ -477,8 +382,8 @@ const NewOrder = () => {
                   </div>
                 </div>
               </div>
-                  </div>
-                </div>
+            </div>
+          </div>
                 
           {/* Technical Specifications */}
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -509,6 +414,7 @@ const NewOrder = () => {
                     </select>
                   </div>
                 </div>
+                
                 {/* Dimensions */}
                 <div className="sm:col-span-6">
                   <h4 className="text-lg font-semibold text-gray-700 mb-6">Dimensions</h4>
@@ -837,37 +743,13 @@ const NewOrder = () => {
               </div>
             </div>
           </div>
-
-          {/* Price Estimation */}
-          {/* <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div className="px-6 py-6 sm:px-8">
-              <h3 className="text-xl leading-7 font-semibold text-gray-900">Estimated Price</h3>
-              <p className="mt-2 max-w-2xl text-base text-gray-600">
-                Based on your specifications, the estimated price for this order is:
-              </p>
-            </div>
-            <div className="border-t border-gray-200 px-6 py-8 sm:p-8">
-              <div className="text-center">
-                <span className="text-4xl font-bold text-gray-900">${estimatedPrice}</span>
-                <p className="mt-4 text-base text-gray-600">
-                  This is an estimate based on the dimensions, colors, and material you've selected.
-                </p>
-                <p className="mt-4 text-base text-gray-600">
-                  Final pricing may vary based on additional factors.
-                </p>
-                <div className="mt-6 text-sm text-gray-500 text-left">
-       
-                </div>
-              </div>
-            </div>
-          </div> */}
           
           {/* Submit Button */}
           <div className="pt-8">
             <div className="flex justify-end space-x-4">
               <button
                 type="button"
-                onClick={() => navigate('/client/orders')}
+                onClick={() => navigate(`/employee/orders/${id}`)}
                 className="bg-white py-3 px-6 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
               >
                 Cancel
@@ -877,17 +759,15 @@ const NewOrder = () => {
                 disabled={isSubmitting}
                 className="inline-flex justify-center py-3 px-6 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Order'}
+                {isSubmitting ? 'Updating...' : 'Update Order'}
               </button>
             </div>
           </div>
           
         </div>
       </form>
-
-    
     </div>
   );
 };
 
-export default NewOrder;
+export default OrderEdit;

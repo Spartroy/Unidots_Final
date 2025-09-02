@@ -15,7 +15,7 @@ import {
   DevicePhoneMobileIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
-import '../../utils/resizeObserverFix'; // Import ResizeObserver fix
+
 
 const PlateCanvas = ({ plate, placements, previewPlacement, isMobile = false }) => {
   if (!plate) return null;
@@ -179,6 +179,8 @@ const PlateMonitoring = () => {
 
   useEffect(() => {
     loadPlate(activePlateId);
+    // Clear selected order when plate changes as it might not be compatible
+    setSelectedOrderId('');
   }, [activePlateId]);
 
   const stats = plateData?.stats;
@@ -221,7 +223,15 @@ const PlateMonitoring = () => {
     }
   };
 
-  const [newPlate, setNewPlate] = useState({ name: '', widthCm: 500, heightCm: 500, marginLeftCm: 2, marginRightCm: 2 });
+  const [newPlate, setNewPlate] = useState({ 
+    name: '', 
+    widthCm: 500, 
+    heightCm: 500, 
+    marginLeftCm: 2, 
+    marginRightCm: 2,
+    material: 'Flint',
+    materialThickness: 1.7
+  });
   const onCreatePlate = async () => {
     if (!newPlate.widthCm || !newPlate.heightCm) return;
     setCreating(true);
@@ -271,6 +281,42 @@ const PlateMonitoring = () => {
       // silent
     }
   };
+
+  // Group orders by material and thickness
+  const groupedOrders = useMemo(() => {
+    const groups = {};
+    prepressOrders.forEach(order => {
+      const material = order.specifications?.material || 'Unknown';
+      const thickness = order.specifications?.materialThickness || 'Unknown';
+      const key = `${material}-${thickness}`;
+      
+      if (!groups[key]) {
+        groups[key] = {
+          material,
+          thickness,
+          orders: []
+        };
+      }
+      groups[key].orders.push(order);
+    });
+    
+    return Object.values(groups).sort((a, b) => {
+      // Sort by material first, then by thickness
+      if (a.material !== b.material) {
+        return a.material.localeCompare(b.material);
+      }
+      return (a.thickness || 0) - (b.thickness || 0);
+    });
+  }, [prepressOrders]);
+
+  // Filter orders to only show those matching the current plate's material and thickness
+  const compatibleOrders = useMemo(() => {
+    if (!plate) return groupedOrders;
+    
+    return groupedOrders.filter(group => 
+      group.material === plate.material && group.thickness === plate.materialThickness
+    );
+  }, [groupedOrders, plate]);
 
   // Convert dimension value to cm based on unit
   const toCm = (value, unit) => {
@@ -337,7 +383,7 @@ const PlateMonitoring = () => {
             <option value="">Select active plate…</option>
             {plates.map((p) => (
               <option key={p._id} value={p._id}>
-                {(p.name || 'Plate')} — {p.widthCm}×{p.heightCm} cm
+                {(p.name || 'Plate')} — {p.widthCm}×{p.heightCm} cm ({p.material} {p.materialThickness}μm)
               </option>
             ))}
           </select>
@@ -352,7 +398,7 @@ const PlateMonitoring = () => {
 
       {/* Summary Cards - Mobile responsive */}
       {plate && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-6">
           <div className="bg-white overflow-hidden shadow rounded-lg p-3 sm:p-5">
             <div className="flex items-center">
               <ChartBarIcon className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" />
@@ -392,6 +438,17 @@ const PlateMonitoring = () => {
               </div>
             </div>
           </div>
+          <div className="bg-white overflow-hidden shadow rounded-lg p-3 sm:p-5">
+            <div className="flex items-center">
+              <Squares2X2Icon className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
+              <div className="ml-2 sm:ml-4">
+                <p className="text-xs sm:text-sm text-gray-500">Compatible orders</p>
+                <p className="text-sm sm:text-lg font-semibold text-gray-900">
+                  {compatibleOrders.reduce((total, group) => total + group.orders.length, 0)}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -401,6 +458,11 @@ const PlateMonitoring = () => {
           <div className="bg-white shadow rounded-lg p-4 sm:p-6">
             <div className="mb-4">
               <h3 className="text-base sm:text-lg font-medium text-gray-900">Current Plate</h3>
+              {plate && (
+                <p className="text-sm text-gray-600 mt-1">
+                  Material: {plate.material} • Thickness: {plate.materialThickness}μm
+                </p>
+              )}
             </div>
             
             {/* Mobile Layout - Stacked */}
@@ -511,6 +573,31 @@ const PlateMonitoring = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Right Margin (cm)</label>
                   <input type="number" className="w-full border rounded px-3 py-2" value={newPlate.marginRightCm} onChange={(e) => setNewPlate({ ...newPlate, marginRightCm: Number(e.target.value) })} />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Material</label>
+                                     <select
+                     className="w-full border rounded px-3 py-2"
+                     value={newPlate.material}
+                     onChange={(e) => setNewPlate({ ...newPlate, material: e.target.value })}
+                   >
+                     <option value="Flint">Flint</option>
+                     <option value="Strong">Strong</option>
+                     <option value="Taiwan">Taiwan</option>
+                     <option value="Other">Other</option>
+                   </select>
+                </div>
+                                 <div>
+                   <label className="block text-sm font-medium text-gray-700 mb-1">Material Thickness (microns)</label>
+                   <select
+                     className="w-full border rounded px-3 py-2"
+                     value={newPlate.materialThickness}
+                     onChange={(e) => setNewPlate({ ...newPlate, materialThickness: Number(e.target.value) })}
+                   >
+                     <option value={1.14}>1.14</option>
+                     <option value={1.7}>1.7</option>
+                     <option value={2.54}>2.54</option>
+                   </select>
+                 </div>
               </div>
               <div className="flex justify-end space-x-3 mt-6">
                 <button onClick={() => setShowCreateModal(false)} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">Cancel</button>
@@ -540,13 +627,24 @@ const PlateMonitoring = () => {
                   }}
                 >
                   <option value="">— Choose an order (optional) —</option>
-                  {prepressOrders.map(o => (
-                    <option key={o._id} value={o._id}>
-                      #{o.orderNumber} — {o.title || 'Untitled'}
-                    </option>
+                  {compatibleOrders.map(group => (
+                    <optgroup key={`${group.material}-${group.thickness}`} label={`${group.material} ${group.thickness}μm (${group.orders.length} orders)`}>
+                      {group.orders.map(o => (
+                        <option key={o._id} value={o._id}>
+                          #{o.orderNumber} — {o.title || 'Untitled'}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
-                <p className="text-xs text-gray-500 mt-1">Selecting an order auto-fills dimensions (converted to cm and multiplied by repeats).</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Orders are grouped by material and thickness. Only orders matching the plate's material ({plate?.material}) and thickness ({plate?.materialThickness}μm) are shown.
+                  {compatibleOrders.length === 0 && (
+                    <span className="text-red-600 block mt-1">
+                      No orders found with matching material and thickness for this plate.
+                    </span>
+                  )}
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -561,7 +659,13 @@ const PlateMonitoring = () => {
               <div className="flex justify-end space-x-3 mt-6">
                 <button onClick={() => setShowAddJobModal(false)} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">Close</button>
                 <button onClick={onSimulate} className="px-4 py-2 bg-amber-500 text-white rounded-md hover:bg-amber-600">Simulate</button>
-                <button onClick={onCommit} disabled={!simulation?.fits} className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50">Commit</button>
+                <button 
+                  onClick={onCommit} 
+                  disabled={!simulation?.fits || !selectedOrderId} 
+                  className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  Commit
+                </button>
               </div>
               {simulation && (
                 <div className="mt-3 p-3 rounded bg-gray-50 text-sm">
@@ -570,6 +674,11 @@ const PlateMonitoring = () => {
                   ) : (
                     <span className="text-red-600">Does not fit</span>
                   )}
+                </div>
+              )}
+              {!selectedOrderId && (
+                <div className="mt-3 p-3 rounded bg-blue-50 text-sm">
+                  <span className="text-blue-700">Please select an order to commit the placement.</span>
                 </div>
               )}
             </div>
