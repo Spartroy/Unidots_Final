@@ -377,7 +377,6 @@ const OrderEdit = () => {
                     >
                       <option value="New Order">New Order</option>
                       <option value="Existing">Existing Order</option>
-                      <option value="Existing With Changes">Existing With Modifications</option>
                     </select>
                   </div>
                 </div>
@@ -511,7 +510,7 @@ const OrderEdit = () => {
                           <option value="Flint">Flint</option>
                           <option value="Strong">Strong</option>
                           <option value="Taiwan">Taiwan</option>
-                          <option value="Other">Other</option>
++                          <option value="Other">Other</option>
                         </select>
                       </div>
                     </div>

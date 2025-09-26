@@ -90,7 +90,7 @@ const orderSchema = mongoose.Schema(
       // Material specifications
       material: {
         type: String,
-        enum: ['Flint', 'Strong', 'Taiwan', 'Other'],
+        enum: ['Flint', 'Strong', 'Taiwan','Other'],
       },
       materialThickness: {
         type: Number,

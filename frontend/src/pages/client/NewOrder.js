@@ -117,7 +117,7 @@ const NewOrder = () => {
         usedColors,
         customColors,
         printingMode: randomFrom(printingModes),
-        material: randomFrom(['Flint', 'Strong', 'Taiwan', 'Other']),
+        material: randomFrom(['Flint', 'Strong', 'Taiwan','Other']),
         materialThickness: randomFrom([1.14, 1.7, 2.54]),
         distortion: randomInt(0, 50), // Random distortion between 0-50
         jobPath: `/jobs/${randomFrom(['coffee', 'juice', 'rice', 'tea'])}_${randomInt(1000, 9999)}.ai`,
@@ -472,7 +472,6 @@ const NewOrder = () => {
                     >
                       <option value="New Order">New Order</option>
                       <option value="Existing">Existing Order</option>
-                      <option value="Existing With Changes">Existing With Modifications</option>
                     </select>
                   </div>
                 </div>
