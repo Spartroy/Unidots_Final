@@ -131,3 +131,8 @@ body:has(.ud-auth) { background: var(--bg-card); }
 /* Right-to-left pages: fields that hold left-to-right content (numbers, emails, links) keep their typing direction but line up with the labels */
 [dir='rtl'] .ud-input[dir='ltr'] { text-align: right; }
 [dir='rtl'] .ud-input[dir='ltr']::placeholder { text-align: right; }
+
+/* Dark theme: let the browser draw scrollbars, form controls and date pickers in dark too */
+:root { color-scheme: light; }
+:root[data-theme='dark'] { color-scheme: dark; }
+.ud-bell-n { background: #c4281c; color: #fff; }

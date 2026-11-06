@@ -1,6 +1,6 @@
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
+import ThemedToasts from './components/common/ThemedToasts';
 import 'react-toastify/dist/ReactToastify.css';
 
 // Auth Context Provider
@@ -207,7 +207,7 @@ function App() {
         </Routes>
         </Suspense>
         
-        <ToastContainer position="top-right" autoClose={5000} />
+        <ThemedToasts />
       </NotificationProvider>
       </ThemeProvider>
       </LanguageProvider>
