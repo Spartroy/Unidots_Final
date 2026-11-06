@@ -15,6 +15,7 @@ import FilesTab from './orderDetail/FilesTab';
 import CommentsTab from './orderDetail/CommentsTab';
 import StatusActionsPanel from './orderDetail/StatusActionsPanel';
 import QuotePanel from '../../components/manager/QuotePanel';
+import OrderTimeline from '../../components/common/OrderTimeline';
 const OrderDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -518,6 +519,7 @@ const OrderDetail = () => {
           
           {/* Status Update Buttons */}
           <div className="w-full"><QuotePanel order={order} onChanged={refreshOrder} /></div>
+          <div className="w-full"><OrderTimeline orderId={order._id} refreshKey={order.updatedAt} /></div>
           {!['Completed', 'Cancelled'].includes(order.status) && <StatusActionsPanel handleStatusUpdate={handleStatusUpdate} order={order} updating={updating} />}
         </div>
       </div>

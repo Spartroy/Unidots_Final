@@ -534,4 +534,4 @@ import React from 'react';
   }
 
 
-export { Ico, IC, Halftone, Button, StatusBadge, OrderCard, OrderStepper, Field, Dropzone, PrepressChecklist, KpiTile, Toast, ConfirmDialog, TopBar, CourierDelivery, Tabs, Chips, SearchField, Select, DataTable, Pagination, FormDialog, Avatar, EmptyState, StatusBars, TrendChart, TankGauge, PlateCanvas, Progress, DefList, PriorityBadge, ActionBar, AuthLayout, ColorOptions, RadioGroup, Notice, ProgressTimeline, FileList, ProcessGrid, ChatFab, ShellParts, AppShell, MobileScreen, OrderRow };
+export { Shape, Check, Ico, IC, Halftone, Button, StatusBadge, OrderCard, OrderStepper, Field, Dropzone, PrepressChecklist, KpiTile, Toast, ConfirmDialog, TopBar, CourierDelivery, Tabs, Chips, SearchField, Select, DataTable, Pagination, FormDialog, Avatar, EmptyState, StatusBars, TrendChart, TankGauge, PlateCanvas, Progress, DefList, PriorityBadge, ActionBar, AuthLayout, ColorOptions, RadioGroup, Notice, ProgressTimeline, FileList, ProcessGrid, ChatFab, ShellParts, AppShell, MobileScreen, OrderRow };

@@ -19,6 +19,7 @@ const ICONS = {
   'nav.clients': 'people',
   'nav.reports': 'reports',
   'nav.messages': 'chat',
+  'nav.activity': 'history',
   'nav.inventory': 'production',
   'nav.priceList': 'reports',
   'nav.barrelManagement': 'production',
@@ -28,7 +29,7 @@ const ICONS = {
 
 // Pages that already use the new design and follow the dark theme. Other pages keep their light look
 // inside the dark shell until they are redesigned.
-const THEMED_PATHS = ['/client'];
+const THEMED_PATHS = ['/client', '/prepress'];
 
 // Pages can add a subtitle and primary action to the page header.
 const ChromeContext = createContext({ setChrome: () => {} });
@@ -99,7 +100,7 @@ const PortalShell = ({ portal }) => {
   const all = [...items, ...more];
   const active = all.find((i) => i.current);
   const title = chrome.title || (active ? t(active.labelKey) : t(portal.titleKey));
-  const themed = THEMED_PATHS.includes(pathname);
+  const themed = THEMED_PATHS.includes(pathname) || pathname === '/prepress/history' || pathname.startsWith('/prepress/orders/') || pathname === '/manager/activity';
   const profile = `/${portal.key}/profile`;
   const roleLabel = t(`role.${user?.role || portal.key}`);
 

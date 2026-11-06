@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { openFile } from '../../utils/files';
 import StatusExplainer from '../../components/client/StatusExplainer';
 import QuoteCard from '../../components/client/QuoteCard';
+import OrderTimeline from '../../components/common/OrderTimeline';
 import api from '../../utils/api';
 import { toast } from 'react-toastify';
 import AuthContext from '../../context/AuthContext';
@@ -339,6 +340,7 @@ const OrderDetail = () => {
     <div className="space-y-4 sm:space-y-6">
       <StatusExplainer status={order?.status} />
       <QuoteCard order={order} onChanged={fetchOrderData} />
+      {order?._id ? <OrderTimeline orderId={order._id} refreshKey={order.updatedAt} /> : null}
 
       {/* Mobile-optimized Order Header */}
       <div className="bg-white shadow rounded-lg overflow-hidden">

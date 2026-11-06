@@ -15,6 +15,7 @@ const portal = {
     { labelKey: 'nav.messages', href: '/manager/messages' },
   ],
   more: [
+    { labelKey: 'nav.activity', href: '/manager/activity' },
     { labelKey: 'nav.inventory', href: '/manager/inventory' },
     { labelKey: 'nav.priceList', href: '/manager/price-list' },
     { labelKey: 'nav.barrelManagement', href: '/manager/barrel-management' },

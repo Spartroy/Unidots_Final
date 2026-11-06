@@ -6,8 +6,12 @@ import landingEn from '../locales/landing.en';
 import landingAr from '../locales/landing.ar';
 import phase5En from '../locales/phase5.en';
 import phase5Ar from '../locales/phase5.ar';
+import prepressEn from '../locales/prepress.en';
+import prepressAr from '../locales/prepress.ar';
+import activityEn from '../locales/activity.en';
+import activityAr from '../locales/activity.ar';
 
-const dictionaries = { en: { ...en, ...landingEn, ...phase5En }, ar: { ...ar, ...landingAr, ...phase5Ar } };
+const dictionaries = { en: { ...en, ...landingEn, ...phase5En, ...prepressEn, ...activityEn }, ar: { ...ar, ...landingAr, ...phase5Ar, ...prepressAr, ...activityAr } };
 const STORAGE_KEY = 'unidots_lang';
 
 const readStored = () => {

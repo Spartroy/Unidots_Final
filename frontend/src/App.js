@@ -69,6 +69,7 @@ const ManagerClientDetail = lazy(() => import('./pages/manager/ClientDetail'));
 const ManagerProfile = lazy(() => import('./pages/manager/Profile'));
 const MonthlyReports = lazy(() => import('./pages/manager/MonthlyReports'));
 const ManagerMessages = lazy(() => import('./pages/manager/Messages'));
+const ManagerActivity = lazy(() => import('./pages/manager/Activity'));
 const ManagerPriceList = lazy(() => import('./pages/manager/PriceList'));
 const ManagerInventory = lazy(() => import('./pages/manager/Inventory'));
 const ClientReports = lazy(() => import('./pages/client/Reports'));
@@ -166,6 +167,7 @@ function App() {
             <Route path="plate-monitoring" element={<ManagerPlateMonitoring />} />
             <Route path="reports" element={<MonthlyReports />} />
             <Route path="messages" element={<ManagerMessages />} />
+            <Route path="activity" element={<ManagerActivity />} />
             <Route path="price-list" element={<ManagerPriceList />} />
             <Route path="inventory" element={<ManagerInventory />} />
             <Route path="profile" element={<ManagerProfile />} />
