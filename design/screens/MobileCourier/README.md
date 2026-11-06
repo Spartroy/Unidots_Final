@@ -1,0 +1,1 @@
+Courier phone flow: Today list, one delivery, confirm. Bottom tabs (Today, History, Profile) at 64px, one full-width primary above the tab bar, Call and Maps as 64px secondary buttons. Nothing scrolls sideways.

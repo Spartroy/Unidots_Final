@@ -1,0 +1,1 @@
+One delivery per screen on a phone. The order, client and address come first; Call and Open in Maps are two large secondary buttons (64px); Complete delivery is the one full-width primary. The delivery method (Direct handover) is shown as a badge. Nothing else above the fold. Sample data.

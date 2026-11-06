@@ -1,0 +1,3 @@
+Fill level of the acid solution tank. Props: `title`, `percent`, `liters`, `capacity`, `statusLabel`, `lowAt` (default 20).
+
+Fill is `brand-500`, switching to `danger` below `lowAt`, and the status badge always says the state in words (`Level OK`, `Low: order barrels`). Show the volume once, in litres with a thousands separator (`1,200 L`). Recycling efficiency is entered and shown as a percentage, not a 0–1 ratio.

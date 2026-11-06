@@ -1,0 +1,1 @@
+Order history for the prepress portal: one search, one filter chip row, a `DataTable` with the status as a translated `StatusBadge` (`label`), and one pagination summary. No View details button on every row: the order number is the link. The sample shows the date column once, as "Date", not "Completed" on orders that are not completed.

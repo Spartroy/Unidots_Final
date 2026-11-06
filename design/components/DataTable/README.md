@@ -1,0 +1,3 @@
+The list table. Props: `columns` (`{key, label, num}`), `rows` (objects keyed by column; cell values are nodes) and `caption`.
+
+The first column is a row header: put the record link there (`ud-link`, underlined). Column headings are sentence case, 12px `text-muted` on `bg-app`; numbers (`num`) right-align in tabular figures. Show status through `StatusBadge`, priority through `PriorityBadge`, lateness as `ud-late` text under the date. Rows highlight with `selected` on hover. No per-row solid buttons: the row link is the action. Put the table in a `ud-card pad0` and pair it with `Pagination`.

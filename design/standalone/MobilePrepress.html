@@ -1,0 +1,52 @@
+<!-- @dsCard group="Mobile" width=1240 height=900 page subtitle="Prepress floor on a phone, Arabic RTL. Sample data." -->
+<!doctype html><html data-theme="light"><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>body{margin:0;padding:16px;background:var(--bg-app);color:var(--text);font-family:var(--font-sans)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.grid6{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}.card-h{margin:0 0 4px;font:600 18px/26px var(--font-sans)}.card-s{margin:0 0 16px;color:var(--text-muted);font-size:14px}.pad0{padding:0!important;overflow:hidden}.pad0>.hd{padding:16px 16px 0}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.formgrid .wide{grid-column:1/-1}.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.formgrid>*,.g4>*,.grid2>*,.grid3>*,.grid4>*,.grid6>*{min-width:0}.formgrid .ud-field,.g4 .ud-field{min-width:0}input,select,textarea{max-width:100%;box-sizing:border-box}</style><link rel="stylesheet" href="../tokens/tokens.css"><link rel="stylesheet" href="../components/bundle.css"><script src="../assets/react.production.min.js"></script><script src="../assets/react-dom.production.min.js"></script><script src="../components/bundle.js"></script></head>
+<body><div id="r"></div><script>
+(function(){var h=React.createElement,U=window.UniDots;
+
+function shell(tb,dir){var kids=[].slice.call(arguments,2);return h.apply(null,[U.AppShell,Object.assign({dir:dir},tb)].concat(kids));}
+function card(title,sub){var c=[].slice.call(arguments,2);return h('section',{className:'ud-card'},title?h('h2',{className:'card-h',style:sub?null:{marginBottom:16}},title):null,sub?h('p',{className:'card-s'},sub):null,c);}
+var L=function(t){return h('a',{href:'#',className:'ud-link'},t)};
+var INKS=[['Cyan','#00aeef'],['Magenta','#ec008c'],['Yellow','#ffd800'],['Black','#111111'],['CMYK Combined','conic-gradient(#00aeef,#ec008c,#ffd800,#111111,#00aeef)'],['Red','#e32119'],['Blue','#1d2b9b'],['Green','#1e8a2e'],['Golden','#d4a017'],['Silver','#b8bcc2'],['White','#ffffff'],['Transparent','repeating-conic-gradient(#d6dbe0 0 25%,#ffffff 0 50%) 0 0/8px 8px']];
+var inks=function(sel){return INKS.map(function(i){return {label:i[0],swatch:i[1],checked:sel.indexOf(i[0])>-1}})};
+function orderForm(o){var internal=o.internal;return h('div',{style:{maxWidth:760,margin:'0 auto',display:'flex',flexDirection:'column',gap:16}},
+ h('header',null,h('h2',{className:'card-h',style:{fontSize:24,lineHeight:'32px'}},o.title),h('p',{className:'card-s',style:{margin:0}},o.sub)),
+ card('Basic information',null,h('div',{className:'formgrid'},h('div',{className:'wide'},h(U.Field,{label:'Order name',value:o.name,required:true})),h('div',{className:'wide'},h(U.Field,{label:'Description',multiline:true,value:o.desc})),h(U.Select,{label:'Order type',options:['New order','Reorder'],value:'New order'}))),
+ card('Technical specifications',null,h('div',{className:'formgrid'},
+  h(U.Select,{label:'Package type',options:['Other','Label','Pouch','Bag'],value:o.pkg}),h('span',null),
+  h('div',{className:'wide g4'},h(U.Field,{label:'Width (mm)',value:o.w,required:true}),h(U.Field,{label:'Width repeat',value:o.wr}),h(U.Field,{label:'Height (mm)',value:o.h,required:true}),h(U.Field,{label:'Height repeat',value:o.hr})),
+  h(U.Select,{label:'Material',options:['Flint','Strong','Taiwan'],value:o.mat}),h(U.Select,{label:'Thickness (mm)',options:['1.14','1.7','2.54'],value:o.th}),
+  internal?h(U.Field,{label:'Distortion (0–100)',hint:'Internal field: shown to staff only.'}):null,internal?h(U.Field,{label:'Job path',hint:'Internal field: shown to staff only.'}):null,
+  h(U.Select,{label:'Printing mode',options:['Surface printing','Reverse printing'],value:'Surface printing'}),h(U.Field,{label:'Number of colours',value:o.n,readOnly:true,hint:'Counted from the inks you tick. CMYK Combined counts as 4.'}),
+  h('div',{className:'wide'},h(U.ColorOptions,{label:'Inks',hint:'Tick every ink this job uses.',options:inks(o.sel)})),
+  h('div',{className:'wide'},h(U.Button,{variant:'secondary'},'Add a custom ink')),
+  h('div',{className:'wide'},h(U.Field,{label:'Additional notes',multiline:true,value:o.notes,placeholder:'Anything the designer should know'})))),
+ h(U.ActionBar,null,h('span',{className:'ud-spacer'}),h(U.Button,{variant:'secondary'},'Cancel'),h(U.Button,null,o.submit)));}
+
+var Row=function(){return h('div',{style:{display:'flex',gap:24,justifyContent:'center',flexWrap:'wrap',padding:'8px 0'}},[].slice.call(arguments).map(function(x,i){return h('div',{key:i,style:{display:'flex',flexDirection:'column',gap:8,alignItems:'center'}},x[0]?h('span',{style:{color:'var(--text-muted)',fontSize:13}},x[0]):null,x[1])}))};
+var St=function(s,l){return h(U.StatusBadge,{status:s,label:l})};
+var S=function(t){return h('h2',{style:{margin:'4px 0 0',font:'600 16px/24px var(--font-sans)'}},t)};
+var K2=function(){return h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}},[].slice.call(arguments))};
+
+function App(){
+var tabs=['الطلبات','السابقة','الحساب'];
+var P=['رص الألوان','تعريض خلفي','تصوير الليزر','تعريض أساسي','حفر','تجفيف','تعريض نهائي','تعريض UVC','مراجعة وتلميع'];
+var items=P.slice(0,4).map(function(p,i){return {label:p,done:i<2,meta:i<2?'09:'+(10+i*7)+' · محمود':''}});
+var lab={done:'مكتمل',todo:'قيد الانتظار',pending:'لم تتم بعد',redo:'إعادة',complete:'إكمال'};
+return Row(
+ ['الطلبات',h(U.MobileScreen,{dir:'rtl',title:'الطلبات',tabs:tabs,active:0,notifications:3,bellLabel:'الإشعارات',backLabel:'رجوع'},
+  h(U.Chips,{dir:'rtl',label:'تصفية',active:0,items:[{label:'الحالية',count:10},{label:'المكتملة',count:4},{label:'الكل',count:14}]}),
+  h(U.OrderRow,{dir:'rtl',no:'ORD-2509-0088',title:'Wemake',meta:'العميل: Etman',status:St('in-prepress','قيد التجهيز'),progress:22,progressLabel:'العمليات: 2 من 9'}),
+  h(U.OrderRow,{dir:'rtl',no:'ORD-2508-0076',title:'Chipsy 150g',meta:'العميل: Ahmad Raouf',status:St('in-prepress','قيد التجهيز'),progress:56,progressLabel:'العمليات: 5 من 9'}),
+  h(U.OrderRow,{dir:'rtl',no:'ORD-2509-0084',title:'Tea Label Set',meta:'العميل: Tulip',status:St('submitted','تم التقديم'),progress:0,progressLabel:'العمليات: 0 من 9'}))],
+ ['العمليات',h(U.MobileScreen,{dir:'rtl',title:'Wemake',back:true,tabs:tabs,active:0,bellLabel:'الإشعارات',backLabel:'رجوع'},
+  h(U.Progress,{dir:'rtl',label:'العمليات المكتملة: 2 من 9',value:22}),
+  h(U.ProcessGrid,{dir:'rtl',items:items,labels:lab}))],
+ ['السابقة',h(U.MobileScreen,{dir:'rtl',title:'الطلبات السابقة',tabs:tabs,active:1,bellLabel:'الإشعارات',backLabel:'رجوع'},
+  h(U.SearchField,{dir:'rtl',placeholder:'ابحث برقم الطلب أو العميل'}),
+  h(U.OrderRow,{dir:'rtl',no:'ORD-2509-0090',title:'Royal-2',meta:'Qadesia · 11 سبتمبر 2025',status:St('completed','مكتمل')}),
+  h(U.OrderRow,{dir:'rtl',no:'ORD-2509-0087',title:'Loft',meta:'Etman · 11 سبتمبر 2025',status:St('completed','مكتمل')}),
+  h(U.OrderRow,{dir:'rtl',no:'ORD-2509-0086',title:'Versay rice',meta:'Al Ahram · 11 سبتمبر 2025',status:St('ready','جاهز للتسليم')}))]);
+}
+ReactDOM.createRoot(document.getElementById('r')).render(h(App));})();
+</script></body></html>

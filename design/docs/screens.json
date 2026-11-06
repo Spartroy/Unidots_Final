@@ -1,0 +1,267 @@
+[
+ {
+  "group": "Actions",
+  "name": "ActionBar",
+  "subtitle": ""
+ },
+ {
+  "group": "Orders",
+  "name": "Avatar",
+  "subtitle": ""
+ },
+ {
+  "group": "Actions",
+  "name": "Button",
+  "subtitle": ""
+ },
+ {
+  "group": "Filters",
+  "name": "Chips",
+  "subtitle": ""
+ },
+ {
+  "group": "Screens",
+  "name": "ClientDashboard",
+  "subtitle": "Client portal home. Sample data."
+ },
+ {
+  "group": "Screens",
+  "name": "ClientNewClaim",
+  "subtitle": "Client portal: submit a claim"
+ },
+ {
+  "group": "Screens",
+  "name": "ClientNewOrder",
+  "subtitle": "Client portal: new order form"
+ },
+ {
+  "group": "Screens",
+  "name": "ClientOrders",
+  "subtitle": "Client portal: my orders. Sample data."
+ },
+ {
+  "group": "Screens",
+  "name": "ClientProfile",
+  "subtitle": "Client portal: profile and password"
+ },
+ {
+  "group": "Screens",
+  "name": "ClientRegister",
+  "subtitle": "Auth: register, 3 steps"
+ },
+ {
+  "group": "Feedback",
+  "name": "ConfirmDialog",
+  "subtitle": ""
+ },
+ {
+  "group": "Courier",
+  "name": "CourierDelivery",
+  "subtitle": ""
+ },
+ {
+  "group": "Screens",
+  "name": "CourierDelivery_Screen",
+  "subtitle": "Courier: one delivery. Sample data."
+ },
+ {
+  "group": "Components",
+  "name": "Cover",
+  "subtitle": ""
+ },
+ {
+  "group": "Data",
+  "name": "DataTable",
+  "subtitle": ""
+ },
+ {
+  "group": "Data",
+  "name": "DefList",
+  "subtitle": ""
+ },
+ {
+  "group": "Forms",
+  "name": "Dropzone",
+  "subtitle": ""
+ },
+ {
+  "group": "Screens",
+  "name": "EmployeeDashboard",
+  "subtitle": "Employee portal home. Sample data."
+ },
+ {
+  "group": "Screens",
+  "name": "EmployeeEditOrder",
+  "subtitle": "Employee: edit order form"
+ },
+ {
+  "group": "Screens",
+  "name": "EmployeeOrderDetail",
+  "subtitle": "Employee: order details tab. Sample data."
+ },
+ {
+  "group": "Screens",
+  "name": "EmployeeOrderFiles",
+  "subtitle": "Employee: files tab and delivery dialog. Sample data."
+ },
+ {
+  "group": "Screens",
+  "name": "EmployeeOrderProgress",
+  "subtitle": "Employee: progress tab. Sample data."
+ },
+ {
+  "group": "Feedback",
+  "name": "EmptyState",
+  "subtitle": ""
+ },
+ {
+  "group": "Forms",
+  "name": "Field",
+  "subtitle": ""
+ },
+ {
+  "group": "Feedback",
+  "name": "FormDialog",
+  "subtitle": ""
+ },
+ {
+  "group": "Dashboards",
+  "name": "KpiTile",
+  "subtitle": ""
+ },
+ {
+  "group": "Screens",
+  "name": "ManagerDashboard",
+  "subtitle": "Manager home. Sample data."
+ },
+ {
+  "group": "Mobile",
+  "name": "MobileClient",
+  "subtitle": "Client on a phone. Sample data."
+ },
+ {
+  "group": "Mobile",
+  "name": "MobileCourier",
+  "subtitle": "Courier on a phone: list, delivery, confirm. Sample data."
+ },
+ {
+  "group": "Mobile",
+  "name": "MobileEmployee",
+  "subtitle": "Employee on a phone. Sample data."
+ },
+ {
+  "group": "Mobile",
+  "name": "MobileManager",
+  "subtitle": "Manager on a phone. Sample data."
+ },
+ {
+  "group": "Mobile",
+  "name": "MobilePrepress",
+  "subtitle": "Prepress floor on a phone, Arabic RTL. Sample data."
+ },
+ {
+  "group": "Orders",
+  "name": "OrderCard",
+  "subtitle": ""
+ },
+ {
+  "group": "Screens",
+  "name": "OrderDetail",
+  "subtitle": "Order detail, Details tab. Sample data."
+ },
+ {
+  "group": "Orders",
+  "name": "OrderStepper",
+  "subtitle": ""
+ },
+ {
+  "group": "Screens",
+  "name": "OrdersList",
+  "subtitle": "Orders list. Sample data."
+ },
+ {
+  "group": "Data",
+  "name": "Pagination",
+  "subtitle": ""
+ },
+ {
+  "group": "Production",
+  "name": "PlateCanvas",
+  "subtitle": ""
+ },
+ {
+  "group": "Prepress",
+  "name": "PrepressChecklist",
+  "subtitle": ""
+ },
+ {
+  "group": "Screens",
+  "name": "PrepressHistory",
+  "subtitle": "Prepress: order history. Sample data."
+ },
+ {
+  "group": "Screens",
+  "name": "PrepressOrderDetail",
+  "subtitle": "Prepress: order with 9 processes, Arabic RTL. Sample data."
+ },
+ {
+  "group": "Screens",
+  "name": "PrepressOrders",
+  "subtitle": "Prepress: active orders, Arabic RTL. Sample data."
+ },
+ {
+  "group": "Orders",
+  "name": "PriorityBadge",
+  "subtitle": ""
+ },
+ {
+  "group": "Data",
+  "name": "Progress",
+  "subtitle": ""
+ },
+ {
+  "group": "Filters",
+  "name": "SearchField",
+  "subtitle": ""
+ },
+ {
+  "group": "Forms",
+  "name": "Select",
+  "subtitle": ""
+ },
+ {
+  "group": "Orders",
+  "name": "StatusBadge",
+  "subtitle": ""
+ },
+ {
+  "group": "Data",
+  "name": "StatusBars",
+  "subtitle": ""
+ },
+ {
+  "group": "Navigation",
+  "name": "Tabs",
+  "subtitle": ""
+ },
+ {
+  "group": "Production",
+  "name": "TankGauge",
+  "subtitle": ""
+ },
+ {
+  "group": "Feedback",
+  "name": "Toast",
+  "subtitle": ""
+ },
+ {
+  "group": "Navigation",
+  "name": "TopBar",
+  "subtitle": ""
+ },
+ {
+  "group": "Data",
+  "name": "TrendChart",
+  "subtitle": ""
+ }
+]

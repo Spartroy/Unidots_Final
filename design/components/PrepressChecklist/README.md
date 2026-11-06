@@ -1,0 +1,3 @@
+Large tappable process rows for the shop floor. Props: `items` (`{label, done, at, by}`), `solvent` and `solventLabel` for the readout, `pendingLabel`.
+
+Each row is at least 56px (`checklist-row`) with a 32px checkbox; a done row turns `status-completed-bg` and shows the time and who completed it. The nine process names are the consumer's: the preview shows illustrative steps. Arabic first: pass `dir="rtl"` and translated labels.

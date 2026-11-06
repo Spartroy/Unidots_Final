@@ -1,0 +1,3 @@
+A scaled layout of a plate with placed jobs. Props: `width`, `height` (mm), `margin` (mm), `placements` (`{x, y, w, h, label}` in mm), `caption`, `maxPx`.
+
+The plate edge is `border-control`, the dashed line is the usable margin, jobs are `selected` with a `primary` edge and carry the order number and size as text. Always caption with plate id, size in mm, thickness in mm and material; never leave "Thickness: µm" blank. Units are mm throughout.

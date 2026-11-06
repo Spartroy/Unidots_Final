@@ -1,0 +1,1 @@
+Profile in two cards. The title is "Profile" in the top bar (not "Client Portal" plus "Your Profile"). Save changes is the one primary; Update password is secondary because it is a separate, rarer task. Shipping fields are empty with neutral placeholders: never persist filler values like "a".

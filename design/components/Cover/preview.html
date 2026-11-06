@@ -1,0 +1,19 @@
+<!-- @dsCard height=288 -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&amp;display=swap">
+<style>html,body{margin:0}body{width:960px;height:288px;position:relative;overflow:hidden;background:var(--bg-card);font-family:var(--font-sans)}svg{position:absolute;inset:0}
+.name{position:absolute;left:32px;bottom:56px;margin:0;font:700 96px/.95 var(--font-sans);letter-spacing:-.02em;color:var(--text)}
+.tag{position:absolute;left:34px;bottom:28px;margin:0;font:400 14px/20px var(--font-sans);color:var(--text-muted)}</style></head>
+<body><!--
+blocks: brand-700 240x176 (identity blue, with dots), nav/brand-900 192x240 (tall slab), teal-500 128x48 + brand-500 96x48 (satellites); sizes are multiples of space-1 (8px steps).
+arrangement: staggered stack right of x=480; tall brand-900 slab bleeds to the right edge area, blue slab top-left of the box, two small blocks beneath it.
+pattern: halftone dot field (35 dots, pitch 32, radius 2 to 10 growing toward bottom-right) in teal-100 on the brand-700 block: the flexo screening dots that are the company's signature.
+steps/radii: radius-lg (12px) on all blocks; dot pitch 32 = 4 x space-2.
+-->
+<svg width="960" height="288" viewBox="0 0 960 288" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="UniDots palette and halftone pattern">
+<style>.b700{fill:var(--brand-700)}.b900{fill:var(--nav)}.t500{fill:var(--teal-500)}.b500{fill:var(--brand-500)}.dot{fill:var(--teal-100)}.blk{rx:12px}</style>
+<rect class="b700 blk" x="496" y="24" width="240" height="176" rx="12"/>
+<circle class="dot" cx="512" cy="40" r="2.0"/><circle class="dot" cx="544" cy="40" r="2.8"/><circle class="dot" cx="576" cy="40" r="3.6"/><circle class="dot" cx="608" cy="40" r="4.4"/><circle class="dot" cx="640" cy="40" r="5.2"/><circle class="dot" cx="672" cy="40" r="6.0"/><circle class="dot" cx="704" cy="40" r="6.8"/><circle class="dot" cx="512" cy="72" r="2.8"/><circle class="dot" cx="544" cy="72" r="3.6"/><circle class="dot" cx="576" cy="72" r="4.4"/><circle class="dot" cx="608" cy="72" r="5.2"/><circle class="dot" cx="640" cy="72" r="6.0"/><circle class="dot" cx="672" cy="72" r="6.8"/><circle class="dot" cx="704" cy="72" r="7.6"/><circle class="dot" cx="512" cy="104" r="3.6"/><circle class="dot" cx="544" cy="104" r="4.4"/><circle class="dot" cx="576" cy="104" r="5.2"/><circle class="dot" cx="608" cy="104" r="6.0"/><circle class="dot" cx="640" cy="104" r="6.8"/><circle class="dot" cx="672" cy="104" r="7.6"/><circle class="dot" cx="704" cy="104" r="8.4"/><circle class="dot" cx="512" cy="136" r="4.4"/><circle class="dot" cx="544" cy="136" r="5.2"/><circle class="dot" cx="576" cy="136" r="6.0"/><circle class="dot" cx="608" cy="136" r="6.8"/><circle class="dot" cx="640" cy="136" r="7.6"/><circle class="dot" cx="672" cy="136" r="8.4"/><circle class="dot" cx="704" cy="136" r="9.2"/><circle class="dot" cx="512" cy="168" r="5.2"/><circle class="dot" cx="544" cy="168" r="6.0"/><circle class="dot" cx="576" cy="168" r="6.8"/><circle class="dot" cx="608" cy="168" r="7.6"/><circle class="dot" cx="640" cy="168" r="8.4"/><circle class="dot" cx="672" cy="168" r="9.2"/><circle class="dot" cx="704" cy="168" r="10.0"/>
+<rect class="b900 blk" x="752" y="24" width="192" height="240" rx="12"/>
+<rect class="t500 blk" x="496" y="216" width="128" height="48" rx="12"/>
+<rect class="b500 blk" x="640" y="216" width="96" height="48" rx="12"/>
+</svg><h1 class="name">UniDots</h1><p class="tag">Prepress &amp; Supply Co.</p></body></html>

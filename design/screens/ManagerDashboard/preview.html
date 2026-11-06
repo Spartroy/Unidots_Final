@@ -1,0 +1,31 @@
+<!-- @dsCard group="Screens" width=1200 height=1280 page subtitle="Manager home. Sample data." -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap">
+<style>body{margin:0;padding:16px;background:var(--bg-app);color:var(--text);font-family:var(--font-sans)}.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:12px}.stack{display:flex;flex-direction:column;gap:16px;max-width:560px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.card-h{margin:0 0 4px;font:600 18px/26px var(--font-sans)}.card-s{margin:0 0 16px;color:var(--text-muted);font-size:14px}h2.sec{margin:0 0 12px;font:600 18px/26px var(--font-sans)}.pad0{padding:0!important;overflow:hidden}.pad0>.hd{padding:16px 16px 0}</style></head>
+<body><div id="r"></div><script>
+(function(){var h=React.createElement,U=window.UniDots;
+function App(){var nav=['Dashboard','Orders','Claims','Tasks','People','Reports','Production'];
+var m=['Dec','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov'],v=[6,9,7,11,8,12,10,9,14,13,8,11];
+var L=function(t){return h('a',{href:'#',className:'ud-link'},t)};
+var rows=[
+ {o:L('ORD-2509-0088'),c:'Etman',d:h('span',null,'Sep 18, 2025',h('span',{className:'ud-late'},'414 days late')),s:h(U.StatusBadge,{status:'in-prepress'}),a:'Mohammad Khamis'},
+ {o:L('ORD-2509-0084'),c:'Tulip',d:h('span',null,'Sep 18, 2025',h('span',{className:'ud-late'},'414 days late')),s:h(U.StatusBadge,{status:'in-prepress'}),a:'Arwa Nader'},
+ {o:L('ORD-2509-0086'),c:'Al Ahram',d:h('span',null,'Sep 18, 2025',h('span',{className:'ud-late'},'414 days late')),s:h(U.StatusBadge,{status:'ready'}),a:'Marwan'},
+ {o:L('ORD-2509-0089'),c:'Qadesia',d:h('span',null,'Sep 18, 2025',h('span',{className:'ud-late'},'414 days late')),s:h(U.StatusBadge,{status:'submitted'}),a:h('span',{style:{color:'var(--text-muted)'}},'Not assigned')},
+ {o:L('ORD-2512-0091'),c:'Ahmad Tamer',d:h('span',null,'Dec 12, 2025',h('span',{className:'ud-late'},'329 days late')),s:h(U.StatusBadge,{status:'submitted'}),a:'Arwa Nader'}];
+return h('div',{className:'ud-shell'},
+ h(U.ShellParts,{portal:'Manager portal',role:'Manager',nav:nav,active:0,notifications:3,title:'Dashboard',user:'Admin Manager'}),
+ h('div',{style:{display:'flex',flexDirection:'column',gap:24,paddingTop:24}},
+  h('div',{className:'grid5'},
+   h(U.KpiTile,{label:'Overdue',value:'12',note:'Oldest is 414 days late',tone:'attention'}),
+   h(U.KpiTile,{label:'Due today',value:'3',note:'2 in prepress'}),
+   h(U.KpiTile,{label:'Unassigned',value:'4',note:'Assign before design starts'}),
+   h(U.KpiTile,{label:'In prepress',value:'11',note:'2 on hold'}),
+   h(U.KpiTile,{label:'Open orders',value:'51',note:'92 orders in total'})),
+  h('div',{className:'grid2'},
+   h('section',{className:'ud-card'},h('h2',{className:'card-h'},'Orders by status'),h('p',{className:'card-s'},'92 orders, in pipeline order'),h(U.StatusBars,{label:'Orders by status',items:[{status:'submitted',count:14},{status:'designing',count:9},{status:'design-done',count:6},{status:'in-prepress',count:11},{status:'ready',count:5},{status:'delivering',count:4},{status:'completed',count:40},{status:'on-hold',count:2},{status:'cancelled',count:1}]})),
+   h('section',{className:'ud-card'},h('h2',{className:'card-h'},'Orders per month'),h('p',{className:'card-s'},'Last 12 months'),h(U.TrendChart,{label:'Orders per month',points:m.map(function(x,i){return {label:x,value:v[i]}})}))),
+  h('section',{className:'ud-card pad0'},h('div',{className:'hd',style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',paddingBottom:12}},h('div',null,h('h2',{className:'card-h'},'Needs attention'),h('p',{className:'card-s',style:{margin:0}},'Overdue orders that are not completed')),h(U.Button,{variant:'secondary'},'View all 12')),
+   h(U.DataTable,{caption:'Overdue orders',columns:[{key:'o',label:'Order'},{key:'c',label:'Client'},{key:'d',label:'Due'},{key:'s',label:'Status'},{key:'a',label:'Assigned to'}],rows:rows}))));
+}
+ReactDOM.createRoot(document.getElementById('r')).render(h(App));})();
+</script></body></html>

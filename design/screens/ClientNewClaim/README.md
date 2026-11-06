@@ -1,0 +1,1 @@
+Claim form. The select placeholders ("Choose an order") are the first option and must be invalid until changed, never saved as data. The only primary is Submit claim; Back to claims is secondary, in the action bar rather than a faint tinted link at the top.

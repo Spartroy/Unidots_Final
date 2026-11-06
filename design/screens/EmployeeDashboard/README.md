@@ -1,0 +1,1 @@
+Employee home: four task tiles (all zero here, shown with a real `EmptyState` instead of a blank table) and the assigned orders table. A welcome banner is not used. Sample data.

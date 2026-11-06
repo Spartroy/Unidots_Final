@@ -1,0 +1,3 @@
+Quick filters for a list, shown as one row. Props: `items` (`{label, count}`), `active`, `label`.
+
+A selected chip is `selected` with a 2px `primary` edge and bold text, never a solid primary fill: the one primary button on the page stays unique. Use one chip row per list; a second filter dimension goes into a `Select`. Chip labels reuse the status vocabulary exactly (`In Prepress`, not `Pending`).

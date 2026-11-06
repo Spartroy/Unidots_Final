@@ -1,0 +1,1 @@
+Edit order uses the same form as the client New order, with the internal Distortion and Job path fields added for staff. Dimensions in mm, thickness in mm, ink picker as checkboxes with swatches.

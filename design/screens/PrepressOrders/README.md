@@ -1,0 +1,1 @@
+Prepress order list for the floor operator, Arabic first (`dir="rtl"`). Each order is a large card with the order number and title, the client and date, a progress bar of finished processes (n of 9) and one button at control height 44px. The three tiles lead with what matters on the floor (active, ready for delivery, late). The top bar title is the only page title. Sample data.

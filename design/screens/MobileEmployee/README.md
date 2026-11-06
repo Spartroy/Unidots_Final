@@ -1,0 +1,1 @@
+Employee phone screens: task tiles two across, an order with a disabled delivery action and the reason beside it, and progress as a compact timeline. Details are one-column `DefList` rows.

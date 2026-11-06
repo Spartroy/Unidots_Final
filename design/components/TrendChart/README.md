@@ -1,0 +1,3 @@
+A line chart with a true zero baseline and real tick marks. Props: `points` (`{label, value}`), `label`, `emptyText`.
+
+Straight segments between points (no smoothing: a spline invents values). The y-axis runs from 0 to a rounded top, drawn from the data, so a 0–1 axis cannot occur. The line is `primary`, gridlines `border`, labels 12px `text-muted`, the latest value is labelled. If every value is zero it renders `emptyText` instead of a flat line.

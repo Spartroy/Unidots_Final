@@ -1,0 +1,8 @@
+<!-- @dsCard group="Feedback" height=230 -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap">
+<style>body{margin:0;padding:16px;background:var(--bg-app);color:var(--text);font-family:var(--font-sans)}.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:12px}.stack{display:flex;flex-direction:column;gap:16px;max-width:520px}</style></head>
+<body><div id="r"></div><script>
+(function(){var h=React.createElement,U=window.UniDots;
+function App(){return h('div',{className:'stack'},h(U.Toast,{tone:'success',title:'Order submitted'},'Design will pick it up next.'),h(U.Toast,{tone:'error',title:'Upload failed'},'The file is over 200 MB. Compress it and try again.'),h(U.Toast,{tone:'info',title:'Plate is drying'},'Mark drying complete when the timer ends.'));}
+ReactDOM.createRoot(document.getElementById('r')).render(h(App));})();
+</script></body></html>

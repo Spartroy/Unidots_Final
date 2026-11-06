@@ -1,0 +1,32 @@
+<!-- @dsCard group="Screens" width=1200 height=1100 page subtitle="Orders list. Sample data." -->
+<!doctype html><html data-theme="light"><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>body{margin:0;padding:16px;background:var(--bg-app);color:var(--text);font-family:var(--font-sans)}.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:12px}.stack{display:flex;flex-direction:column;gap:16px;max-width:560px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.card-h{margin:0 0 4px;font:600 18px/26px var(--font-sans)}.card-s{margin:0 0 16px;color:var(--text-muted);font-size:14px}h2.sec{margin:0 0 12px;font:600 18px/26px var(--font-sans)}.pad0{padding:0!important;overflow:hidden}.pad0>.hd{padding:16px 16px 0}</style><link rel="stylesheet" href="../tokens/tokens.css"><link rel="stylesheet" href="../components/bundle.css"><script src="../assets/react.production.min.js"></script><script src="../assets/react-dom.production.min.js"></script><script src="../components/bundle.js"></script></head>
+<body><div id="r"></div><script>
+(function(){var h=React.createElement,U=window.UniDots;
+function App(){var nav=['Dashboard','Orders','Claims','Tasks','People','Reports','Production'];
+var L=function(t){return h('a',{href:'#',className:'ud-link'},t)};
+var late=function(d,n){return h('span',null,d,h('span',{className:'ud-late'},n+' days late'))};
+var rows=[
+ {o:L('ORD-2611-0092'),t:'Rice Bag 5kg',c:'Tulip',d:'Nov 11, 2026',p:h(U.PriorityBadge,{level:'medium'}),s:h(U.StatusBadge,{status:'submitted'}),a:'Mayar'},
+ {o:L('ORD-2512-0091'),t:'Custom Pouch Sample',c:'Ahmad Tamer',d:late('Dec 12, 2025',329),p:h(U.PriorityBadge,{level:'medium'}),s:h(U.StatusBadge,{status:'submitted'}),a:'Arwa Nader'},
+ {o:L('ORD-2509-0090'),t:'Royal-2',c:'Qadesia',d:'Sep 18, 2025',p:h(U.PriorityBadge,{level:'medium'}),s:h(U.StatusBadge,{status:'completed'}),a:'Mahmoud'},
+ {o:L('ORD-2509-0089'),t:'Royal',c:'Qadesia',d:late('Sep 18, 2025',414),p:h(U.PriorityBadge,{level:'medium'}),s:h(U.StatusBadge,{status:'submitted'}),a:h('span',{style:{color:'var(--text-muted)'}},'Not assigned')},
+ {o:L('ORD-2509-0088'),t:'Wemake',c:'Etman',d:late('Sep 18, 2025',414),p:h(U.PriorityBadge,{level:'medium'}),s:h(U.StatusBadge,{status:'in-prepress'}),a:'Mohammad Khamis'},
+ {o:L('ORD-2509-0087'),t:'Loft',c:'Etman',d:'Sep 18, 2025',p:h(U.PriorityBadge,{level:'medium'}),s:h(U.StatusBadge,{status:'completed'}),a:'Mohammad Khamis'},
+ {o:L('ORD-2509-0086'),t:'Versay rice',c:'Al Ahram',d:late('Sep 18, 2025',414),p:h(U.PriorityBadge,{level:'medium'}),s:h(U.StatusBadge,{status:'ready'}),a:'Marwan'},
+ {o:L('ORD-2509-0084'),t:'Tea Label Set',c:'Tulip',d:late('Sep 18, 2025',414),p:h(U.PriorityBadge,{level:'medium'}),s:h(U.StatusBadge,{status:'in-prepress'}),a:'Arwa Nader'}];
+return h('div',{className:'ud-shell'},
+ h(U.ShellParts,{portal:'Manager portal',role:'Manager',nav:nav,active:1,notifications:3,title:'Orders',user:'Admin Manager'}),
+ h('div',{style:{display:'flex',flexDirection:'column',gap:16,paddingTop:24}},
+  h('div',{style:{display:'flex',justifyContent:'space-between',gap:16,alignItems:'flex-end',flexWrap:'wrap'}},
+   h(U.Chips,{label:'Filter orders',active:0,items:[{label:'All',count:83},{label:'Needs action',count:9},{label:'Designing',count:9},{label:'In Prepress',count:11},{label:'Ready for Delivery',count:5},{label:'Completed',count:40}]}),
+   h(U.Button,null,'New order')),
+  h('div',{style:{display:'flex',gap:12,alignItems:'flex-end',flexWrap:'wrap'}},
+   h('div',{style:{flex:1,minWidth:260}},h(U.SearchField,{placeholder:'Search by order number, title or client'})),
+   h('div',{style:{width:200}},h(U.Select,{label:'Designer',options:['All designers','Mayar','Arwa Nader','Mahmoud','Mohammad Khamis','Marwan']})),
+   h('div',{style:{width:160}},h(U.Select,{label:'Sort by',options:['Due date','Newest','Client']}))),
+  h('div',{className:'ud-card pad0'},h(U.DataTable,{caption:'Orders',columns:[{key:'o',label:'Order'},{key:'t',label:'Title'},{key:'c',label:'Client'},{key:'d',label:'Due'},{key:'s',label:'Status'},{key:'a',label:'Assigned to'}],rows:rows})),
+  h(U.Pagination,{summary:'Showing 1–8 of 83',page:1,items:[1,2,3,'…',11]})));
+}
+ReactDOM.createRoot(document.getElementById('r')).render(h(App));})();
+</script></body></html>

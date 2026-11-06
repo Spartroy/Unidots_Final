@@ -1,0 +1,3 @@
+The row of actions at the foot of a detail page. Props: children; add a `ud-spacer` span to push groups apart.
+
+One primary: the next valid step for the current status (Submitted: `Send to design`), with a hint above it naming that step. Secondary actions (Back, Reassign) sit to the left; destructive actions are `ghost` text with an ellipsis (`Cancel order…`) and always open a `ConfirmDialog`. Never show steps that skip the pipeline.

@@ -1,0 +1,1 @@
+Client home. The welcome banner is replaced by the page title and a short KPI row where every tile links to its filtered list. Recent orders is a `DataTable` with the order link in the first column; the one primary action is New order. The floating `ChatFab` is the support chat entry point. Sample data.

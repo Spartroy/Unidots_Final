@@ -166,3 +166,11 @@ Phase 2 status: done except external notifications.
 - **Manager dashboard** now also lists quotes waiting for approval and low stock.
 - **Tests:** 10 new backend tests (pricing, quote rules, stock math, client report) and 5 more frontend tests. The new API routes have not been exercised against a real database yet.
 - **Not built:** the API for large customers (API keys), and email / WhatsApp for quotes.
+
+## Design system rollout (started)
+The supplied design system lives in `design/` (spec, tokens, reference kit, screenshots, 23 screens). Applied so far:
+- **Foundation:** tokens (`src/design/tokens.css`, light and dark), the reference component CSS (`ud.css`), the 41-component kit as an importable module (`src/design/kit.js`) plus interactive form controls (`src/design/controls.js`), IBM Plex Sans Arabic, a light/dark theme (`ThemeContext`, remembered per device), and logos generated from `logo-V2.png` (white for the navy sidebar, teal for light pages). The white/teal logos are approximations traced from the supplied PNG: replace them with the original artwork when you have it.
+- **Shell for all five portals:** desktop sidebar + page header, phone top bar + bottom tabs with a "More" sheet, language switch, theme toggle, notifications, skip link. Pages not yet redesigned keep their light look inside the shell (the dark theme only applies to redesigned pages).
+- **Redesigned screens:** Client Dashboard and Login. New status: "Awaiting approval" added to the status set with its own colour and shape.
+- **Removed generic patterns on the landing page:** tracked all-caps eyebrow labels over every heading, four identical card tiles (services are now a ruled list), decorative dots.
+- **Still to do (in the design's order):** Client Register, Orders, New order, New claim, Profile; Employee (5 screens); Prepress (3); Manager (3 + data views); Courier; the 5 mobile screens; screens the design leaves open (Claims, Tasks, People, Reports, Barrels, Plate monitoring, Courier history). Known small issue: the floating chat button overlaps "Sign out" in the Arabic sidebar.

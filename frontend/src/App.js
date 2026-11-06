@@ -7,6 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 // Landing Page
 import Landing from './pages/Landing';
@@ -92,6 +93,7 @@ function App() {
   return (
     <AuthProvider>
       <LanguageProvider>
+      <ThemeProvider>
       <NotificationProvider>
         <Suspense
           fallback={
@@ -205,6 +207,7 @@ function App() {
         
         <ToastContainer position="top-right" autoClose={5000} />
       </NotificationProvider>
+      </ThemeProvider>
       </LanguageProvider>
     </AuthProvider>
   );

@@ -1,0 +1,34 @@
+<!-- @dsCard group="Screens" width=1200 height=1300 subtitle="Prepress: order history. Sample data." page -->
+<!doctype html><html data-theme="light"><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>body{margin:0;padding:16px;background:var(--bg-app);color:var(--text);font-family:var(--font-sans)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.grid6{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}.card-h{margin:0 0 4px;font:600 18px/26px var(--font-sans)}.card-s{margin:0 0 16px;color:var(--text-muted);font-size:14px}.pad0{padding:0!important;overflow:hidden}.pad0>.hd{padding:16px 16px 0}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.formgrid .wide{grid-column:1/-1}.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.formgrid>*,.g4>*,.grid2>*,.grid3>*,.grid4>*,.grid6>*{min-width:0}.formgrid .ud-field,.g4 .ud-field{min-width:0}input,select,textarea{max-width:100%;box-sizing:border-box}</style><link rel="stylesheet" href="../tokens/tokens.css"><link rel="stylesheet" href="../components/bundle.css"><script src="../assets/react.production.min.js"></script><script src="../assets/react-dom.production.min.js"></script><script src="../components/bundle.js"></script></head>
+<body><div id="r"></div><script>
+(function(){var h=React.createElement,U=window.UniDots;
+
+function shell(tb,dir){var kids=[].slice.call(arguments,2);return h.apply(null,[U.AppShell,Object.assign({dir:dir},tb)].concat(kids));}
+function card(title,sub){var c=[].slice.call(arguments,2);return h('section',{className:'ud-card'},title?h('h2',{className:'card-h',style:sub?null:{marginBottom:16}},title):null,sub?h('p',{className:'card-s'},sub):null,c);}
+var L=function(t){return h('a',{href:'#',className:'ud-link'},t)};
+var INKS=[['Cyan','#00aeef'],['Magenta','#ec008c'],['Yellow','#ffd800'],['Black','#111111'],['CMYK Combined','conic-gradient(#00aeef,#ec008c,#ffd800,#111111,#00aeef)'],['Red','#e32119'],['Blue','#1d2b9b'],['Green','#1e8a2e'],['Golden','#d4a017'],['Silver','#b8bcc2'],['White','#ffffff'],['Transparent','repeating-conic-gradient(#d6dbe0 0 25%,#ffffff 0 50%) 0 0/8px 8px']];
+var inks=function(sel){return INKS.map(function(i){return {label:i[0],swatch:i[1],checked:sel.indexOf(i[0])>-1}})};
+function orderForm(o){var internal=o.internal;return h('div',{style:{maxWidth:760,margin:'0 auto',display:'flex',flexDirection:'column',gap:16}},
+ h('header',null,h('h2',{className:'card-h',style:{fontSize:24,lineHeight:'32px'}},o.title),h('p',{className:'card-s',style:{margin:0}},o.sub)),
+ card('Basic information',null,h('div',{className:'formgrid'},h('div',{className:'wide'},h(U.Field,{label:'Order name',value:o.name,required:true})),h('div',{className:'wide'},h(U.Field,{label:'Description',multiline:true,value:o.desc})),h(U.Select,{label:'Order type',options:['New order','Reorder'],value:'New order'}))),
+ card('Technical specifications',null,h('div',{className:'formgrid'},
+  h(U.Select,{label:'Package type',options:['Other','Label','Pouch','Bag'],value:o.pkg}),h('span',null),
+  h('div',{className:'wide g4'},h(U.Field,{label:'Width (mm)',value:o.w,required:true}),h(U.Field,{label:'Width repeat',value:o.wr}),h(U.Field,{label:'Height (mm)',value:o.h,required:true}),h(U.Field,{label:'Height repeat',value:o.hr})),
+  h(U.Select,{label:'Material',options:['Flint','Strong','Taiwan'],value:o.mat}),h(U.Select,{label:'Thickness (mm)',options:['1.14','1.7','2.54'],value:o.th}),
+  internal?h(U.Field,{label:'Distortion (0–100)',hint:'Internal field: shown to staff only.'}):null,internal?h(U.Field,{label:'Job path',hint:'Internal field: shown to staff only.'}):null,
+  h(U.Select,{label:'Printing mode',options:['Surface printing','Reverse printing'],value:'Surface printing'}),h(U.Field,{label:'Number of colours',value:o.n,readOnly:true,hint:'Counted from the inks you tick. CMYK Combined counts as 4.'}),
+  h('div',{className:'wide'},h(U.ColorOptions,{label:'Inks',hint:'Tick every ink this job uses.',options:inks(o.sel)})),
+  h('div',{className:'wide'},h(U.Button,{variant:'secondary'},'Add a custom ink')),
+  h('div',{className:'wide'},h(U.Field,{label:'Additional notes',multiline:true,value:o.notes,placeholder:'Anything the designer should know'})))),
+ h(U.ActionBar,null,h('span',{className:'ud-spacer'}),h(U.Button,{variant:'secondary'},'Cancel'),h(U.Button,null,o.submit)));}
+
+function App(){
+var rows=[['ORD-2509-0090','Royal-2','Qadesia','11 سبتمبر 2025','completed','مكتمل'],['ORD-2509-0089','Royal','Qadesia','11 سبتمبر 2025','submitted','تم التقديم'],['ORD-2509-0088','Wemake','Etman','11 سبتمبر 2025','in-prepress','قيد التجهيز'],['ORD-2509-0087','Loft','Etman','11 سبتمبر 2025','completed','مكتمل'],['ORD-2509-0086','Versay rice','Al Ahram','11 سبتمبر 2025','ready','جاهز للتسليم']].map(function(r){return {o:L(r[0]),t:r[1],c:r[2],d:r[3],s:h(U.StatusBadge,{status:r[4],label:r[5]})}});
+return shell({nav:['الطلبات','الطلبات السابقة'],lang:'ar',active:1,notifications:9,title:'الطلبات السابقة',user:'جابر',portal:'قسم ما قبل الطباعة',role:'فني ما قبل الطباعة',bellLabel:'الإشعارات'},'rtl',
+ h('div',{style:{display:'flex',gap:12,alignItems:'flex-end',flexWrap:'wrap'}},h('div',{style:{flex:1,minWidth:260}},h(U.SearchField,{dir:'rtl',placeholder:'ابحث برقم الطلب أو العنوان أو العميل'})),h(U.Chips,{dir:'rtl',label:'تصفية',active:0,items:['كل الطلبات','طلبات التجهيز','المكتملة','المسلّمة']})),
+ h('div',{className:'ud-card pad0'},h(U.DataTable,{dir:'rtl',caption:'الطلبات السابقة',columns:[{key:'o',label:'الطلب'},{key:'t',label:'العنوان'},{key:'c',label:'العميل'},{key:'d',label:'التاريخ'},{key:'s',label:'الحالة'}],rows:rows})),
+ h(U.Pagination,{dir:'rtl',summary:'عرض 1–5 من 92',page:1,items:[1,2,'…',10],prevLabel:'السابق',nextLabel:'التالي'}));
+}
+ReactDOM.createRoot(document.getElementById('r')).render(h(App));})();
+</script></body></html>

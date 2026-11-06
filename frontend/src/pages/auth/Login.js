@@ -1,286 +1,111 @@
-import React, { useState, useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import AuthContext from '../../context/AuthContext';
 import { toast } from 'react-toastify';
-import logo from '../../assets/logo.png';
+import AuthContext from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
-import LanguageToggle from '../../components/common/LanguageToggle';
+import { AuthLayout, Button, Notice } from '../../design/kit';
+import { Field } from '../../design/controls';
+import usePageTitle from '../../utils/usePageTitle';
+import logoWhite from '../../assets/logo-white.png';
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { login } = useContext(AuthContext);
   const location = useLocation();
-  const { t } = useLanguage();
+  const { t, lang, setLang, dir } = useLanguage();
+  usePageTitle(`${t('login.title')} | UniDots`);
 
   // Where the user was heading before being sent here (route guard state, or ?from= after a session expiry)
   const params = new URLSearchParams(location.search);
   const fromState = location.state?.from;
-  const from = fromState
-    ? `${fromState.pathname || ''}${fromState.search || ''}`
-    : params.get('from') || undefined;
+  const from = fromState ? `${fromState.pathname || ''}${fromState.search || ''}` : params.get('from') || undefined;
   const sessionExpired = params.get('expired') === '1';
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+  const handleChange = (e) => setFormData((f) => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Basic validation
     if (!formData.email || !formData.password) {
       toast.error(t('login.errorMissing'));
       return;
     }
-    
     try {
       setIsSubmitting(true);
       await login(formData.email.trim(), formData.password, from);
-      // Successful login will redirect in the AuthContext
     } catch (error) {
-      // Handle different error types
-      if (error.response) {
-        // Server responded with an error status
-        const errorMessage = error.response.data?.message || t('login.errorInvalid');
-        toast.error(errorMessage);
-      } else if (error.request) {
-        // Request was made but no response was received
-        toast.error(t('login.errorNetwork'));
-      } else {
-        // Something else caused the error
-        toast.error(t('login.errorGeneric'));
-      }
+      if (error.response) toast.error(error.response.data?.message || t('login.errorInvalid'));
+      else if (error.request) toast.error(t('login.errorNetwork'));
+      else toast.error(t('login.errorGeneric'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 opacity-50 blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-gradient-to-br from-secondary-100 to-secondary-200 opacity-50 blur-3xl"></div>
+    <AuthLayout
+      dir={dir}
+      brand={<img src={logoWhite} alt="UniDots" style={{ width: 168, height: 'auto' }} />}
+      title={t('login.asideTitle')}
+      text={t('login.asideText')}
+      points={[t('login.point1'), t('login.point2'), t('login.point3')]}
+      back={
+        <Link to="/" className="ud-link ud-back">
+          {t('login.backHome')}
+        </Link>
+      }
+    >
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBlockEnd: 8 }}>
+        <div className="ud-lang" role="group" aria-label="Language" style={{ borderColor: 'var(--border-control)' }}>
+          <button type="button" aria-pressed={lang === 'en'} onClick={() => setLang('en')} style={{ color: lang === 'en' ? undefined : 'var(--text)' }}>EN</button>
+          <button type="button" aria-pressed={lang === 'ar'} onClick={() => setLang('ar')} style={{ color: lang === 'ar' ? undefined : 'var(--text)' }}>عربي</button>
+        </div>
       </div>
 
-      <div className="absolute top-4 end-4 z-10">
-        <LanguageToggle className="bg-white text-gray-700 border border-gray-300 hover:bg-gray-50" />
-      </div>
+      <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 420 }}>
+        <h1 style={{ margin: 0, font: '700 28px/36px var(--font-sans)' }}>{t('login.welcomeBack')}</h1>
+        <p style={{ margin: 0, color: 'var(--text-muted)' }}>{t('login.subtitle')}</p>
 
-      <div className="relative">
-        {/* Header */}
-        <motion.div 
-          className="sm:mx-auto sm:w-full sm:max-w-md"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+        {sessionExpired && <Notice tone="info">{t('login.expired')}</Notice>}
+
+        <Field
+          label={t('login.email')}
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          value={formData.email}
+          onChange={handleChange}
+          dir="ltr"
+        />
+        <Field
+          label={t('login.password')}
+          name="password"
+          type={showPassword ? 'text' : 'password'}
+          autoComplete="current-password"
+          required
+          value={formData.password}
+          onChange={handleChange}
+          dir="ltr"
         >
-          <div className="flex justify-center mb-6">
-            <motion.img 
-              src={logo} 
-              alt="UNI Logo" 
-              className="h-[200px] w-auto"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            />
-          </div>
-          <motion.h2 
-            className="text-center text-3xl font-extrabold text-gray-900"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            {t('login.welcomeBack')}
-          </motion.h2>
-          <motion.p 
-            className="mt-2 text-center text-sm text-gray-600"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-          >
-            {t('login.subtitle')}
-          </motion.p>
-        </motion.div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, cursor: 'pointer' }}>
+            <input type="checkbox" checked={showPassword} onChange={(e) => setShowPassword(e.target.checked)} />
+            {t('login.showPassword')}
+          </label>
+        </Field>
 
-        {/* Login Form */}
-        <motion.div 
-          className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-        >
-          <div className="bg-white py-8 px-4 shadow-xl sm:rounded-xl sm:px-10 border border-gray-200 relative overflow-hidden">
-            {sessionExpired && (
-              <div role="alert" className="mb-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-                {t('login.expired')}
-              </div>
-            )}
-            {/* Decorative elements */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 to-secondary-500"></div>
-            <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full bg-gradient-to-br from-primary-500/10 to-secondary-500/10 blur-2xl"></div>
-            
-            <form className="space-y-6 relative" onSubmit={handleSubmit}>
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-              >
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('login.email')}
-                </label>
-                <div className="relative">
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300 sm:text-sm"
-                    placeholder={t('login.emailPlaceholder')}
-                  />
-                  <div className="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                </div>
-              </motion.div>
+        <Button type="submit" size="lg" disabled={isSubmitting}>
+          {isSubmitting ? t('login.submitting') : t('login.submit')}
+        </Button>
 
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.6 }}
-              >
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('login.password')}
-                </label>
-                <div className="relative">
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
-                    required
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="appearance-none block w-full px-4 py-3 pe-16 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300 sm:text-sm"
-                    placeholder={t('login.passwordPlaceholder')}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
-                    aria-pressed={showPassword}
-                    className="absolute inset-y-0 end-0 px-4 flex items-center text-xs font-medium text-gray-500 hover:text-primary-600 focus:outline-none focus:text-primary-700"
-                  >
-                    {showPassword ? t('login.hide') : t('login.show')}
-                  </button>
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.7 }}
-              >
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="group relative w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg"
-                >
-                  <span className="absolute start-0 inset-y-0 flex items-center ps-3">
-                    {!isSubmitting && (
-                      <svg className="h-5 w-5 text-primary-200 group-hover:text-primary-100 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                      </svg>
-                    )}
-                  </span>
-                  {isSubmitting ? (
-                    <div className="flex items-center space-x-2">
-                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      <span>{t('login.submitting')}</span>
-                    </div>
-                  ) : (
-                    t('login.submit')
-                  )}
-                </button>
-              </motion.div>
-            </form>
-
-            {/* Divider */}
-            <motion.div 
-              className="mt-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.8 }}
-            >
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">{t('login.newTo')}</span>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Register Link */}
-            <motion.div 
-              className="mt-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.9 }}
-            >
-              <Link
-                to="/register"
-                className="group relative w-full flex justify-center py-3 px-4 border border-primary-300 rounded-lg shadow-sm text-sm font-medium text-primary-600 bg-white hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300 transform hover:scale-[1.02]"
-              >
-                <span className="absolute start-0 inset-y-0 flex items-center ps-3">
-                  <svg className="h-5 w-5 text-primary-400 group-hover:text-primary-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                  </svg>
-                </span>
-                {t('login.createAccount')}
-              </Link>
-            </motion.div>
-          </div>
-        </motion.div>
-
-        {/* Back to Home */}
-        <motion.div 
-          className="mt-8 text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 1.0 }}
-        >
-          <Link 
-            to="/" 
-            className="inline-flex items-center text-sm text-gray-600 hover:text-primary-600 transition-colors duration-300"
-          >
-            <svg className="h-4 w-4 me-1 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            {t('login.backHome')}
-          </Link>
-        </motion.div>
-      </div>
-    </div>
+        <p style={{ margin: 0, color: 'var(--text-muted)' }}>
+          {t('login.newTo')}{' '}
+          <Link to="/register" className="ud-link">{t('login.createAccount')}</Link>
+        </p>
+      </form>
+    </AuthLayout>
   );
 };
 

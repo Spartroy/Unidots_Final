@@ -1,0 +1,1 @@
+Orders list: one chip row for status, one filter row (search, designer, sort), a `DataTable` with the record link in the first column, and a single `Pagination`. The only primary button is New order. Overdue orders show the days late under the due date. Sample data.

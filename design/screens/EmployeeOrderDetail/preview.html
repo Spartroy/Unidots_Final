@@ -1,0 +1,41 @@
+<!-- @dsCard group="Screens" width=1200 height=1300 subtitle="Employee: order details tab. Sample data." page -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap">
+<style>body{margin:0;padding:16px;background:var(--bg-app);color:var(--text);font-family:var(--font-sans)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.grid6{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}.card-h{margin:0 0 4px;font:600 18px/26px var(--font-sans)}.card-s{margin:0 0 16px;color:var(--text-muted);font-size:14px}.pad0{padding:0!important;overflow:hidden}.pad0>.hd{padding:16px 16px 0}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.formgrid .wide{grid-column:1/-1}.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.formgrid>*,.g4>*,.grid2>*,.grid3>*,.grid4>*,.grid6>*{min-width:0}.formgrid .ud-field,.g4 .ud-field{min-width:0}input,select,textarea{max-width:100%;box-sizing:border-box}</style></head>
+<body><div id="r"></div><script>
+(function(){var h=React.createElement,U=window.UniDots;
+
+function shell(tb,dir){var kids=[].slice.call(arguments,2);return h.apply(null,[U.AppShell,Object.assign({dir:dir},tb)].concat(kids));}
+function card(title,sub){var c=[].slice.call(arguments,2);return h('section',{className:'ud-card'},title?h('h2',{className:'card-h',style:sub?null:{marginBottom:16}},title):null,sub?h('p',{className:'card-s'},sub):null,c);}
+var L=function(t){return h('a',{href:'#',className:'ud-link'},t)};
+var INKS=[['Cyan','#00aeef'],['Magenta','#ec008c'],['Yellow','#ffd800'],['Black','#111111'],['CMYK Combined','conic-gradient(#00aeef,#ec008c,#ffd800,#111111,#00aeef)'],['Red','#e32119'],['Blue','#1d2b9b'],['Green','#1e8a2e'],['Golden','#d4a017'],['Silver','#b8bcc2'],['White','#ffffff'],['Transparent','repeating-conic-gradient(#d6dbe0 0 25%,#ffffff 0 50%) 0 0/8px 8px']];
+var inks=function(sel){return INKS.map(function(i){return {label:i[0],swatch:i[1],checked:sel.indexOf(i[0])>-1}})};
+function orderForm(o){var internal=o.internal;return h('div',{style:{maxWidth:760,margin:'0 auto',display:'flex',flexDirection:'column',gap:16}},
+ h('header',null,h('h2',{className:'card-h',style:{fontSize:24,lineHeight:'32px'}},o.title),h('p',{className:'card-s',style:{margin:0}},o.sub)),
+ card('Basic information',null,h('div',{className:'formgrid'},h('div',{className:'wide'},h(U.Field,{label:'Order name',value:o.name,required:true})),h('div',{className:'wide'},h(U.Field,{label:'Description',multiline:true,value:o.desc})),h(U.Select,{label:'Order type',options:['New order','Reorder'],value:'New order'}))),
+ card('Technical specifications',null,h('div',{className:'formgrid'},
+  h(U.Select,{label:'Package type',options:['Other','Label','Pouch','Bag'],value:o.pkg}),h('span',null),
+  h('div',{className:'wide g4'},h(U.Field,{label:'Width (mm)',value:o.w,required:true}),h(U.Field,{label:'Width repeat',value:o.wr}),h(U.Field,{label:'Height (mm)',value:o.h,required:true}),h(U.Field,{label:'Height repeat',value:o.hr})),
+  h(U.Select,{label:'Material',options:['Flint','Strong','Taiwan'],value:o.mat}),h(U.Select,{label:'Thickness (mm)',options:['1.14','1.7','2.54'],value:o.th}),
+  internal?h(U.Field,{label:'Distortion (0–100)',hint:'Internal field: shown to staff only.'}):null,internal?h(U.Field,{label:'Job path',hint:'Internal field: shown to staff only.'}):null,
+  h(U.Select,{label:'Printing mode',options:['Surface printing','Reverse printing'],value:'Surface printing'}),h(U.Field,{label:'Number of colours',value:o.n,readOnly:true,hint:'Counted from the inks you tick. CMYK Combined counts as 4.'}),
+  h('div',{className:'wide'},h(U.ColorOptions,{label:'Inks',hint:'Tick every ink this job uses.',options:inks(o.sel)})),
+  h('div',{className:'wide'},h(U.Button,{variant:'secondary'},'Add a custom ink')),
+  h('div',{className:'wide'},h(U.Field,{label:'Additional notes',multiline:true,value:o.notes,placeholder:'Anything the designer should know'})))),
+ h(U.ActionBar,null,h('span',{className:'ud-spacer'}),h(U.Button,{variant:'secondary'},'Cancel'),h(U.Button,null,o.submit)));}
+
+function App(){var head=function(tab){return h('section',{className:'ud-card',style:{display:'flex',flexDirection:'column',gap:16}},h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexWrap:'wrap',gap:12}},h('div',{style:{display:'flex',flexDirection:'column',gap:8}},h('div',{style:{display:'flex',gap:12,alignItems:'center'}},h('span',{className:'ud-order-no ud-root'},'ORD-2508-0076'),h(U.StatusBadge,{status:'in-prepress'}),h(U.PriorityBadge,{level:'medium'})),h('span',{style:{color:'var(--text-muted)',fontSize:14}},'Ordered Aug 20, 2025, 2:17 PM · Due Aug 27, 2025')),h(U.Button,{variant:'secondary'},'Edit order')),h(U.OrderStepper,{current:3}),h(U.Progress,{label:'Prepress processes done',value:56}));};
+var tabs=function(a){return h(U.Tabs,{label:'Order sections',active:a,tabs:['Details','Progress',{label:'Files',count:4},{label:'Comments',count:0},'Chat']})};
+var nextBar=function(){return h(U.ActionBar,null,h(U.Button,{variant:'secondary'},'Back to orders'),h('span',{className:'ud-spacer'}),h('div',{style:{display:'flex',flexDirection:'column',gap:4,alignItems:'flex-end'}},h('span',{className:'ud-hint'},'Available when all 9 prepress processes are done (5 of 9)'),h(U.Button,{disabled:true},'Choose delivery method')))};
+
+return shell({nav:['Dashboard','Orders','Claims','Tasks'],active:1,notifications:9,title:'Chipsy 150g',crumbs:['Orders','ORD-2508-0076'],user:'Mahmoud Aybak',portal:'Employee portal',role:'Employee'},undefined,
+ head(),tabs(0),
+ h('div',{className:'grid2'},
+  card('Customer',null,h(U.DefList,{items:[['Name','Ahmad Raouf'],['Email',L('AR@unidots.com')],['Ordered','Aug 20, 2025, 2:17 PM']]})),
+  card('Order',null,h(U.DefList,{items:[['Package type','Other'],['Order type','New order'],['Material','Taiwan'],['Thickness','2.54 mm'],['Printing mode','Surface printing']]}))),
+ h('div',{className:'grid2'},
+  card('Technical specifications',null,h(U.DefList,{items:[['Dimensions','223 × 349 mm'],['Repeat','2 wide × 3 high'],['Number of colours','6'],['Inks','Silver, CMYK Combined, Green']]})),
+  card('Notes',null,h(U.DefList,{cols:1,items:[['Description','Test order for QA, auto generated.'],['Additional notes','Auto-filled notes for quick testing.']]}))),
+ nextBar());
+}
+ReactDOM.createRoot(document.getElementById('r')).render(h(App));})();
+</script></body></html>

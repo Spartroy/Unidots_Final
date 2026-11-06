@@ -3,17 +3,13 @@ import { Link } from 'react-router-dom';
 import {
   Bars3Icon,
   XMarkIcon,
-  Squares2X2Icon,
-  PencilSquareIcon,
-  CubeIcon,
-  TruckIcon,
   MapPinIcon,
   PhoneIcon,
   EnvelopeIcon,
   ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 import api from '../utils/api';
-import logo from '../assets/logo.png';
+import logo from '../assets/logo-teal.png';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageToggle from '../components/common/LanguageToggle';
 import usePageTitle from '../utils/usePageTitle';
@@ -50,16 +46,7 @@ const HalftoneArt = ({ className = '' }) => {
   );
 };
 
-const Eyebrow = ({ children, light = false }) => (
-  <p className={`text-sm font-semibold uppercase tracking-wider ${light ? 'text-secondary-300' : 'text-secondary-700'}`}>{children}</p>
-);
-
-const SERVICES = [
-  { key: 'plates', icon: Squares2X2Icon },
-  { key: 'design', icon: PencilSquareIcon },
-  { key: 'supply', icon: CubeIcon },
-  { key: 'delivery', icon: TruckIcon },
-];
+const SERVICES = ['plates', 'design', 'supply', 'delivery'];
 
 const TEAM = [
   { initials: 'TA', name: 'Dr. Tamer Ali', role: 'landing.about.role1', color: 'bg-primary-600' },
@@ -175,7 +162,6 @@ const Landing = () => {
           <HalftoneArt className="pointer-events-none absolute -end-24 top-1/2 hidden h-[34rem] w-[34rem] -translate-y-1/2 text-secondary-400 opacity-30 md:block rtl:-scale-x-100" />
           <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
             <div className="max-w-3xl">
-              <Eyebrow light>{t('landing.hero.eyebrow')}</Eyebrow>
               <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">{t('landing.hero.title')}</h1>
               <p className="mt-6 max-w-2xl text-lg text-primary-100 sm:text-xl">{t('landing.hero.subtitle')}</p>
               <div className="mt-10 flex flex-col gap-3 sm:flex-row">
@@ -195,7 +181,6 @@ const Landing = () => {
               <ul className="mt-10 flex flex-wrap gap-x-8 gap-y-2 text-sm font-medium text-primary-100">
                 {['fact1', 'fact2', 'fact3'].map((k) => (
                   <li key={k} className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-secondary-400" aria-hidden="true" />
                     {t(`landing.hero.${k}`)}
                   </li>
                 ))}
@@ -208,21 +193,17 @@ const Landing = () => {
         <section id="services" className="scroll-mt-20 bg-gray-50 py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="max-w-2xl">
-              <Eyebrow>{t('landing.services.eyebrow')}</Eyebrow>
               <h2 className="mt-2 text-3xl font-bold tracking-tight text-primary-900 sm:text-4xl">{t('landing.services.title')}</h2>
               <p className="mt-4 text-lg text-gray-600">{t('landing.services.subtitle')}</p>
             </div>
-            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {SERVICES.map(({ key, icon: Icon }) => (
-                <article key={key} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-100 text-primary-700">
-                    <Icon className="h-6 w-6" aria-hidden="true" />
-                  </span>
-                  <h3 className="mt-5 text-lg font-semibold text-gray-900">{t(`landing.services.${key}.title`)}</h3>
-                  <p className="mt-2 text-base text-gray-600">{t(`landing.services.${key}.body`)}</p>
-                </article>
+            <ul className="mt-12 divide-y divide-gray-300 border-y border-gray-300">
+              {SERVICES.map((key) => (
+                <li key={key} className="grid gap-2 py-8 md:grid-cols-3 md:gap-8">
+                  <h3 className="text-xl font-semibold text-primary-900">{t(`landing.services.${key}.title`)}</h3>
+                  <p className="text-lg text-gray-700 md:col-span-2">{t(`landing.services.${key}.body`)}</p>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         </section>
 
@@ -230,7 +211,6 @@ const Landing = () => {
         <section id="process" className="scroll-mt-20 py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="max-w-2xl">
-              <Eyebrow>{t('landing.process.eyebrow')}</Eyebrow>
               <h2 className="mt-2 text-3xl font-bold tracking-tight text-primary-900 sm:text-4xl">{t('landing.process.title')}</h2>
             </div>
             <ol className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
@@ -249,7 +229,6 @@ const Landing = () => {
         <section className="bg-secondary-50 py-16">
           <div className="mx-auto flex max-w-7xl flex-col items-start gap-6 px-4 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
             <div className="max-w-2xl">
-              <Eyebrow>{t('landing.ai.eyebrow')}</Eyebrow>
               <h2 className="mt-2 text-2xl font-bold text-primary-900 sm:text-3xl">{t('landing.ai.title')}</h2>
               <p className="mt-3 text-lg text-gray-700">{t('landing.ai.body')}</p>
             </div>
@@ -266,7 +245,6 @@ const Landing = () => {
         <section id="about" className="scroll-mt-20 py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="max-w-2xl">
-              <Eyebrow>{t('landing.about.eyebrow')}</Eyebrow>
               <h2 className="mt-2 text-3xl font-bold tracking-tight text-primary-900 sm:text-4xl">{t('landing.about.title')}</h2>
               <p className="mt-4 text-lg text-gray-600">{t('landing.about.body')}</p>
             </div>
@@ -309,7 +287,6 @@ const Landing = () => {
         {/* FAQ */}
         <section id="faq" className="scroll-mt-20 bg-gray-50 py-20">
           <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-            <Eyebrow>{t('landing.faq.eyebrow')}</Eyebrow>
             <h2 className="mt-2 text-3xl font-bold tracking-tight text-primary-900 sm:text-4xl">{t('landing.faq.title')}</h2>
             <div className="mt-8 divide-y divide-gray-200 rounded-2xl border border-gray-200 bg-white">
               {[1, 2, 3, 4, 5, 6].map((n) => (
@@ -329,7 +306,6 @@ const Landing = () => {
         <section id="contact" className="scroll-mt-20 py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="max-w-2xl">
-              <Eyebrow>{t('landing.contact.eyebrow')}</Eyebrow>
               <h2 className="mt-2 text-3xl font-bold tracking-tight text-primary-900 sm:text-4xl">{t('landing.contact.title')}</h2>
               <p className="mt-4 text-lg text-gray-600">{t('landing.contact.subtitle')}</p>
             </div>

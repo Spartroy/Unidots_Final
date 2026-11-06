@@ -1,0 +1,1 @@
+Client order list. One chip row (status vocabulary, with counts), one search field, a single New order primary, and rows with Reorder and View details as secondary buttons (the row title is the link). Removed: the "Printing Order" line with a meaningless trend icon, and uppercase status pills. Sample data.

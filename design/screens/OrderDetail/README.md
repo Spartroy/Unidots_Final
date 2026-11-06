@@ -1,0 +1,1 @@
+Order detail: header card with order number, status, priority and the five-stage `OrderStepper`; `Tabs` for Details, Progress, Files, Comments; `DefList` cards; and an `ActionBar` whose one primary is the next valid step. Money, sizes and units follow the formatting rules in the README. Sample data.

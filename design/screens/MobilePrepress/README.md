@@ -1,0 +1,1 @@
+Prepress phone screens in Arabic RTL: active orders with a progress bar of finished processes, one order's processes as a single column of large cards (the first pending one is the only primary), and history. The back chevron flips in RTL (`ud-flip`), tabs sit at the bottom.

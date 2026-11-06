@@ -1,0 +1,1 @@
+Client phone screens: home with the latest order and four tiles, orders with search and chips, and the new order form split into three short steps (Basics, Size, Inks) so one thumb can finish it. New order is the single primary above the bottom tabs.

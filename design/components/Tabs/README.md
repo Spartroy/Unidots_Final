@@ -1,0 +1,3 @@
+Section switcher inside one page (Details, Progress, Files, Comments). Props: `tabs` (strings or `{label, count}`), `active`, `label`.
+
+The active tab is `text` with a 3px `accent` underline; the others are `text-muted`. Counts are optional and only shown when a count is meaningful (0 files is shown, a bare 0 comments is not needed). Never use tabs to switch the whole page: that is `TopBar` navigation.

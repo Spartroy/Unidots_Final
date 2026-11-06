@@ -1,0 +1,1 @@
+Files tab as a `FileList` (staff files, design links, ripping links, each with a text action) plus the upload `Dropzone`. Below it, the Choose delivery method dialog: `RadioGroup` options with the optional temporary address only under the selected option, and the registered address as a `Notice`. Cancel and Confirm are secondary and primary.

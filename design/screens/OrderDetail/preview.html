@@ -1,0 +1,31 @@
+<!-- @dsCard group="Screens" width=1200 height=1280 page subtitle="Order detail, Details tab. Sample data." -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap">
+<style>body{margin:0;padding:16px;background:var(--bg-app);color:var(--text);font-family:var(--font-sans)}.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:12px}.stack{display:flex;flex-direction:column;gap:16px;max-width:560px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.card-h{margin:0 0 4px;font:600 18px/26px var(--font-sans)}.card-s{margin:0 0 16px;color:var(--text-muted);font-size:14px}h2.sec{margin:0 0 12px;font:600 18px/26px var(--font-sans)}.pad0{padding:0!important;overflow:hidden}.pad0>.hd{padding:16px 16px 0}</style></head>
+<body><div id="r"></div><script>
+(function(){var h=React.createElement,U=window.UniDots;
+function App(){var nav=['Dashboard','Orders','Claims','Tasks','People','Reports','Production'];
+return h('div',{className:'ud-shell'},
+ h(U.ShellParts,{portal:'Manager portal',role:'Manager',nav:nav,active:1,notifications:3,title:'Rice Bag 5kg',crumbs:['Orders','ORD-2611-0092'],user:'Admin Manager'}),
+ h('div',{style:{display:'flex',flexDirection:'column',gap:16,paddingTop:24}},
+  h('section',{className:'ud-card',style:{display:'flex',flexDirection:'column',gap:20}},
+   h('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:12}},
+    h('div',{style:{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap'}},h('span',{className:'ud-order-no ud-root'},'ORD-2611-0092'),h(U.StatusBadge,{status:'submitted'}),h(U.PriorityBadge,{level:'medium'}),h('span',{style:{color:'var(--text-muted)',fontSize:14}},'Ordered Nov 4, 2026 · Due Nov 11, 2026')),
+    h(U.Button,{variant:'secondary'},'Download receipt')),
+   h(U.OrderStepper,{current:1})),
+  h(U.Tabs,{label:'Order sections',active:0,tabs:['Details','Progress',{label:'Files',count:0},{label:'Comments',count:0}]}),
+  h('div',{className:'grid2'},
+   h('section',{className:'ud-card'},h('h2',{className:'card-h'},'Customer'),h('p',{className:'card-s'},'Who ordered'),h(U.DefList,{items:[['Name','Tulip'],['Email',h('a',{href:'#',className:'ud-link'},'Tulip@unidots.com')],['Ordered','Nov 4, 2026, 10:30 PM'],['Shipping city','Cairo']]})),
+   h('section',{className:'ud-card'},h('h2',{className:'card-h'},'Order'),h('p',{className:'card-s'},'Commercial details'),h(U.DefList,{items:[['Type','New order'],['Assigned to','Mayar'],['Material','Strong'],['Thickness','2.54 mm'],['Printing mode','Surface printing'],['Estimated price','EGP 353,531.10']]}))),
+  h('div',{className:'grid2'},
+   h('section',{className:'ud-card'},h('h2',{className:'card-h'},'Technical specifications'),h('p',{className:'card-s'},'Used by design and prepress'),h(U.DefList,{items:[['Dimensions','3,670 × 1,690 mm'],['Repeat count','1 wide × 2 high'],['Number of colours','3'],['Colours','Black, White, Blue']]})),
+   h('section',{className:'ud-card'},h('h2',{className:'card-h'},'Notes'),h('p',{className:'card-s'},'From the client'),h(U.DefList,{cols:1,items:[['Description','Test order for QA, auto generated.'],['Additional notes','Auto-filled notes for quick testing.']]}))),
+  h(U.ActionBar,null,
+   h(U.Button,{variant:'secondary'},'Back to orders'),
+   h('div',{style:{width:200}},h(U.Select,{label:'Assigned designer',options:['Mayar','Arwa Nader','Mahmoud']})),
+   h(U.Button,{variant:'secondary'},'Reassign'),
+   h('span',{className:'ud-spacer'}),
+   h(U.Button,{variant:'ghost'},'Cancel order…'),
+   h('div',{style:{display:'flex',flexDirection:'column',gap:4,alignItems:'flex-end'}},h('span',{className:'ud-hint'},'Next step: Design'),h(U.Button,null,'Send to design')))));
+}
+ReactDOM.createRoot(document.getElementById('r')).render(h(App));})();
+</script></body></html>

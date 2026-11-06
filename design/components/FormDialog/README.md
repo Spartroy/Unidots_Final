@@ -1,0 +1,3 @@
+A modal form with a two-column field grid. Props: `title`, `description`, `cancelLabel`, `submitLabel`, children (`Field`, `Select`; add `className="ud-wide"` to a wrapper for a full-width row).
+
+The submit is the only primary; Cancel is secondary. Name the submit with the verb and object (`Create employee`). The consumer provides the overlay, focus trap, Escape, and `autocomplete="off"` or `new-password` on credential fields so the browser never pre-fills the manager's own details. A form field must match its list: never offer a department or role the list can't show.

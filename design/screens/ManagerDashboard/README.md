@@ -1,0 +1,1 @@
+Manager home. Five KPI tiles lead with what needs action (Overdue, Due today, Unassigned), then Orders by status (`StatusBars`) and Orders per month (`TrendChart`), then a Needs attention table. The page title appears once, in `TopBar`; there is no welcome banner. Sample data.

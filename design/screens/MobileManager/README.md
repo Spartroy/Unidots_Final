@@ -1,0 +1,1 @@
+Manager phone screens: attention tiles and the overdue list, an orders list with filters, and order detail with Assign designer as the one primary and Put on hold secondary. Five bottom tabs; People and Production sit under More.
