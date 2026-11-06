@@ -1,0 +1,66 @@
+/* Motion system. Short, purposeful, and switched off for people who ask for less motion. */
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 140ms;
+  --dur-base: 240ms;
+  --dur-slow: 420ms;
+}
+
+@keyframes ud-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes ud-pop { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes ud-slide-up { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes ud-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ud-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes ud-grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes ud-bell { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(14deg); } 30% { transform: rotate(-12deg); } 45% { transform: rotate(8deg); } 60% { transform: rotate(-4deg); } }
+
+/* Staggered entrance: set style={{ '--i': index }} on each item */
+.ud-rise { animation: ud-rise var(--dur-slow) var(--ease-out) both; animation-delay: calc(var(--i, 0) * 55ms); }
+.ud-pop { animation: ud-pop var(--dur-base) var(--ease-out) both; animation-delay: calc(var(--i, 0) * 40ms); }
+
+/* Press and hover feedback */
+.ud-btn { transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
+.ud-btn:active:not([disabled]) { transform: scale(0.97); }
+.ud-btn-primary:hover:not([disabled]) { box-shadow: 0 4px 14px rgba(15, 58, 87, 0.25); }
+.ud-card { transition: box-shadow var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out); }
+a.ud-card:hover, .ud-kpi:hover { box-shadow: var(--shadow-overlay); transform: translateY(-2px); }
+.ud-chip, .ud-tab, .ud-pg, .ud-iconbtn, .ud-themebtn { transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+.ud-chip:active, .ud-pg:active { transform: scale(0.95); }
+.ud-link { transition: color var(--dur-fast) var(--ease-out); }
+
+/* Navigation: the active item slides in, links nudge on hover */
+.ud-side nav a { transition: background-color var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out); }
+.ud-side nav a:hover:not([aria-current='page']) { transform: translateX(3px); }
+[dir='rtl'] .ud-side nav a:hover:not([aria-current='page']) { transform: translateX(-3px); }
+.ud-mtabs a, .ud-mtabs button { transition: color var(--dur-fast) var(--ease-out); }
+
+/* Overlays */
+.ud-sheet { animation: ud-fade var(--dur-base) var(--ease-out) both; }
+.ud-sheet-panel { animation: ud-slide-up var(--dur-slow) var(--ease-out) both; }
+.ud-toast { animation: ud-slide-up var(--dur-base) var(--ease-out) both; }
+.ud-dialog { animation: ud-pop var(--dur-base) var(--ease-out) both; }
+
+/* Stepper and progress: dots pop in, bars fill */
+.ud-step[data-state='done'] .ud-dot, .ud-step[data-state='current'] .ud-dot { animation: ud-pop var(--dur-slow) var(--ease-out) both; animation-delay: calc(var(--i, 0) * 90ms); }
+.ud-step::before { transform-origin: right center; }
+.ud-progress span, .ud-sb-fill { transition: width 700ms var(--ease-out); }
+.ud-progress span { animation: ud-grow-x 700ms var(--ease-out) both; transform-origin: left center; }
+[dir='rtl'] .ud-progress span { transform-origin: right center; }
+
+/* Loading skeletons */
+.ud-skel { border-radius: var(--radius-md); background: linear-gradient(90deg, var(--border) 25%, var(--selected) 37%, var(--border) 63%); background-size: 400% 100%; animation: ud-shimmer 1.6s linear infinite; }
+
+/* Notification bell: a short shake when something arrives (add the class for 700ms) */
+.ud-bell-shake svg { animation: ud-bell 700ms var(--ease-in-out); transform-origin: top center; }
+
+/* Colour theme change: crossfade everything once */
+html.ud-theme-fade, html.ud-theme-fade * { transition: background-color 320ms ease, color 320ms ease, border-color 320ms ease, fill 320ms ease !important; }
+
+/* Page transitions are done in React (PageTransition); this only prevents layout jumps */
+.ud-page { min-width: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ud-rise, .ud-pop, .ud-sheet, .ud-sheet-panel, .ud-toast, .ud-dialog, .ud-skel, .ud-progress span, .ud-step .ud-dot { animation: none !important; }
+  .ud-btn, .ud-card, .ud-side nav a { transition: none !important; transform: none !important; }
+}

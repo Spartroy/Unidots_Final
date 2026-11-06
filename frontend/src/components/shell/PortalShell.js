@@ -5,6 +5,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import NotificationDropdown from '../common/NotificationDropdown';
 import { Ico, Avatar } from '../../design/kit';
+import PageTransition from './PageTransition';
 import logoWhite from '../../assets/logo-white.png';
 
 const ICONS = {
@@ -162,7 +163,7 @@ const PortalShell = ({ portal }) => {
           </header>
 
           <main id="main-content" tabIndex={-1} className="ud-content ud-root" data-theme={themed ? undefined : 'light'}>
-            <Outlet />
+            <PageTransition><Outlet /></PageTransition>
           </main>
         </div>
 

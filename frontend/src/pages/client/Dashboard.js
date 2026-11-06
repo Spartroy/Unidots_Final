@@ -6,6 +6,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { usePageChrome } from '../../components/shell/PortalShell';
 import { KpiTile, OrderStepper, DataTable, Notice, EmptyState } from '../../design/kit';
 import OrderStatusBadge from '../../components/common/OrderStatusBadge';
+import { CountUp, Skeleton } from '../../design/motionKit';
 import { stepperIndex } from '../../utils/orderStatus';
 
 // Client home: where the latest order is, the totals, and recent orders.
@@ -58,9 +59,13 @@ const ClientDashboard = () => {
   }
   if (!stats) {
     return (
-      <p role="status" className="ud-hint">
-        {t('common.loading')}
-      </p>
+      <div role="status" aria-label={t('common.loading')} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <Skeleton height={150} />
+        <div className="ud-grid ud-grid-6">
+          {[0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} height={120} />)}
+        </div>
+        <Skeleton height={220} />
+      </div>
     );
   }
 
@@ -84,7 +89,7 @@ const ClientDashboard = () => {
   return (
     <>
       {latest ? (
-        <section className="ud-card ud-feature" aria-labelledby="latest-title">
+        <section className="ud-card ud-feature ud-rise" aria-labelledby="latest-title">
           <div className="ud-feature-top">
             <div>
               <span className="ud-hint">{t('dash.latest')}</span>
@@ -111,13 +116,15 @@ const ClientDashboard = () => {
       )}
 
       <div className="ud-grid ud-grid-6">
-        {kpis.map((k) => (
-          <KpiTile key={k.key} icon={k.icon} label={k.label} value={k.value} action={<Link className="ud-link" style={{ fontSize: 14, marginBlockStart: 4 }} to={k.to}>{k.action}</Link>} />
+        {kpis.map((k, i) => (
+          <div key={k.key} className="ud-rise" style={{ '--i': i + 1 }}>
+          <KpiTile icon={k.icon} label={k.label} value={<CountUp value={k.value} />} action={<Link className="ud-link" style={{ fontSize: 14, marginBlockStart: 4 }} to={k.to}>{k.action}</Link>} />
+          </div>
         ))}
       </div>
 
       {recent.length > 0 && (
-        <section className="ud-card ud-pad0" aria-labelledby="recent-title">
+        <section className="ud-card ud-pad0 ud-rise" style={{ '--i': 7 }} aria-labelledby="recent-title">
           <div className="ud-card-head">
             <div>
               <h2 id="recent-title" className="ud-card-h">{t('dash.recent')}</h2>

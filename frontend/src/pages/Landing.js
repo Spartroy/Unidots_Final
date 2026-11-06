@@ -13,38 +13,12 @@ import logo from '../assets/logo-teal.png';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageToggle from '../components/common/LanguageToggle';
 import usePageTitle from '../utils/usePageTitle';
+import HeroPlate from '../components/landing/HeroPlate';
+import PressSection from '../components/landing/PressSection';
 
 const PHONES = ['+201144142992', '+201144142990', '+201117229555'];
 const EMAIL = 'info@unidots.com';
 const NAV = ['services', 'process', 'about', 'faq', 'contact'];
-
-// The brand's halftone motif: a round field of dots that grow from top-left to bottom-right.
-const HalftoneArt = ({ className = '' }) => {
-  const size = 11;
-  const step = 34;
-  const dots = [];
-  for (let r = 0; r < size; r++) {
-    for (let c = 0; c < size; c++) {
-      const cx = c * step + step / 2;
-      const cy = r * step + step / 2;
-      const d = Math.hypot(cx - (size * step) / 2, cy - (size * step) / 2);
-      if (d > (size * step) / 2 - 6) continue; // keep it circular
-      const radius = 2 + ((r + c) / (2 * (size - 1))) * 12;
-      dots.push(<circle key={`${r}-${c}`} cx={cx} cy={cy} r={radius.toFixed(1)} />);
-    }
-  }
-  return (
-    <svg
-      viewBox={`0 0 ${size * step} ${size * step}`}
-      className={className}
-      fill="currentColor"
-      aria-hidden="true"
-      focusable="false"
-    >
-      {dots}
-    </svg>
-  );
-};
 
 const SERVICES = ['plates', 'design', 'supply', 'delivery'];
 
@@ -159,7 +133,7 @@ const Landing = () => {
       <main id="main">
         {/* Hero */}
         <section className="relative overflow-hidden bg-primary-900 text-white">
-          <HalftoneArt className="pointer-events-none absolute -end-24 top-1/2 hidden h-[34rem] w-[34rem] -translate-y-1/2 text-secondary-400 opacity-30 md:block rtl:-scale-x-100" />
+          <HeroPlate className="pointer-events-none absolute -end-28 top-1/2 hidden h-[40rem] w-[40rem] -translate-y-1/2 text-secondary-400 opacity-40 md:block" />
           <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
             <div className="max-w-3xl">
               <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">{t('landing.hero.title')}</h1>
@@ -207,23 +181,8 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* Process */}
-        <section id="process" className="scroll-mt-20 py-20">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="max-w-2xl">
-              <h2 className="mt-2 text-3xl font-bold tracking-tight text-primary-900 sm:text-4xl">{t('landing.process.title')}</h2>
-            </div>
-            <ol className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-              {[1, 2, 3, 4].map((n) => (
-                <li key={n} className="relative">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-700 text-lg font-bold text-white">{n}</span>
-                  <h3 className="mt-4 text-lg font-semibold text-gray-900">{t(`landing.process.s${n}.title`)}</h3>
-                  <p className="mt-2 text-base text-gray-600">{t(`landing.process.s${n}.body`)}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
+        {/* Process: a flexographic press that runs as you scroll */}
+        <PressSection />
 
         {/* AI tool */}
         <section className="bg-secondary-50 py-16">

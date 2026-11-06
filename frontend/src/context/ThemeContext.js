@@ -22,6 +22,10 @@ export const ThemeProvider = ({ children }) => {
   }, [theme]);
 
   const toggleTheme = useCallback(() => {
+    // crossfade colours once instead of snapping
+    const root = document.documentElement;
+    root.classList.add('ud-theme-fade');
+    window.setTimeout(() => root.classList.remove('ud-theme-fade'), 400);
     setTheme((current) => {
       const next = current === 'dark' ? 'light' : 'dark';
       try {
