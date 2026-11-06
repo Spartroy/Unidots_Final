@@ -17,6 +17,7 @@ import templateRoutes from './src/routes/templateRoutes.js';
 import chatRoutes from './src/routes/chatRoutes.js';
 import acidSolutionRoutes from './src/routes/acidSolutionRoutes.js';
 import plateRoutes from './src/routes/plateRoutes.js';
+import contactRoutes from './src/routes/contactRoutes.js';
 
 // Import middleware
 import { errorHandler } from './src/middleware/errorMiddleware.js';
@@ -54,6 +55,7 @@ app.use('/api/templates', templateRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/acid-solution', acidSolutionRoutes);
 app.use('/api/plates', plateRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

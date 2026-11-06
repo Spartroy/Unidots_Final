@@ -12,6 +12,7 @@ const portal = {
     { labelKey: 'nav.employees', href: '/manager/employees' },
     { labelKey: 'nav.clients', href: '/manager/clients' },
     { labelKey: 'nav.reports', href: '/manager/reports' },
+    { labelKey: 'nav.messages', href: '/manager/messages' },
   ],
   more: [
     { labelKey: 'nav.barrelManagement', href: '/manager/barrel-management' },

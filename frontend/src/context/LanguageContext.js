@@ -2,8 +2,10 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import AuthContext from './AuthContext';
 import en from '../locales/en';
 import ar from '../locales/ar';
+import landingEn from '../locales/landing.en';
+import landingAr from '../locales/landing.ar';
 
-const dictionaries = { en, ar };
+const dictionaries = { en: { ...en, ...landingEn }, ar: { ...ar, ...landingAr } };
 const STORAGE_KEY = 'unidots_lang';
 
 const readStored = () => {
@@ -49,7 +51,7 @@ export const LanguageProvider = ({ children }) => {
   // Optional {name} placeholders: t('hello', { name: 'Sam' }) with 'Hello {name}'.
   const t = useCallback(
     (key, vars) => {
-      let text = dictionaries[lang][key] ?? en[key] ?? key;
+      let text = dictionaries[lang][key] ?? dictionaries.en[key] ?? key;
       if (vars) {
         Object.entries(vars).forEach(([k, v]) => {
           text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));

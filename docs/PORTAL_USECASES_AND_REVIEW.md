@@ -140,3 +140,10 @@ Confirmed by you: the default shipping company ("Middle East") stays.
 - **Notifications:** in-app notifications already fire on status changes (backend). Email / WhatsApp / SMS were **not** added: they need a provider and credentials (you skipped email earlier). Pick a provider when you want them.
 
 Phase 2 status: done except external notifications.
+
+## Phase 3 progress (public website and brand)
+- **Landing page redesigned** (`pages/Landing.js`) in the brand blue/teal with the halftone-dot motif: sticky header, hero, four services, four-step "how it works", AI dot-detector teaser, about (mission, vision, team), FAQ, contact and footer. Fully English/Arabic with right-to-left layout (copy in `locales/landing.en.js` / `landing.ar.js`). Accessible: skip link, landmarks, labelled form, keyboard-friendly FAQ.
+- **Working contact form:** `POST /api/contact` saves the message (spam honeypot and a 5-per-hour limit per visitor address), notifies every manager in-app, and managers read and mark messages in **Manager > Messages** (`/manager/messages`). No email provider needed; email can be added later.
+- **SEO basics:** page title and meta description, social-sharing tags, LocalBusiness structured data (address, phones, email), `robots.txt` hiding the portals. Not done: `sitemap.xml` (needs the final website address) and pre-rendering for search engines (the site is a single-page app).
+- **Copy to review:** the "Prepress supplies" service text is generic because the site never described it. Please correct it if there is something specific to say. Services, FAQ answers and the process steps describe how the platform actually works.
+- **Brief for Claude Design:** `docs/BRANDING_GUIDE.md` is ready to paste.

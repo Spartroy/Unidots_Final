@@ -122,6 +122,18 @@ const en = {
   'status.next.Cancelled': 'This order was cancelled. You can place a new order any time.',
   'status.title.On Hold': 'On hold',
   'status.next.On Hold': 'Work is paused. Please check the comments or contact UniDots.',
+
+  'nav.messages': 'Messages',
+  'messages.filters': 'Filter messages',
+  'messages.filter.new': 'New',
+  'messages.filter.handled': 'Handled',
+  'messages.filter.all': 'All',
+  'messages.empty': 'No messages here.',
+  'messages.reply': 'Reply by email',
+  'messages.markHandled': 'Mark as handled',
+  'messages.markNew': 'Mark as new',
+  'messages.loadError': 'We could not load the messages.',
+  'messages.updateError': 'We could not update the message.',
 };
 
 export default en;

@@ -114,6 +114,18 @@ const ar = {
   'status.next.Cancelled': 'تم إلغاء هذا الأوردر. يمكنك تقديم أوردر جديد في أي وقت.',
   'status.title.On Hold': 'معلّق',
   'status.next.On Hold': 'العمل متوقف مؤقتًا. راجع التعليقات أو تواصل مع يونيدوتس.',
+
+  'nav.messages': 'الرسائل',
+  'messages.filters': 'تصفية الرسائل',
+  'messages.filter.new': 'جديدة',
+  'messages.filter.handled': 'تمت معالجتها',
+  'messages.filter.all': 'الكل',
+  'messages.empty': 'لا توجد رسائل هنا.',
+  'messages.reply': 'الرد بالبريد',
+  'messages.markHandled': 'تحديد كمُعالَجة',
+  'messages.markNew': 'تحديد كجديدة',
+  'messages.loadError': 'تعذّر تحميل الرسائل.',
+  'messages.updateError': 'تعذّر تحديث الرسالة.',
 };
 
 export default ar;

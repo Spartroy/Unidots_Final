@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /client
+Disallow: /employee
+Disallow: /manager
+Disallow: /prepress
+Disallow: /courier
+Disallow: /login
+Disallow: /register

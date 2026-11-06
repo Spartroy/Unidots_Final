@@ -53,6 +53,7 @@ import ManagerClients from './pages/manager/Clients';
 import ManagerClientDetail from './pages/manager/ClientDetail';
 import ManagerProfile from './pages/manager/Profile';
 import MonthlyReports from './pages/manager/MonthlyReports';
+import ManagerMessages from './pages/manager/Messages';
 import BarrelManagement from './pages/manager/BarrelManagement';
 import ManagerPlateMonitoring from './pages/manager/PlateMonitoring';
 
@@ -148,6 +149,7 @@ function App() {
             <Route path="barrel-management" element={<BarrelManagement />} />
             <Route path="plate-monitoring" element={<ManagerPlateMonitoring />} />
             <Route path="reports" element={<MonthlyReports />} />
+            <Route path="messages" element={<ManagerMessages />} />
             <Route path="profile" element={<ManagerProfile />} />
           </Route>
 
