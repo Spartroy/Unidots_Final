@@ -4,104 +4,84 @@ import { toast } from 'react-toastify';
 import api from '../../utils/api';
 import useAutoRefresh from '../../hooks/useAutoRefresh';
 import { useLanguage } from '../../context/LanguageContext';
+import { usePageChrome } from '../../components/shell/PortalShell';
+import { Button, EmptyState, Notice, StatusBadge } from '../../design/kit';
+import { Field, Select } from '../../design/controls';
+import { Skeleton } from '../../design/motionKit';
 
 const MATERIALS = ['Flint', 'Strong', 'Taiwan', 'Other'];
-const THICKNESSES = [1.14, 1.7, 2.54];
-const inputClass = 'block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500';
+const THICKNESSES = ['1.14', '1.7', '2.54'];
 
-const ItemRow = ({ item, onChanged }) => {
+const Level = ({ low }) => {
   const { t } = useLanguage();
+  return <StatusBadge status={low ? 'cancelled' : 'completed'} label={t(low ? 'inventory.low' : 'inventory.ok')} />;
+};
+
+const Mini = ({ id, label, onSubmit, button, ...props }) => (
+  <form onSubmit={onSubmit} style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+    <div style={{ flex: 1, minWidth: 0 }}><Field id={id} label={label} type="number" dir="ltr" required {...props} /></div>
+    <Button type="submit" variant="secondary" style={{ flex: 'none' }}>{button}</Button>
+  </form>
+);
+
+const ItemCard = ({ item, onChanged, i }) => {
+  const { t, lang, dir } = useLanguage();
   const [receive, setReceive] = useState('');
   const [count, setCount] = useState('');
   const [threshold, setThreshold] = useState(String(item.lowStockThreshold));
   const [history, setHistory] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  const run = async (fn, okMsg) => {
+  const run = async (fn, ok) => {
     try {
       setBusy(true);
       await fn();
-      if (okMsg) toast.success(okMsg);
+      if (ok) toast.success(ok);
       onChanged();
+      return true;
     } catch (e) {
       toast.error(e.response?.data?.message || t('inventory.error'));
+      return false;
     } finally {
       setBusy(false);
     }
   };
-
   const loadHistory = async () => {
     try {
-      const res = await api.get(`/api/inventory/${item._id}/movements`);
-      setHistory(res.data);
+      const r = await api.get(`/api/inventory/${item._id}/movements`);
+      setHistory(r.data);
     } catch (e) {
       toast.error(t('inventory.error'));
     }
   };
 
   return (
-    <li className="rounded-lg bg-white p-4 shadow">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <li className="ud-card ud-rise" style={{ '--i': i, display: 'flex', flexDirection: 'column', gap: 16 }} dir={dir}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
         <div>
-          <p className="font-semibold text-gray-900">{item.material} · {item.thickness} mm</p>
-          <p className="text-sm text-gray-600">{t('inventory.onHand')}: <b>{item.quantity} m²</b></p>
+          <h3 className="ud-card-h">{item.material} · <bdi dir="ltr">{item.thickness} mm</bdi></h3>
+          <p className="ud-card-s">{t('inventory.onHand')}: <b><bdi dir="ltr">{item.quantity} m²</bdi></b></p>
         </div>
-        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${item.low ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-          {item.low ? t('inventory.low') : t('inventory.ok')}
-        </span>
+        <Level low={item.low} />
       </div>
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            run(() => api.post(`/api/inventory/${item._id}/receive`, { quantity: Number(receive) }), t('inventory.received')).then(() => setReceive(''));
-          }}
-        >
-          <label htmlFor={`rec-${item._id}`} className="mb-1 block text-xs font-medium text-gray-600">{t('inventory.receive')} (m²)</label>
-          <div className="flex gap-2">
-            <input id={`rec-${item._id}`} type="number" min="0" step="0.01" required value={receive} onChange={(e) => setReceive(e.target.value)} className={inputClass} />
-            <button type="submit" disabled={busy} className="rounded-md bg-primary-700 px-3 text-sm font-semibold text-white hover:bg-primary-800 disabled:opacity-50">+</button>
-          </div>
-        </form>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            run(() => api.post(`/api/inventory/${item._id}/adjust`, { quantity: Number(count) }), t('inventory.counted')).then(() => setCount(''));
-          }}
-        >
-          <label htmlFor={`cnt-${item._id}`} className="mb-1 block text-xs font-medium text-gray-600">{t('inventory.count')} (m²)</label>
-          <div className="flex gap-2">
-            <input id={`cnt-${item._id}`} type="number" step="0.01" required value={count} onChange={(e) => setCount(e.target.value)} className={inputClass} />
-            <button type="submit" disabled={busy} className="rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-50">{t('inventory.set')}</button>
-          </div>
-        </form>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            run(() => api.put(`/api/inventory/${item._id}`, { lowStockThreshold: Number(threshold) }), t('inventory.thresholdSaved'));
-          }}
-        >
-          <label htmlFor={`thr-${item._id}`} className="mb-1 block text-xs font-medium text-gray-600">{t('inventory.alertBelow')} (m²)</label>
-          <div className="flex gap-2">
-            <input id={`thr-${item._id}`} type="number" min="0" step="0.01" required value={threshold} onChange={(e) => setThreshold(e.target.value)} className={inputClass} />
-            <button type="submit" disabled={busy} className="rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-50">{t('inventory.save')}</button>
-          </div>
-        </form>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 16 }}>
+        <Mini id={`rec-${item._id}`} label={`${t('inventory.receive')} (m²)`} min="0" step="0.01" value={receive} onChange={(e) => setReceive(e.target.value)} button="+" aria-label={t('inventory.receive')}
+          onSubmit={async (e) => { e.preventDefault(); if (await run(() => api.post(`/api/inventory/${item._id}/receive`, { quantity: Number(receive) }), t('inventory.received'))) setReceive(''); }} />
+        <Mini id={`cnt-${item._id}`} label={`${t('inventory.count')} (m²)`} step="0.01" value={count} onChange={(e) => setCount(e.target.value)} button={t('inventory.set')}
+          onSubmit={async (e) => { e.preventDefault(); if (await run(() => api.post(`/api/inventory/${item._id}/adjust`, { quantity: Number(count) }), t('inventory.counted'))) setCount(''); }} />
+        <Mini id={`thr-${item._id}`} label={`${t('inventory.alertBelow')} (m²)`} min="0" step="0.01" value={threshold} onChange={(e) => setThreshold(e.target.value)} button={t('inventory.save')}
+          onSubmit={(e) => { e.preventDefault(); run(() => api.put(`/api/inventory/${item._id}`, { lowStockThreshold: Number(threshold) }), t('inventory.thresholdSaved')); }} />
       </div>
-
-      <details className="mt-4" onToggle={(e) => e.target.open && !history && loadHistory()}>
-        <summary className="cursor-pointer text-sm font-medium text-primary-700">{t('inventory.history')}</summary>
-        {history && history.length === 0 && <p className="mt-2 text-sm text-gray-500">{t('inventory.noHistory')}</p>}
+      <details onToggle={(e) => e.target.open && !history && loadHistory()}>
+        <summary style={{ cursor: 'pointer', fontWeight: 600 }}>{t('inventory.history')}</summary>
+        {busy && <span className="ud-sr" role="status">{t('common.loading')}</span>}
+        {history && history.length === 0 && <p className="ud-card-s" style={{ marginBlockStart: 8 }}>{t('inventory.noHistory')}</p>}
         {history && history.length > 0 && (
-          <ul className="mt-2 divide-y divide-gray-100 text-sm">
+          <ul style={{ listStyle: 'none', margin: '8px 0 0', padding: 0 }}>
             {history.map((m) => (
-              <li key={m._id} className="flex flex-wrap justify-between gap-2 py-1">
-                <span>
-                  {new Date(m.createdAt).toLocaleDateString()} · {t(`inventory.reason.${m.reason}`)}
-                  {m.order?.orderNumber ? ` · ${m.order.orderNumber}` : ''}
-                </span>
-                <span className={m.delta < 0 ? 'text-red-700' : 'text-green-700'}>{m.delta > 0 ? '+' : ''}{m.delta} m²</span>
+              <li key={m._id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', paddingBlock: 6, borderBlockStart: '1px solid var(--border)' }}>
+                <span>{new Date(m.createdAt).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-GB')} · {t(`inventory.reason.${m.reason}`)}{m.order?.orderNumber ? ` · ${m.order.orderNumber}` : ''}</span>
+                <b dir="ltr" style={{ color: m.delta < 0 ? 'var(--danger)' : 'var(--status-completed-fg)' }}>{m.delta > 0 ? '+' : ''}{m.delta} m²</b>
               </li>
             ))}
           </ul>
@@ -111,23 +91,24 @@ const ItemRow = ({ item, onChanged }) => {
   );
 };
 
+// Manager: plate material in stock and the solvent level.
 const Inventory = () => {
-  const { t } = useLanguage();
+  const { t, dir } = useLanguage();
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [form, setForm] = useState({ material: 'Flint', thickness: '1.7', quantity: '', lowStockThreshold: '' });
   const [adding, setAdding] = useState(false);
+  usePageChrome({ subtitle: t('inventory.help') });
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get('/api/inventory');
-      setData(res.data);
+      const r = await api.get('/api/inventory');
+      setData(r.data);
       setError(null);
     } catch (e) {
       setError(e.response?.data?.message || t('inventory.loadError'));
     }
   }, [t]);
-
   useEffect(() => {
     load();
   }, [load]);
@@ -137,12 +118,7 @@ const Inventory = () => {
     e.preventDefault();
     try {
       setAdding(true);
-      await api.post('/api/inventory', {
-        material: form.material,
-        thickness: Number(form.thickness),
-        quantity: Number(form.quantity) || 0,
-        lowStockThreshold: Number(form.lowStockThreshold) || 0,
-      });
+      await api.post('/api/inventory', { material: form.material, thickness: Number(form.thickness), quantity: Number(form.quantity) || 0, lowStockThreshold: Number(form.lowStockThreshold) || 0 });
       toast.success(t('inventory.added'));
       setForm((f) => ({ ...f, quantity: '', lowStockThreshold: '' }));
       load();
@@ -153,84 +129,43 @@ const Inventory = () => {
     }
   };
 
-  if (error && !data) {
-    return (
-      <div role="alert" className="rounded-lg bg-white p-6 text-center shadow">
-        <p className="text-sm text-red-700">{error}</p>
-        <button type="button" onClick={load} className="mt-4 rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white">{t('common.retry')}</button>
-      </div>
-    );
-  }
-  if (!data) {
-    return (
-      <div className="flex h-48 items-center justify-center" role="status">
-        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-primary-600" />
-        <span className="sr-only">{t('common.loading')}</span>
-      </div>
-    );
-  }
-
+  if (error && !data) return <Notice tone="error">{error} <button type="button" className="ud-link" onClick={load}>{t('common.retry')}</button></Notice>;
+  if (!data) return <div role="status" aria-label={t('common.loading')}><Skeleton height={300} /></div>;
   const { items, solvent } = data;
 
   return (
-    <div className="space-y-6 px-4 sm:px-0">
-      <p className="text-sm text-gray-600">{t('inventory.help')}</p>
-
+    <div style={{ display: 'grid', gap: 16, maxWidth: 960 }} dir={dir}>
       {solvent && (
-        <section aria-labelledby="solvent-title" className="rounded-lg bg-white p-4 shadow">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 id="solvent-title" className="font-semibold text-gray-900">{t('inventory.solvent')}</h2>
-            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${solvent.low ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-              {solvent.low ? t('inventory.low') : t('inventory.ok')}
-            </span>
+        <section className="ud-card ud-rise" aria-labelledby="solvent-title" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <h2 id="solvent-title" className="ud-card-h">{t('inventory.solvent')}</h2>
+            <Level low={solvent.low} />
           </div>
-          <p className="mt-2 text-sm text-gray-700">
-            {t('inventory.solventLevel', { liters: Math.round(solvent.currentLiters), barrels: solvent.totalBarrels })}
-          </p>
-          <Link to="/manager/barrel-management" className="mt-2 inline-block text-sm font-medium text-primary-700 hover:underline">{t('inventory.manageBarrels')}</Link>
+          <p style={{ margin: 0 }}>{t('inventory.solventLevel', { liters: Math.round(solvent.currentLiters), barrels: solvent.totalBarrels })}</p>
+          <Link to="/manager/barrel-management" className="ud-link">{t('inventory.manageBarrels')}</Link>
         </section>
       )}
 
-      <section aria-labelledby="plates-title" className="space-y-3">
-        <h2 id="plates-title" className="font-semibold text-gray-900">{t('inventory.plates')}</h2>
+      <section aria-labelledby="plates-title" style={{ display: 'grid', gap: 12 }}>
+        <h2 id="plates-title" className="ud-card-h">{t('inventory.plates')}</h2>
         {items.length === 0 ? (
-          <p className="rounded-lg bg-white p-6 text-center text-sm text-gray-500 shadow">{t('inventory.empty')}</p>
+          <EmptyState dir={dir} title={t('inventory.empty')} />
         ) : (
-          <ul className="space-y-3">
-            {items.map((item) => (
-              <ItemRow key={item._id} item={item} onChanged={load} />
-            ))}
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 12 }}>
+            {items.map((item, i) => <ItemCard key={item._id} item={item} i={i} onChanged={load} />)}
           </ul>
         )}
       </section>
 
-      <form onSubmit={add} className="rounded-lg bg-white p-4 shadow">
-        <h2 className="font-semibold text-gray-900">{t('inventory.addTitle')}</h2>
-        <div className="mt-3 grid gap-3 sm:grid-cols-4">
-          <div>
-            <label htmlFor="new-material" className="mb-1 block text-xs font-medium text-gray-600">{t('inventory.material')}</label>
-            <select id="new-material" value={form.material} onChange={(e) => setForm({ ...form, material: e.target.value })} className={inputClass}>
-              {MATERIALS.map((m) => <option key={m}>{m}</option>)}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="new-thickness" className="mb-1 block text-xs font-medium text-gray-600">{t('inventory.thickness')}</label>
-            <select id="new-thickness" value={form.thickness} onChange={(e) => setForm({ ...form, thickness: e.target.value })} className={inputClass}>
-              {THICKNESSES.map((v) => <option key={v} value={v}>{v} mm</option>)}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="new-qty" className="mb-1 block text-xs font-medium text-gray-600">{t('inventory.opening')} (m²)</label>
-            <input id="new-qty" type="number" min="0" step="0.01" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} className={inputClass} />
-          </div>
-          <div>
-            <label htmlFor="new-thr" className="mb-1 block text-xs font-medium text-gray-600">{t('inventory.alertBelow')} (m²)</label>
-            <input id="new-thr" type="number" min="0" step="0.01" value={form.lowStockThreshold} onChange={(e) => setForm({ ...form, lowStockThreshold: e.target.value })} className={inputClass} />
-          </div>
+      <form onSubmit={add} className="ud-card ud-rise" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <h2 className="ud-card-h">{t('inventory.addTitle')}</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12 }}>
+          <Select label={t('inventory.material')} value={form.material} onChange={(e) => setForm({ ...form, material: e.target.value })} options={MATERIALS} />
+          <Select label={t('inventory.thickness')} value={form.thickness} onChange={(e) => setForm({ ...form, thickness: e.target.value })} options={THICKNESSES} />
+          <Field label={`${t('inventory.opening')} (m²)`} type="number" dir="ltr" min="0" step="0.01" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} />
+          <Field label={`${t('inventory.alertBelow')} (m²)`} type="number" dir="ltr" min="0" step="0.01" value={form.lowStockThreshold} onChange={(e) => setForm({ ...form, lowStockThreshold: e.target.value })} />
         </div>
-        <button type="submit" disabled={adding} className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-md bg-primary-700 px-5 py-2 text-sm font-semibold text-white hover:bg-primary-800 disabled:opacity-50">
-          {t('inventory.add')}
-        </button>
+        <div><Button type="submit" disabled={adding}>{t('inventory.add')}</Button></div>
       </form>
     </div>
   );
