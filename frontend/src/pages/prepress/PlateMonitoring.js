@@ -1,725 +1,302 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import api from '../../utils/api';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
-import {
-  Squares2X2Icon,
-  ArrowsPointingInIcon,
-  PlusIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-  ChartBarIcon,
-  TrashIcon,
-  RectangleGroupIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  DevicePhoneMobileIcon,
-  ArrowPathIcon
-} from '@heroicons/react/24/outline';
+import api from '../../utils/api';
+import { useLanguage } from '../../context/LanguageContext';
+import { usePageChrome } from '../../components/shell/PortalShell';
+import { Button, EmptyState, KpiTile, Notice } from '../../design/kit';
+import { Field, Select } from '../../design/controls';
+import { CountUp, Skeleton } from '../../design/motionKit';
+import Modal from '../../components/common/Modal';
+import { MATERIALS, THICKNESSES } from '../../utils/orderForm';
 
+const TO_CM = { cm: 1, mm: 0.1, inch: 2.54 };
 
-const PlateCanvas = ({ plate, placements, previewPlacement, isMobile = false }) => {
-  if (!plate) return null;
-  
-  // Responsive canvas dimensions
-  const canvasWidth = isMobile ? Math.min(window.innerWidth - 40, 820) : 820; // px
-  const canvasHeight = isMobile ? Math.min((canvasWidth * 420) / 820, 420) : 420; // px
-  const border = 2; // border stroke
-  const padding = border; // draw content inside the border
-  const innerWidth = canvasWidth - padding * 2;
-  const innerHeight = canvasHeight - padding * 2;
-  const scaleX = innerWidth / plate.widthCm;
-  const scaleY = innerHeight / plate.heightCm;
-
-  const rects = placements.map((p, idx) => ({
-    key: `p-${idx}`,
-    x: padding + p.xCm * scaleX,
-    y: padding + p.yCm * scaleY,
-    w: p.widthCm * scaleX,
-    h: p.heightCm * scaleY,
-    color: '#60a5fa',
-  }));
-
-  if (previewPlacement) {
-    rects.push({
-      key: 'preview',
-      x: padding + previewPlacement.xCm * scaleX,
-      y: padding + previewPlacement.yCm * scaleY,
-      w: previewPlacement.widthCm * scaleX,
-      h: previewPlacement.heightCm * scaleY,
-      color: '#f59e0b',
-      dashed: true,
-    });
-  }
-
-  // Draw background grid every 50 cm
-  const gridLines = [];
-  const stepX = 50 * scaleX;
-  for (let x = padding; x <= canvasWidth - padding + 0.5; x += stepX) {
-    gridLines.push(
-      <line key={`gx-${x}`} x1={x} y1={padding} x2={x} y2={canvasHeight - padding} stroke="#e5e7eb" strokeWidth={1} />
-    );
-  }
-  const stepY = 50 * scaleY;
-  for (let y = padding; y <= canvasHeight - padding + 0.5; y += stepY) {
-    gridLines.push(
-      <line key={`gy-${y}`} x1={padding} y1={y} x2={canvasWidth - padding} y2={y} stroke="#e5e7eb" strokeWidth={1} />
-    );
-  }
-
+// The plate drawn to scale. Colours come from theme variables so it works in light and dark.
+const Layout = ({ plate, placements, preview, label }) => {
+  const W = plate.widthCm;
+  const H = plate.heightCm;
+  const grid = [];
+  for (let x = 50; x < W; x += 50) grid.push(<line key={`x${x}`} x1={x} x2={x} y1={0} y2={H} stroke="var(--border)" strokeWidth={Math.max(W, H) / 600} />);
+  for (let y = 50; y < H; y += 50) grid.push(<line key={`y${y}`} x1={0} x2={W} y1={y} y2={y} stroke="var(--border)" strokeWidth={Math.max(W, H) / 600} />);
+  const sw = Math.max(W, H) / 400;
   return (
-    <svg width={canvasWidth} height={canvasHeight} className="rounded bg-white shadow border">
-      <defs>
-        <linearGradient id="plateGrad" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#f8fafc" />
-          <stop offset="100%" stopColor="#eef2ff" />
-        </linearGradient>
-      </defs>
-      {/* Plate background */}
-      <rect x={0} y={0} width={canvasWidth} height={canvasHeight} fill="url(#plateGrad)" stroke="#0f172a" strokeWidth={border} />
-      {/* Grid */}
-      <g>{gridLines}</g>
-      {/* Left/right margins */}
-      <rect x={padding} y={padding} width={plate.marginLeftCm * scaleX} height={innerHeight} fill="#e2e8f0" />
-      <rect x={canvasWidth - padding - plate.marginRightCm * scaleX} y={padding} width={plate.marginRightCm * scaleX} height={innerHeight} fill="#e2e8f0" />
-      {rects.map((r) => (
-        <g key={r.key}>
-          <rect x={r.x} y={r.y} width={r.w} height={r.h} fill={r.color} opacity={0.75} stroke="#1f2937" strokeDasharray={r.dashed ? '6 6' : '0'} />
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label={label} style={{ display: 'block', maxHeight: 460, background: 'var(--bg-card)', border: '2px solid var(--border-control)', borderRadius: 8 }}>
+      {grid}
+      <rect x={0} y={0} width={plate.marginLeftCm} height={H} fill="var(--border)" />
+      <rect x={W - plate.marginRightCm} y={0} width={plate.marginRightCm} height={H} fill="var(--border)" />
+      {placements.map((p, i) => (
+        <g key={i}>
+          <rect x={p.xCm} y={p.yCm} width={p.widthCm} height={p.heightCm} fill="var(--brand-500)" fillOpacity={0.65} stroke="var(--primary)" strokeWidth={sw} />
+          <text x={p.xCm + p.widthCm / 2} y={p.yCm + p.heightCm / 2} textAnchor="middle" dominantBaseline="middle" fontSize={Math.min(p.widthCm, p.heightCm, W / 12)} fill="var(--on-primary)" fontWeight="700">{i + 1}</text>
         </g>
       ))}
+      {preview && <rect x={preview.xCm} y={preview.yCm} width={preview.widthCm} height={preview.heightCm} fill="var(--status-submitted-bg)" fillOpacity={0.7} stroke="var(--status-submitted-fg)" strokeWidth={sw} strokeDasharray={`${sw * 4} ${sw * 3}`} />}
     </svg>
   );
 };
 
-const PlateMonitoring = () => {
-  const [plates, setPlates] = useState([]);
-  const [activePlateId, setActivePlateId] = useState('');
-  const [plateData, setPlateData] = useState(null); // { plate, stats }
-  const [simulation, setSimulation] = useState(null); // { fits, position, stats }
-  const [creating, setCreating] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showAddJobModal, setShowAddJobModal] = useState(false);
-  const [jobWidth, setJobWidth] = useState('');
-  const [jobHeight, setJobHeight] = useState('');
-  const [statsSummary, setStatsSummary] = useState(null);
-  const [prepressOrders, setPrepressOrders] = useState([]);
-  const [selectedOrderId, setSelectedOrderId] = useState('');
-  // Smooth slide-over state
-  const [placementsPanelMounted, setPlacementsPanelMounted] = useState(false);
-  const [placementsPanelOpen, setPlacementsPanelOpen] = useState(false);
-  // Mobile orientation state
-  const [isLandscape, setIsLandscape] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+const Swatch = ({ color, children, dashed }) => (
+  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+    <span aria-hidden="true" style={{ width: 14, height: 14, borderRadius: 3, background: color, border: dashed ? '2px dashed var(--status-submitted-fg)' : '1px solid var(--border-control)' }} />
+    {children}
+  </span>
+);
 
-  const openPlacementsPanel = () => {
-    if (!placementsPanelMounted) {
-      setPlacementsPanelMounted(true);
-      requestAnimationFrame(() => setPlacementsPanelOpen(true));
-    } else {
-      setPlacementsPanelOpen(true);
-    }
-  };
-
-  const closePlacementsPanel = () => {
-    setPlacementsPanelOpen(false);
-    setTimeout(() => setPlacementsPanelMounted(false), 300);
-  };
-
-  const loadPlates = async () => {
+const NewPlate = ({ onClose, onDone }) => {
+  const { t } = useLanguage();
+  const [f, setF] = useState({ name: '', widthCm: '500', heightCm: '500', marginLeftCm: '2', marginRightCm: '2', material: 'Flint', materialThickness: '1.7' });
+  const [busy, setBusy] = useState(false);
+  const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!(Number(f.widthCm) > 0 && Number(f.heightCm) > 0)) return toast.error(t('pm.create.err'));
     try {
-      const { data } = await api.get('/api/plates?status=Active');
-      setPlates(data);
-      if (data.length && !activePlateId) setActivePlateId(data[0]._id);
-    } catch (e) {
-      toast.error('Failed to load plates');
-    }
-  };
-
-  const loadPlate = async (id) => {
-    if (!id) return;
-    try {
-      const { data } = await api.get(`/api/plates/${id}`);
-      setPlateData(data);
-      setSimulation(null);
-    } catch (e) {
-      toast.error('Failed to load plate');
-    }
-  };
-
-  useEffect(() => {
-    loadPlates();
-    // Fetch global stats
-    (async () => {
-      try {
-        const { data } = await api.get('/api/plates/stats');
-        setStatsSummary(data);
-      } catch (e) {
-        // optional
-      }
-    })();
-  }, []);
-
-  // Check mobile orientation
-  useEffect(() => {
-    const checkOrientation = () => {
-      const isMobileDevice = window.innerWidth <= 768;
-      const isLandscapeOrientation = window.innerWidth > window.innerHeight;
-      setIsMobile(isMobileDevice);
-      setIsLandscape(isLandscapeOrientation);
-    };
-
-    checkOrientation();
-    window.addEventListener('resize', checkOrientation);
-    window.addEventListener('orientationchange', checkOrientation);
-
-    return () => {
-      window.removeEventListener('resize', checkOrientation);
-      window.removeEventListener('orientationchange', checkOrientation);
-    };
-  }, []);
-
-  useEffect(() => {
-    loadPlate(activePlateId);
-    // Clear selected order when plate changes as it might not be compatible
-    setSelectedOrderId('');
-  }, [activePlateId]);
-
-  const stats = plateData?.stats;
-  const plate = plateData?.plate;
-
-  const onSimulate = async () => {
-    if (!activePlateId || !jobWidth || !jobHeight) return;
-    const widthCm = Number(jobWidth);
-    const heightCm = Number(jobHeight);
-    if (Number.isNaN(widthCm) || Number.isNaN(heightCm)) {
-      toast.warn('Please enter valid numeric dimensions (cm)');
-      return;
-    }
-    try {
-      const { data } = await api.post(`/api/plates/${activePlateId}/simulate`, { widthCm, heightCm });
-      setSimulation(data);
-      if (!data.fits) toast.warning('Job does not fit on remaining space');
-    } catch (e) {
-      toast.error('Failed to simulate placement');
-    }
-  };
-
-  const onCommit = async () => {
-    if (!simulation?.fits || !simulation?.position) {
-      toast.warn('Simulate first and ensure it fits');
-      return;
-    }
-    try {
-      const widthCm = Number(jobWidth);
-      const heightCm = Number(jobHeight);
-      await api.post(`/api/plates/${activePlateId}/placements`, { widthCm, heightCm, orderId: selectedOrderId || undefined });
-      toast.success('Placement added');
-      setJobWidth('');
-      setJobHeight('');
-      setSelectedOrderId('');
-      setShowAddJobModal(false);
-      await loadPlate(activePlateId);
-    } catch (e) {
-      toast.error('Failed to add placement');
-    }
-  };
-
-  const [newPlate, setNewPlate] = useState({ 
-    name: '', 
-    widthCm: 500, 
-    heightCm: 500, 
-    marginLeftCm: 2, 
-    marginRightCm: 2,
-    material: 'Flint',
-    materialThickness: 1.7
-  });
-  const onCreatePlate = async () => {
-    if (!newPlate.widthCm || !newPlate.heightCm) return;
-    setCreating(true);
-    try {
-      await api.post('/api/plates', newPlate);
-      await loadPlates();
-      toast.success('Plate created');
-      setShowCreateModal(false);
-    } catch (e) {
-      toast.error('Failed to create plate');
+      setBusy(true);
+      await api.post('/api/plates', { ...f, widthCm: Number(f.widthCm), heightCm: Number(f.heightCm), marginLeftCm: Number(f.marginLeftCm), marginRightCm: Number(f.marginRightCm), materialThickness: Number(f.materialThickness) });
+      toast.success(t('pm.create.done'));
+      onDone();
+    } catch (err) {
+      toast.error(err.response?.data?.message || t('pm.create.failed'));
     } finally {
-      setCreating(false);
+      setBusy(false);
     }
   };
+  return (
+    <Modal title={t('pm.create.title')} onClose={onClose} actions={<><Button variant="secondary" onClick={onClose}>{t('pm.job.cancel')}</Button><Button type="submit" form="new-plate" disabled={busy}>{t('pm.create.submit')}</Button></>}>
+      <form id="new-plate" onSubmit={submit} noValidate style={{ display: 'grid', gap: 12 }}>
+        <Field label={t('pm.create.name')} value={f.name} onChange={set('name')} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+          <Field label={t('pm.create.width')} type="number" dir="ltr" min="1" value={f.widthCm} onChange={set('widthCm')} required />
+          <Field label={t('pm.create.height')} type="number" dir="ltr" min="1" value={f.heightCm} onChange={set('heightCm')} required />
+          <Field label={t('pm.create.marginL')} type="number" dir="ltr" min="0" value={f.marginLeftCm} onChange={set('marginLeftCm')} />
+          <Field label={t('pm.create.marginR')} type="number" dir="ltr" min="0" value={f.marginRightCm} onChange={set('marginRightCm')} />
+          <Select label={t('pm.create.material')} value={f.material} onChange={set('material')} options={MATERIALS} />
+          <Select label={t('pm.create.thickness')} value={f.materialThickness} onChange={set('materialThickness')} options={THICKNESSES.map(String)} />
+        </div>
+      </form>
+    </Modal>
+  );
+};
 
-  const onRemovePlacement = async (index) => {
+const AddJob = ({ plate, plateId, onClose, onDone, onPreview }) => {
+  const { t } = useLanguage();
+  const [orders, setOrders] = useState([]);
+  const [orderId, setOrderId] = useState('');
+  const [w, setW] = useState('');
+  const [h, setH] = useState('');
+  const [sim, setSim] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    api.get('/api/orders?status=In%20Prepress&limit=100')
+      .then((r) => setOrders((r.data.orders || []).filter((o) => o.specifications?.material === plate.material && Number(o.specifications?.materialThickness) === Number(plate.materialThickness))))
+      .catch(() => {});
+  }, [plate]);
+  useEffect(() => () => onPreview(null), [onPreview]);
+
+  const pick = (id) => {
+    setOrderId(id);
+    setSim(null);
+    onPreview(null);
+    const d = orders.find((o) => o._id === id)?.specifications?.dimensions;
+    if (!id) return;
+    if (!d) return toast.warn(t('pm.job.noDims'));
+    const k = TO_CM[d.unit || 'mm'] ?? 0.1;
+    setW(String(Number((Number(d.width) * k * (parseInt(d.widthRepeatCount, 10) || 1)).toFixed(2))));
+    setH(String(Number((Number(d.height) * k * (parseInt(d.heightRepeatCount, 10) || 1)).toFixed(2))));
+  };
+
+  const check = async () => {
+    const widthCm = Number(w);
+    const heightCm = Number(h);
+    if (!(widthCm > 0 && heightCm > 0)) return toast.error(t('pm.job.err'));
     try {
-      await api.delete(`/api/plates/${activePlateId}/placements`, { data: { index } });
-      toast.success('Placement removed');
-      await loadPlate(activePlateId);
+      const r = await api.post(`/api/plates/${plateId}/simulate`, { widthCm, heightCm });
+      setSim(r.data);
+      onPreview(r.data.fits && r.data.position ? { ...r.data.position, widthCm, heightCm } : null);
     } catch (e) {
-      toast.error('Failed to remove placement');
+      toast.error(e.response?.data?.message || t('pm.job.failed'));
     }
   };
-
-  const onCompletePlate = async () => {
+  const add = async () => {
+    if (!sim?.fits) return toast.warn(t('pm.job.checkFirst'));
     try {
-      await api.put(`/api/plates/${activePlateId}/complete`);
-      toast.success('Plate marked completed');
-      await loadPlates();
-      setActivePlateId('');
-      setPlateData(null);
+      setBusy(true);
+      await api.post(`/api/plates/${plateId}/placements`, { widthCm: Number(w), heightCm: Number(h), orderId: orderId || undefined });
+      toast.success(t('pm.job.added'));
+      onDone();
     } catch (e) {
-      toast.error('Failed to complete plate');
+      toast.error(e.response?.data?.message || t('pm.job.failed'));
+    } finally {
+      setBusy(false);
     }
-  };
-
-  const percentage = (value) => (value != null ? value.toFixed(1) + '%' : '—');
-  const usedUsablePct = plate && plateData?.stats?.usableArea > 0 ? (plateData.stats.usedArea / plateData.stats.usableArea) * 100 : 0;
-
-  // Orders in Prepress queue
-  const fetchPrepressOrders = async () => {
-    try {
-      const { data } = await api.get('/api/orders?status=In%20Prepress');
-      setPrepressOrders(data.orders || []);
-    } catch (e) {
-      // silent
-    }
-  };
-
-  // Group orders by material and thickness
-  const groupedOrders = useMemo(() => {
-    const groups = {};
-    prepressOrders.forEach(order => {
-      const material = order.specifications?.material || 'Unknown';
-      const thickness = order.specifications?.materialThickness || 'Unknown';
-      const key = `${material}-${thickness}`;
-      
-      if (!groups[key]) {
-        groups[key] = {
-          material,
-          thickness,
-          orders: []
-        };
-      }
-      groups[key].orders.push(order);
-    });
-    
-    return Object.values(groups).sort((a, b) => {
-      // Sort by material first, then by thickness
-      if (a.material !== b.material) {
-        return a.material.localeCompare(b.material);
-      }
-      return (a.thickness || 0) - (b.thickness || 0);
-    });
-  }, [prepressOrders]);
-
-  // Filter orders to only show those matching the current plate's material and thickness
-  const compatibleOrders = useMemo(() => {
-    if (!plate) return groupedOrders;
-    
-    return groupedOrders.filter(group => 
-      group.material === plate.material && group.thickness === plate.materialThickness
-    );
-  }, [groupedOrders, plate]);
-
-  // Convert dimension value to cm based on unit
-  const toCm = (value, unit) => {
-    if (value == null) return 0;
-    if (unit === 'cm' || !unit) return Number(value) || 0;
-    if (unit === 'mm') return (Number(value) || 0) / 10;
-    if (unit === 'inch') return (Number(value) || 0) * 2.54;
-    return Number(value) || 0;
-  };
-
-  const applyOrderDimensions = (order) => {
-    const dims = order?.specifications?.dimensions;
-    if (!dims) {
-      toast.warning('Order has no dimensions');
-      return;
-    }
-    const unit = dims.unit || 'mm';
-    const widthCm = toCm(dims.width, unit) * (parseInt(dims.widthRepeatCount || 1));
-    const heightCm = toCm(dims.height, unit) * (parseInt(dims.heightRepeatCount || 1));
-    setJobWidth(widthCm ? String(Number(widthCm.toFixed(2))) : '');
-    setJobHeight(heightCm ? String(Number(heightCm.toFixed(2))) : '');
-  };
-
-  // Open Add Job modal and load orders
-  const openAddJobModal = async () => {
-    setShowAddJobModal(true);
-    setSimulation(null);
-    await fetchPrepressOrders();
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Landscape Orientation Message for Mobile */}
-      {isMobile && !isLandscape && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6">
-          <div className="flex items-center space-x-3">
-            <DevicePhoneMobileIcon className="h-6 w-6 text-blue-600 flex-shrink-0" />
-            <div className="flex-1">
-              <h3 className="text-sm font-medium text-blue-900">Better View in Landscape</h3>
-              <p className="text-sm text-blue-700 mt-1">
-                Rotate your device to landscape mode for a better view of the plate monitoring interface.
-              </p>
-            </div>
-            <ArrowPathIcon className="h-5 w-5 text-blue-600 flex-shrink-0" />
-          </div>
+    <Modal title={t('pm.job.title')} onClose={onClose} actions={<><Button variant="secondary" onClick={onClose}>{t('pm.job.cancel')}</Button><Button disabled={busy || !sim?.fits} onClick={add}>{t('pm.job.add')}</Button></>}>
+      <div style={{ display: 'grid', gap: 12 }}>
+        <Select label={t('pm.job.order')} hint={t('pm.job.orderHint')} value={orderId} onChange={(e) => pick(e.target.value)} options={[{ value: '', label: t('pm.job.orderNone') }, ...orders.map((o) => ({ value: o._id, label: `${o.orderNumber} — ${o.title}` }))]} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+          <Field label={t('pm.job.width')} type="number" dir="ltr" min="0" step="0.1" value={w} onChange={(e) => { setW(e.target.value); setSim(null); onPreview(null); }} />
+          <Field label={t('pm.job.height')} type="number" dir="ltr" min="0" step="0.1" value={h} onChange={(e) => { setH(e.target.value); setSim(null); onPreview(null); }} />
         </div>
-      )}
-
-      {/* Header - Mobile responsive */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 flex items-center">
-            <Squares2X2Icon className="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3 text-indigo-600" />
-            Plate Monitoring
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1">Position jobs efficiently and minimize plate waste</p>
-        </div>
-        <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-          <select
-            className="border rounded px-3 py-2 bg-white text-sm"
-            value={activePlateId}
-            onChange={(e) => setActivePlateId(e.target.value)}
-          >
-            <option value="">Select active plate…</option>
-            {plates.map((p) => (
-              <option key={p._id} value={p._id}>
-                {(p.name || 'Plate')} — {p.widthCm}×{p.heightCm} cm ({p.material} {p.materialThickness}μm)
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-          >
-            <PlusIcon className="h-4 w-4 mr-2" /> New Plate
-          </button>
-        </div>
+        <div><Button variant="secondary" onClick={check}>{t('pm.job.check')}</Button></div>
+        {sim && (
+          <Notice tone={sim.fits ? 'success' : 'error'}>
+            {sim.fits ? t('pm.job.fits', { x: Number(sim.position?.xCm ?? 0).toFixed(1), y: Number(sim.position?.yCm ?? 0).toFixed(1) }) : t('pm.job.noFit')}
+          </Notice>
+        )}
       </div>
+    </Modal>
+  );
+};
 
-      {/* Summary Cards - Mobile responsive */}
-      {plate && (
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-6">
-          <div className="bg-white overflow-hidden shadow rounded-lg p-3 sm:p-5">
-            <div className="flex items-center">
-              <ChartBarIcon className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" />
-              <div className="ml-2 sm:ml-4">
-                <p className="text-xs sm:text-sm text-gray-500">Used of usable area</p>
-                <p className="text-sm sm:text-lg font-semibold text-gray-900">{percentage(usedUsablePct)}</p>
-              </div>
-            </div>
-            <div className="mt-2 sm:mt-3 w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
-              <div className="bg-indigo-600 h-1.5 sm:h-2 rounded-full" style={{ width: `${Math.min(100, usedUsablePct)}%` }}></div>
-            </div>
-          </div>
-          <div className="bg-white overflow-hidden shadow rounded-lg p-3 sm:p-5">
-            <div className="flex items-center">
-              <ArrowsPointingInIcon className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600" />
-              <div className="ml-2 sm:ml-4">
-                <p className="text-xs sm:text-sm text-gray-500">Remaining</p>
-                <p className="text-sm sm:text-lg font-semibold text-gray-900">{(plateData.stats.remainingArea / 10000).toFixed(2)} m²</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white overflow-hidden shadow rounded-lg p-3 sm:p-5">
-            <div className="flex items-center">
-              <RectangleGroupIcon className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
-              <div className="ml-2 sm:ml-4">
-                <p className="text-xs sm:text-sm text-gray-500">Placements</p>
-                <p className="text-sm sm:text-lg font-semibold text-gray-900">{plate.placements.length}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white overflow-hidden shadow rounded-lg p-3 sm:p-5">
-            <div className="flex items-center">
-              <ExclamationTriangleIcon className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" />
-              <div className="ml-2 sm:ml-4">
-                <p className="text-xs sm:text-sm text-gray-500">Estimated waste (margins)</p>
-                <p className="text-sm sm:text-lg font-semibold text-gray-900">{percentage(plateData.stats.wastePct)}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white overflow-hidden shadow rounded-lg p-3 sm:p-5">
-            <div className="flex items-center">
-              <Squares2X2Icon className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
-              <div className="ml-2 sm:ml-4">
-                <p className="text-xs sm:text-sm text-gray-500">Compatible orders</p>
-                <p className="text-sm sm:text-lg font-semibold text-gray-900">
-                  {compatibleOrders.reduce((total, group) => total + group.orders.length, 0)}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+// Prepress: place jobs on a plate, see the waste, and close the plate when it is full.
+const PlateMonitoring = () => {
+  const { t, lang, dir } = useLanguage();
+  const [plates, setPlates] = useState(null);
+  const [activeId, setActiveId] = useState('');
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+  const [modal, setModal] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [busy, setBusy] = useState(false);
 
-      {plate && (
-        <div className="space-y-4 sm:space-y-6">
-          {/* Visualization - Mobile responsive */}
-          <div className="bg-white shadow rounded-lg p-4 sm:p-6">
-            <div className="mb-4">
-              <h3 className="text-base sm:text-lg font-medium text-gray-900">Current Plate</h3>
-              {plate && (
-                <p className="text-sm text-gray-600 mt-1">
-                  Material: {plate.material} • Thickness: {plate.materialThickness}μm
-                </p>
-              )}
-            </div>
-            
-            {/* Mobile Layout - Stacked */}
-            {isMobile && (
-              <div className="space-y-4">
-                <div className="w-full overflow-auto">
-                  <PlateCanvas 
-                    plate={plate} 
-                    placements={plate.placements} 
-                    previewPlacement={simulation?.position || null} 
-                    isMobile={true}
-                  />
-                </div>
-                <div className="flex flex-col gap-3">
-                  <button
-                    onClick={openAddJobModal}
-                    className="w-full px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-md inline-flex items-center justify-center text-sm font-medium"
-                  >
-                    <PlusIcon className="h-4 w-4 mr-2" /> Add Job
-                  </button>
-                  <button
-                    onClick={openPlacementsPanel}
-                    className="w-full px-4 py-3 bg-slate-700 hover:bg-slate-800 text-white rounded-md inline-flex items-center justify-center text-sm font-medium"
-                  >
-                    <RectangleGroupIcon className="h-4 w-4 mr-2" /> Placements
-                  </button>
-                  <button
-                    onClick={onCompletePlate}
-                    className="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md inline-flex items-center justify-center text-sm font-medium"
-                  >
-                    <CheckCircleIcon className="h-4 w-4 mr-2" /> Complete Plate
-                  </button>
-                </div>
-              </div>
-            )}
-            
-            {/* Desktop Layout - Side by side */}
-            {!isMobile && (
-              <div className="flex flex-col lg:flex-row gap-4 items-start">
-                <div className="w-full overflow-auto">
-                  <PlateCanvas 
-                    plate={plate} 
-                    placements={plate.placements} 
-                    previewPlacement={simulation?.position || null} 
-                  />
-                </div>
-                <div className="w-full lg:w-60 flex flex-col gap-3 items-start justify-start min-h-[340px]">
-                  <button
-                    onClick={openAddJobModal}
-                    className="w-full lg:w-56 px-8 py-5 bg-amber-500 hover:bg-amber-600 text-white rounded-md inline-flex items-center text-base font-medium whitespace-nowrap justify-start text-left"
-                  >
-                    <PlusIcon className="h-5 w-5 mr-2" /> Add Job
-                  </button>
-                  <button
-                    onClick={openPlacementsPanel}
-                    className="w-full lg:w-56 px-8 py-5 bg-slate-700 hover:bg-slate-800 text-white rounded-md inline-flex items-center text-base font-medium whitespace-nowrap justify-start text-left"
-                  >
-                    <RectangleGroupIcon className="h-5 w-5 mr-2" /> Placements
-                  </button>
-                  <button
-                    onClick={onCompletePlate}
-                    className="w-full lg:w-56 px-8 py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md inline-flex items-center text-base font-medium whitespace-nowrap justify-start text-left"
-                  >
-                    <CheckCircleIcon className="h-5 w-5 mr-2" /> Complete Plate
-                  </button>
-                </div>
-              </div>
-            )}
-            
-            {simulation && (
-              <div className="mt-3 text-sm">
-                {simulation.fits ? (
-                  <span className="text-emerald-700">Fits at ({simulation.position.xCm}, {simulation.position.yCm}) cm{simulation.position.rotated ? ' with rotation' : ''}</span>
-                ) : (
-                  <span className="text-red-600">Does not fit</span>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+  const actions = useMemo(() => (
+    <>
+      <Button variant="secondary" onClick={() => setModal('new')}>{t('pm.new')}</Button>
+      {activeId && <Button onClick={() => setModal('job')}>{t('pm.addJob')}</Button>}
+    </>
+  ), [t, activeId]);
+  usePageChrome({ subtitle: t('pm.subtitle'), actions });
 
-      {/* Create Plate Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-full max-w-xl shadow-lg rounded-md bg-white">
-            <div className="mt-1">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Create Plate</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                  <input className="w-full border rounded px-3 py-2" value={newPlate.name} onChange={(e) => setNewPlate({ ...newPlate, name: e.target.value })} placeholder="Optional" />
-                </div>
-                <div className="hidden md:block"></div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Width (cm)</label>
-                  <input type="number" className="w-full border rounded px-3 py-2" value={newPlate.widthCm} onChange={(e) => setNewPlate({ ...newPlate, widthCm: Number(e.target.value) })} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
-                  <input type="number" className="w-full border rounded px-3 py-2" value={newPlate.heightCm} onChange={(e) => setNewPlate({ ...newPlate, heightCm: Number(e.target.value) })} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Left Margin (cm)</label>
-                  <input type="number" className="w-full border rounded px-3 py-2" value={newPlate.marginLeftCm} onChange={(e) => setNewPlate({ ...newPlate, marginLeftCm: Number(e.target.value) })} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Right Margin (cm)</label>
-                  <input type="number" className="w-full border rounded px-3 py-2" value={newPlate.marginRightCm} onChange={(e) => setNewPlate({ ...newPlate, marginRightCm: Number(e.target.value) })} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Material</label>
-                                     <select
-                     className="w-full border rounded px-3 py-2"
-                     value={newPlate.material}
-                     onChange={(e) => setNewPlate({ ...newPlate, material: e.target.value })}
-                   >
-                     <option value="Flint">Flint</option>
-                     <option value="Strong">Strong</option>
-                     <option value="Taiwan">Taiwan</option>
-                     <option value="Other">Other</option>
-                   </select>
-                </div>
-                                 <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-1">Material Thickness (microns)</label>
-                   <select
-                     className="w-full border rounded px-3 py-2"
-                     value={newPlate.materialThickness}
-                     onChange={(e) => setNewPlate({ ...newPlate, materialThickness: Number(e.target.value) })}
-                   >
-                     <option value={1.14}>1.14</option>
-                     <option value={1.7}>1.7</option>
-                     <option value={2.54}>2.54</option>
-                   </select>
-                 </div>
-              </div>
-              <div className="flex justify-end space-x-3 mt-6">
-                <button onClick={() => setShowCreateModal(false)} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">Cancel</button>
-                <button onClick={onCreatePlate} disabled={creating} className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50">{creating ? 'Creating…' : 'Create Plate'}</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+  const loadPlates = useCallback(async (keep) => {
+    try {
+      const r = await api.get('/api/plates?status=Active');
+      const list = Array.isArray(r.data) ? r.data : r.data.plates || [];
+      setPlates(list);
+      setActiveId((cur) => (keep && list.some((p) => p._id === cur) ? cur : list[0]?._id || ''));
+      setError(null);
+    } catch (e) {
+      setError(e.response?.data?.message || t('pm.loadError'));
+    }
+  }, [t]);
+  useEffect(() => {
+    loadPlates(true);
+  }, [loadPlates]);
 
-      {/* Add Job Modal */}
-      {showAddJobModal && plate && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-full max-w-xl shadow-lg rounded-md bg-white">
-            <div className="mt-1">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Add/Simulate Job</h3>
-              {/* Order selector */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Select order in Prepress</label>
-                <select
-                  className="w-full border rounded px-3 py-2 bg-white"
-                  value={selectedOrderId}
-                  onChange={(e) => {
-                    const id = e.target.value; setSelectedOrderId(id);
-                    const ord = prepressOrders.find(o => o._id === id);
-                    if (ord) applyOrderDimensions(ord);
-                  }}
-                >
-                  <option value="">— Choose an order (optional) —</option>
-                  {compatibleOrders.map(group => (
-                    <optgroup key={`${group.material}-${group.thickness}`} label={`${group.material} ${group.thickness}μm (${group.orders.length} orders)`}>
-                      {group.orders.map(o => (
-                        <option key={o._id} value={o._id}>
-                          #{o.orderNumber} — {o.title || 'Untitled'}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-500 mt-1">
-                  Orders are grouped by material and thickness. Only orders matching the plate's material ({plate?.material}) and thickness ({plate?.materialThickness}μm) are shown.
-                  {compatibleOrders.length === 0 && (
-                    <span className="text-red-600 block mt-1">
-                      No orders found with matching material and thickness for this plate.
-                    </span>
-                  )}
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Width (cm)</label>
-                  <input className="w-full border rounded px-3 py-2" value={jobWidth} onChange={(e) => setJobWidth(e.target.value)} placeholder="e.g. 100" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
-                  <input className="w-full border rounded px-3 py-2" value={jobHeight} onChange={(e) => setJobHeight(e.target.value)} placeholder="e.g. 50" />
-                </div>
-              </div>
-              <div className="flex justify-end space-x-3 mt-6">
-                <button onClick={() => setShowAddJobModal(false)} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">Close</button>
-                <button onClick={onSimulate} className="px-4 py-2 bg-amber-500 text-white rounded-md hover:bg-amber-600">Simulate</button>
-                <button 
-                  onClick={onCommit} 
-                  disabled={!simulation?.fits || !selectedOrderId} 
-                  className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50"
-                >
-                  Commit
-                </button>
-              </div>
-              {simulation && (
-                <div className="mt-3 p-3 rounded bg-gray-50 text-sm">
-                  {simulation.fits ? (
-                    <span className="text-emerald-700">Fits at ({simulation.position.xCm}, {simulation.position.yCm}) cm{simulation.position.rotated ? ' with rotation' : ''}</span>
-                  ) : (
-                    <span className="text-red-600">Does not fit</span>
-                  )}
-                </div>
-              )}
-              {!selectedOrderId && (
-                <div className="mt-3 p-3 rounded bg-blue-50 text-sm">
-                  <span className="text-blue-700">Please select an order to commit the placement.</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+  const loadPlate = useCallback(async () => {
+    if (!activeId) return setData(null);
+    try {
+      const r = await api.get(`/api/plates/${activeId}`);
+      setData(r.data);
+    } catch (e) {
+      setError(e.response?.data?.message || t('pm.loadError'));
+    }
+  }, [activeId, t]);
+  useEffect(() => {
+    setData(null);
+    loadPlate();
+  }, [loadPlate]);
 
-      {/* Placements Slide-over with smooth transition */}
-      {placementsPanelMounted && plate && (
-        <div className="fixed inset-0 z-50 pointer-events-none">
-          <div className={`absolute inset-0 bg-gray-900/30 transition-opacity duration-300 ${placementsPanelOpen ? 'opacity-100' : 'opacity-0'} pointer-events-auto`} onClick={closePlacementsPanel}></div>
-          <aside className={`absolute right-0 top-0 h-full w-[360px] bg-white shadow-xl border-l p-6 flex flex-col transform transition-transform duration-300 ${placementsPanelOpen ? 'translate-x-0' : 'translate-x-full'} pointer-events-auto`}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Placements</h3>
-              <button onClick={closePlacementsPanel} className="text-gray-500 hover:text-gray-700">Close</button>
+  const remove = async (index) => {
+    try {
+      await api.delete(`/api/plates/${activeId}/placements`, { data: { index } });
+      toast.success(t('pm.removed'));
+      await loadPlate();
+    } catch (e) {
+      toast.error(e.response?.data?.message || t('pm.removeFailed'));
+    }
+  };
+  const closePlate = async () => {
+    try {
+      setBusy(true);
+      await api.put(`/api/plates/${activeId}/complete`);
+      toast.success(t('pm.close.done'));
+      setModal(null);
+      await loadPlates(false);
+    } catch (e) {
+      toast.error(e.response?.data?.message || t('pm.close.failed'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (error && !plates) return <Notice tone="error">{error}</Notice>;
+  if (!plates) return <div role="status" aria-label={t('common.loading')}><Skeleton height={320} /></div>;
+
+  const plate = data?.plate;
+  const stats = data?.stats;
+  const locale = lang === 'ar' ? 'ar-EG' : 'en-US';
+  const pct = (v) => `${Number(v || 0).toLocaleString(locale, { maximumFractionDigits: 1 })}%`;
+  const usedPct = stats?.usableArea > 0 ? (stats.usedArea / stats.usableArea) * 100 : 0;
+  const placements = plate?.placements || [];
+
+  return (
+    <>
+      {plates.length === 0 ? (
+        <EmptyState dir={dir} title={t('pm.noPlates')} action={<Button onClick={() => setModal('new')}>{t('pm.new')}</Button>}>{t('pm.noPlatesText')}</EmptyState>
+      ) : (
+        <>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between' }} dir={dir}>
+            <div style={{ minWidth: 260 }}>
+              <Select label={t('pm.plate')} value={activeId} onChange={(e) => setActiveId(e.target.value)} options={plates.map((p, i) => ({ value: p._id, label: `${p.name || `#${i + 1}`} · ${p.widthCm}×${p.heightCm} cm · ${p.material} ${p.materialThickness}` }))} />
             </div>
-            <div className="text-xs text-gray-500 mb-2">{plate.placements.length} total</div>
-            <div className="space-y-3 overflow-auto">
-              {plate.placements.length === 0 ? (
-                <div className="text-sm text-gray-500">No placements yet.</div>
-              ) : (
-                plate.placements.map((p, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{p.widthCm} × {p.heightCm} cm {p.rotated ? '(rot)' : ''}</div>
-                      <div className="text-xs text-gray-600">at ({p.xCm}, {p.yCm}) cm</div>
-                    </div>
-                    <button onClick={() => onRemovePlacement(idx)} className="text-red-600 hover:text-red-700 inline-flex items-center text-xs">
-                      <TrashIcon className="h-4 w-4 mr-1" /> Remove
-                    </button>
+            <Button variant="secondary" style={{ color: 'var(--danger)' }} onClick={() => setModal('close')}>{t('pm.complete')}</Button>
+          </div>
+
+          {!plate ? (
+            <Skeleton height={320} />
+          ) : (
+            <>
+              <div className="ud-grid ud-grid-6">
+                {[['used', 'orders', pct(usedPct)], ['waste', 'claims', pct(stats?.wastePct)], ['left', 'reports', `${Number((stats?.remainingArea || 0) / 10000).toLocaleString(locale, { maximumFractionDigits: 2 })} m²`], ['jobs', 'tasks', placements.length]].map(([k, icon, v], i) => (
+                  <div key={k} className="ud-rise" style={{ '--i': i }}>
+                    <KpiTile dir={dir} icon={icon} label={t(`pm.kpi.${k}`)} value={typeof v === 'number' ? <CountUp value={v} /> : <bdi dir="ltr">{v}</bdi>} />
                   </div>
-                ))
-              )}
-            </div>
-          </aside>
-        </div>
+                ))}
+              </div>
+
+              <section className="ud-card ud-rise" style={{ '--i': 4, display: 'grid', gap: 12 }}>
+                <Layout plate={plate} placements={placements} preview={preview} label={t('pm.canvas', { w: plate.widthCm, h: plate.heightCm, n: placements.length })} />
+                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                  <Swatch color="var(--brand-500)">{t('pm.legend.job')}</Swatch>
+                  <Swatch color="var(--status-submitted-bg)" dashed>{t('pm.legend.preview')}</Swatch>
+                  <Swatch color="var(--border)">{t('pm.legend.margin')}</Swatch>
+                </div>
+              </section>
+
+              <section className="ud-card ud-rise" style={{ '--i': 5, display: 'grid', gap: 8 }} dir={dir}>
+                <h2 className="ud-card-h">{t('pm.jobs')}</h2>
+                {placements.length === 0 ? (
+                  <p className="ud-card-s">{t('pm.jobsEmpty')}</p>
+                ) : (
+                  <ul className="ud-files" style={{ margin: 0 }}>
+                    {placements.map((p, i) => (
+                      <li key={i} className="ud-file">
+                        <span className="ud-file-ph">{i + 1}</span>
+                        <span className="ud-file-name">{t('pm.job', { n: i + 1 })}{p.orderId?.orderNumber ? ` · ${p.orderId.orderNumber}` : ''}</span>
+                        <span className="ud-file-size"><bdi dir="ltr">{Number(p.widthCm).toFixed(1)} × {Number(p.heightCm).toFixed(1)} cm</bdi></span>
+                        <Button variant="ghost" aria-label={t('pm.remove', { n: i + 1 })} onClick={() => remove(i)}>×</Button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            </>
+          )}
+        </>
       )}
-    </div>
+
+      {modal === 'new' && <NewPlate onClose={() => setModal(null)} onDone={() => { setModal(null); loadPlates(false); }} />}
+      {modal === 'job' && plate && <AddJob plate={plate} plateId={activeId} onPreview={setPreview} onClose={() => setModal(null)} onDone={() => { setModal(null); loadPlate(); }} />}
+      {modal === 'close' && (
+        <Modal destructive title={t('pm.close.title')} onClose={() => setModal(null)} actions={<><Button variant="secondary" onClick={() => setModal(null)}>{t('pm.keep')}</Button><Button variant="danger" disabled={busy} onClick={closePlate}>{t('pm.close.confirm')}</Button></>}>
+          <p>{t('pm.close.text')}</p>
+        </Modal>
+      )}
+    </>
   );
 };
 
 export default PlateMonitoring;
-
-

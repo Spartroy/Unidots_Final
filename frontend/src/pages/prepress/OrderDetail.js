@@ -6,7 +6,7 @@ import useAutoRefresh from '../../hooks/useAutoRefresh';
 import AuthContext from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { usePageChrome } from '../../components/shell/PortalShell';
-import { Progress, DefList, Notice, Button, EmptyState } from '../../design/kit';
+import { Progress, DefList, Notice, Button } from '../../design/kit';
 import { Skeleton } from '../../design/motionKit';
 import { Field } from '../../design/controls';
 import OrderStatusBadge from '../../components/common/OrderStatusBadge';

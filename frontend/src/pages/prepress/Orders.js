@@ -4,7 +4,7 @@ import api from '../../utils/api';
 import useAutoRefresh from '../../hooks/useAutoRefresh';
 import { useLanguage } from '../../context/LanguageContext';
 import { Chips, Pager } from '../../design/controls';
-import { Progress, Notice, EmptyState, Button } from '../../design/kit';
+import { Progress, Notice, EmptyState } from '../../design/kit';
 import { Skeleton } from '../../design/motionKit';
 import { PROCESS_KEYS } from '../../components/prepress/ProcessGrid';
 

@@ -1,661 +1,186 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import api from '../../utils/api';
-import { 
-  BeakerIcon, 
-  CogIcon, 
-  PlusIcon, 
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  ChartBarIcon,
-  ChevronDownIcon,
-  ChevronUpIcon
-} from '@heroicons/react/24/outline';
-import { Settings } from 'lucide-react';
+import useAutoRefresh from '../../hooks/useAutoRefresh';
+import { useLanguage } from '../../context/LanguageContext';
+import { usePageChrome } from '../../components/shell/PortalShell';
+import { Button, DataTable, EmptyState, KpiTile, Notice, TankGauge } from '../../design/kit';
+import { Field } from '../../design/controls';
+import { CountUp, Skeleton } from '../../design/motionKit';
+import Modal from '../../components/common/Modal';
 
+const LOW_PERCENT = 30;
+const SHOWN = 8;
+
+// Prepress: solvent tank, refills and recent usage. Shows only real records.
 const AcidSolutionMonitor = () => {
-  const [solutionData, setSolutionData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [showRefillModal, setShowRefillModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [refillBarrels, setRefillBarrels] = useState(1);
-  const [isRefilling, setIsRefilling] = useState(false);
-  const [recentOrders, setRecentOrders] = useState([]);
-  const [usageHistory, setUsageHistory] = useState([]);
-  const [showAllHistory, setShowAllHistory] = useState(false);
-  const [showManualUsageModal, setShowManualUsageModal] = useState(false);
-  const [manualUsage, setManualUsage] = useState({
-    length: '',
-    width: '',
-    lengthRepeat: 1,
-    widthRepeat: 1
-  });
+  const { t, lang, dir } = useLanguage();
+  const locale = lang === 'ar' ? 'ar-EG' : 'en-US';
+  const [data, setData] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [error, setError] = useState(null);
+  const [all, setAll] = useState(false);
+  const [refill, setRefill] = useState(false);
+  const [manual, setManual] = useState(false);
+  const [count, setCount] = useState('1');
+  const [m, setM] = useState({ length: '', width: '', lengthRepeat: '1', widthRepeat: '1' });
+  const [busy, setBusy] = useState(false);
 
-  // Mock usage history data - replace with actual API call
-  const generateMockUsageHistory = () => {
-    const mockData = [];
-    const orderNumbers = ['ORD-2506-004930', 'ORD-2506-004931', 'ORD-2506-004932', 'ORD-2506-004933', 'ORD-2506-004934', 'ORD-2506-004935', 'ORD-2506-004936', 'ORD-2506-004937'];
-    const titles = ['Packaging Label Design', 'Product Branding', 'Marketing Materials', 'Corporate Identity', 'Product Packaging', 'Promotional Items', 'Brand Guidelines', 'Logo Design'];
-    
-    for (let i = 0; i < 12; i++) {
-      const areaProcessed = (Math.random() * 5 + 1); // 1-6 m²
-      const litersUsed = areaProcessed * 10; // 10L per m²
-      const cost = areaProcessed * 424.44; // Cost calculation
-      
-      mockData.push({
-        id: i + 1,
-        orderId: {
-          orderNumber: orderNumbers[i % orderNumbers.length],
-          title: titles[i % titles.length]
-        },
-        areaProcessed: areaProcessed,
-        litersUsed: litersUsed,
-        cost: cost,
-        processedAt: new Date(Date.now() - (i * 24 * 60 * 60 * 1000 + Math.random() * 24 * 60 * 60 * 1000)).toISOString(),
-        processedBy: 'System',
-        efficiency: Math.floor(Math.random() * 20 + 80) // 80-100% efficiency
-      });
+  const actions = useMemo(() => (
+    <>
+      <Button variant="secondary" onClick={() => setManual(true)}>{t('as.manual')}</Button>
+      <Button onClick={() => setRefill(true)}>{t('br.refill')}</Button>
+    </>
+  ), [t]);
+  usePageChrome({ subtitle: t('as.subtitle'), actions });
+
+  const load = useCallback(async () => {
+    try {
+      const r = await api.get('/api/acid-solution/status');
+      setData(r.data);
+      setError(null);
+    } catch (e) {
+      setError(e.response?.data?.message || t('br.loadError'));
     }
-    
-    return mockData.sort((a, b) => new Date(b.processedAt) - new Date(a.processedAt));
-  };
-
+    try {
+      const h = await api.get('/api/acid-solution/history');
+      setHistory([...(h.data.usageHistory || [])].sort((a, b) => new Date(b.processedAt) - new Date(a.processedAt)));
+    } catch (e) {
+      setHistory([]);
+    }
+  }, [t]);
   useEffect(() => {
-    fetchSolutionStatus();
-    fetchUsageHistory();
-    // Set up interval for real-time updates
-    const interval = setInterval(() => {
-      fetchSolutionStatus();
-      fetchUsageHistory();
-    }, 30000); // Update every 30 seconds
+    load();
+  }, [load]);
+  useAutoRefresh(load, 30000, [load]);
 
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchSolutionStatus = async () => {
+  const doRefill = async (e) => {
+    e.preventDefault();
+    const n = Number(count);
+    if (!Number.isInteger(n) || n < 1) return toast.error(t('br.refill.err'));
     try {
-      const response = await api.get('/api/acid-solution/status');
-      setSolutionData(response.data);
-    } catch (error) {
-      toast.error('Failed to fetch acid solution status');
-      console.error('Error:', error);
+      setBusy(true);
+      const r = await api.post('/api/acid-solution/refill', { barrelCount: n });
+      toast.success(t('br.refill.done', { n, liters: Math.round(r.data.currentLiters) }));
+      setRefill(false);
+      setCount('1');
+      await load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || t('br.refill.failed'));
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
   };
 
-  const fetchUsageHistory = async () => {
+  const area = (Number(m.length) * (parseInt(m.lengthRepeat, 10) || 1) * Number(m.width) * (parseInt(m.widthRepeat, 10) || 1)) / 10000;
+  const litersPer = data?.litersPerM2 || 10;
+  const doManual = async (e) => {
+    e.preventDefault();
+    if (!(area > 0)) return toast.error(t('as.manual.err'));
     try {
-      // Try to fetch from API first
-      const response = await api.get('/api/acid-solution/history');
-      setUsageHistory(response.data.usageHistory || []);
-    } catch (error) {
-      // If API fails, use mock data
-      const mockHistory = generateMockUsageHistory();
-      setUsageHistory(mockHistory);
-    }
-  };
-
-  const handleRefill = async () => {
-    if (!refillBarrels || refillBarrels <= 0) {
-      toast.error('Please enter a valid number of barrels');
-      return;
-    }
-
-    try {
-      setIsRefilling(true);
-      const response = await api.post('/api/acid-solution/refill', { 
-        barrelCount: parseInt(refillBarrels) 
-      });
-      
-      toast.success(`${refillBarrels} barrel(s) added successfully! Total capacity now: ${response.data.currentLiters}L`);
-      setShowRefillModal(false);
-      setRefillBarrels(1);
-      
-      // Refresh data immediately
-      await fetchSolutionStatus();
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Failed to refill acid solution';
-      toast.error(errorMessage);
-      console.error('Error:', error);
+      setBusy(true);
+      await api.post('/api/acid-solution/usage', { orderId: null, areaProcessed: area });
+      toast.success(t('as.manual.done'));
+      setManual(false);
+      setM({ length: '', width: '', lengthRepeat: '1', widthRepeat: '1' });
+      await load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || t('as.manual.failed'));
     } finally {
-      setIsRefilling(false);
+      setBusy(false);
     }
   };
 
-  const handleManualUsageRecord = async () => {
-    if (!manualUsage.length || !manualUsage.width) {
-      toast.error('Please enter valid dimensions');
-      return;
-    }
+  if (error && !data) return <Notice tone="error">{error} <button type="button" className="ud-link" onClick={load}>{t('common.retry')}</button></Notice>;
+  if (!data) return <div role="status" aria-label={t('common.loading')}><Skeleton height={300} /></div>;
 
-    try {
-      const totalLengthCm = parseFloat(manualUsage.length) * parseInt(manualUsage.lengthRepeat);
-      const totalWidthCm = parseFloat(manualUsage.width) * parseInt(manualUsage.widthRepeat);
-      const totalAreaM2 = (totalLengthCm * totalWidthCm) / 10000;
-      const litersUsed = totalAreaM2 * 10;
-      const cost = totalAreaM2 * 424.44;
-
-      // Create new usage record
-      const newUsageRecord = {
-        id: Date.now(),
-        orderId: {
-          orderNumber: 'MANUAL-' + Date.now().toString().slice(-6),
-          title: 'Manual Usage Entry'
-        },
-        areaProcessed: totalAreaM2,
-        litersUsed: litersUsed,
-        cost: cost,
-        processedAt: new Date().toISOString(),
-        processedBy: 'Manual Entry',
-        efficiency: 100
-      };
-
-      // Add to local state
-      setUsageHistory(prev => [newUsageRecord, ...prev]);
-
-      try {
-        // Try to send to API
-        await api.post('/api/acid-solution/usage', {
-          orderId: null, // Manual entry
-          areaProcessed: totalAreaM2
-        });
-      } catch (apiError) {
-      }
-
-      toast.success(`Manual usage recorded: ${litersUsed.toFixed(2)}L consumed`);
-      setShowManualUsageModal(false);
-      setManualUsage({ length: '', width: '', lengthRepeat: 1, widthRepeat: 1 });
-      
-      // Refresh data
-      await fetchSolutionStatus();
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Failed to record manual usage';
-      toast.error(errorMessage);
-      console.error('Error:', error);
-    }
-  };
-
-  const getStatusColor = (percentage) => {
-    if (percentage > 70) return 'text-green-600';
-    if (percentage > 30) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  const getBarrelFillColor = (percentage) => {
-    if (percentage > 70) return 'from-green-400 to-green-600';
-    if (percentage > 30) return 'from-yellow-400 to-yellow-600';
-    return 'from-red-400 to-red-600';
-  };
-
-  const getStatusIcon = (percentage) => {
-    if (percentage > 70) return <CheckCircleIcon className="h-6 w-6 text-green-600" />;
-    if (percentage > 30) return <ClockIcon className="h-6 w-6 text-yellow-600" />;
-    return <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />;
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
-
-  if (!solutionData) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">Unable to load acid solution data</p>
-      </div>
-    );
-  }
-
-  const { metrics } = solutionData;
+  const mt = data.metrics || {};
+  const pct = Math.round(mt.fillPercentage || 0);
+  const num = (v, d = 1) => Number(v || 0).toLocaleString(locale, { maximumFractionDigits: d });
+  const rows = (all ? history : history.slice(0, SHOWN)).map((u) => ({
+    o: u.orderId?.orderNumber ? `${u.orderId.orderNumber}${u.orderId.title ? ` · ${u.orderId.title}` : ''}` : t('as.manual.entry'),
+    a: <bdi dir="ltr">{num(u.areaProcessed, 2)} m²</bdi>,
+    l: <bdi dir="ltr">{num(u.litersUsed, 1)} L</bdi>,
+    c: <bdi dir="ltr">{num(u.cost, 0)}</bdi>,
+    d: new Date(u.processedAt).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' }),
+  }));
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900 flex items-center">
-            <BeakerIcon className="h-8 w-8 mr-3 text-blue-600" />
-            Solvent Solution Monitor
-          </h1>
-        
-        </div>
-        <div className="flex space-x-3">
-         
-          <button
-            onClick={() => setShowRefillModal(true)}
-            className="inline-flex items-center px-3 py-2 sm:px-4 sm:py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 w-full sm:w-auto mr-2.5"
-            style={{ marginRight: '10px' }}
-          >
-            <PlusIcon className="h-4 w-4 mr-2" />
-            <span className="hidden xs:inline">Add Barrels</span>
-            <span className="inline xs:hidden">Add Barrels</span>
-          </button>
-        </div>
+    <>
+      <section className="ud-card ud-rise" dir={dir}>
+        <TankGauge dir={dir} percent={pct} lowAt={LOW_PERCENT} title={t('br.tank')} liters={`${num(data.currentLiters)} L`} capacity={t('br.capacity', { max: num(mt.maxCapacity) })} statusLabel={t(pct < LOW_PERCENT ? 'br.low' : 'br.ok')} />
+      </section>
+
+      <div className="ud-grid ud-grid-6">
+        {[['barrels', 'orders', data.totalBarrels], ['days', 'tasks', Math.round(mt.estimatedDaysRemaining || 0)]].map(([k, icon, v], i) => (
+          <div key={k} className="ud-rise" style={{ '--i': i + 1 }}>
+            <KpiTile dir={dir} icon={icon} label={t(`br.kpi.${k}`)} value={<CountUp value={Number(v) || 0} />} />
+          </div>
+        ))}
       </div>
 
-      {/* Status Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                {getStatusIcon(metrics.fillPercentage)}
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Current Level
-                  </dt>
-                  <dd className={`text-lg font-medium ${getStatusColor(metrics.fillPercentage)}`}>
-                    {metrics.fillPercentage.toFixed(1)}%
-                  </dd>
-                </dl>
-              </div>
+      <section style={{ display: 'grid', gap: 12 }} dir={dir}>
+        <h2 className="ud-card-h">{t('as.history')}</h2>
+        {history.length === 0 ? (
+          <EmptyState dir={dir} title={t('as.historyEmpty')} />
+        ) : (
+          <>
+            <div className="ud-card ud-pad0 ud-rise">
+              <DataTable
+                dir={dir}
+                caption={t('as.history')}
+                columns={[{ key: 'o', label: t('as.col.order') }, { key: 'a', label: t('as.col.area') }, { key: 'l', label: t('as.col.liters') }, { key: 'c', label: t('as.col.cost') }, { key: 'd', label: t('as.col.date') }]}
+                rows={rows}
+              />
             </div>
-          </div>
-        </div>
+            {history.length > SHOWN && <div><Button variant="secondary" onClick={() => setAll((v) => !v)}>{all ? t('as.showLess') : t('as.showAll', { n: history.length })}</Button></div>}
+          </>
+        )}
+      </section>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <BeakerIcon className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Current Liters
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {solutionData.currentLiters.toFixed(0)}L
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <ChartBarIcon className="h-6 w-6 text-indigo-600" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Remaining Barrels
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {metrics.remainingBarrels}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <ClockIcon className="h-6 w-6 text-purple-600" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Est. Days Remaining
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {metrics.estimatedDaysRemaining}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Barrel Visualization */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Barrel Tank Visualization */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-6">Solution Tank</h3>
-          <div className="flex justify-center">
-            <div className="relative">
-              {/* Barrel Container */}
-              <div className="w-32 h-48 border-4 border-gray-400 rounded-b-3xl relative overflow-hidden bg-gray-100">
-                {/* Liquid Fill */}
-                <div 
-                  className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t ${getBarrelFillColor(metrics.fillPercentage)} transition-all duration-1000 ease-in-out`}
-                  style={{ height: `${metrics.fillPercentage}%` }}
-                >
-                  {/* Liquid Animation */}
-                  <div className="absolute top-0 left-0 right-0 h-2 bg-white bg-opacity-20 animate-pulse"></div>
-                </div>
-                
-                {/* Percentage Label */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className={`text-lg font-bold ${metrics.fillPercentage > 50 ? 'text-white' : 'text-gray-700'}`}>
-                    {metrics.fillPercentage.toFixed(1)}%
-                  </span>
-                </div>
-              </div>
-              
-              {/* Tank Labels */}
-              <div className="absolute -right-16 top-0 text-sm text-gray-500">
-                {metrics.maxCapacity}L
-              </div>
-              <div className="absolute -right-16 bottom-0 text-sm text-gray-500">
-                0L
-              </div>
-              <div className="absolute -left-16 bottom-1/2 transform translate-y-1/2 text-sm font-medium text-gray-700">
-                {solutionData.currentLiters.toFixed(0)}L
-              </div>
-            </div>
-          </div>
-          
-          {/* Tank Details */}
-          <div className="mt-6 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Total Capacity:</span>
-              <span className="font-medium">{metrics.maxCapacity}L</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Current Volume:</span>
-              <span className="font-medium">{solutionData.currentLiters.toFixed(1)}L</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Recycling Efficiency:</span>
-              <span className="font-medium text-green-600">{metrics.efficiency}%</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Monthly Statistics */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-6">This Month's Usage</h3>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center p-4 bg-blue-50 rounded-lg">
-              <div>
-                <p className="text-sm font-medium text-blue-900">Orders Processed</p>
-                <p className="text-2xl font-bold text-blue-600">{solutionData.monthlyStats.ordersProcessed}</p>
-              </div>
-              <ChartBarIcon className="h-8 w-8 text-blue-400" />
-            </div>
-
-            <div className="flex justify-between items-center p-4 bg-green-50 rounded-lg">
-              <div>
-                <p className="text-sm font-medium text-green-900">Total Area Processed</p>
-                <p className="text-2xl font-bold text-green-600">{solutionData.monthlyStats.totalAreaProcessed.toFixed(1)} m²</p>
-              </div>
-              <BeakerIcon className="h-8 w-8 text-green-400" />
-            </div>
-
-            <div className="flex justify-between items-center p-4 bg-purple-50 rounded-lg">
-              <div>
-                <p className="text-sm font-medium text-purple-900">Liters Used</p>
-                <p className="text-2xl font-bold text-purple-600">{solutionData.monthlyStats.totalLitersUsed.toFixed(1)}L</p>
-              </div>
-              <BeakerIcon className="h-8 w-8 text-purple-400" />
-            </div>
-
-            <div className="flex justify-between items-center p-4 bg-yellow-50 rounded-lg">
-              <div>
-                <p className="text-sm font-medium text-yellow-900">Processing Cost</p>
-                <p className="text-2xl font-bold text-yellow-600">{solutionData.monthlyStats.totalCost.toFixed(0)}</p>
-              </div>
-              <CogIcon className="h-8 w-8 text-yellow-400" />
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Usage Activity */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-medium text-gray-900">Recent Usage Activity</h3>
-            {usageHistory.length > 5 && (
-              <button
-                onClick={() => setShowAllHistory(!showAllHistory)}
-                className="inline-flex items-center text-sm text-primary-600 hover:text-primary-800 font-medium"
-              >
-                {showAllHistory ? (
-                  <>
-                    Show Less
-                    <ChevronUpIcon className="ml-1 h-4 w-4" />
-                  </>
-                ) : (
-                  <>
-                    View All ({usageHistory.length})
-                    <ChevronDownIcon className="ml-1 h-4 w-4" />
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-          
-          {usageHistory.length === 0 ? (
-            <div className="text-center py-8">
-              <BeakerIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No usage activity recorded yet</p>
-              <button
-                onClick={() => setShowManualUsageModal(true)}
-                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-600 bg-primary-100 hover:bg-primary-200"
-              >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Record Manual Usage
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">
-                  Showing {showAllHistory ? usageHistory.length : Math.min(5, usageHistory.length)} of {usageHistory.length} records
-                </span>
-                <button
-                  onClick={() => setShowManualUsageModal(true)}
-                  className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-primary-600 bg-primary-100 hover:bg-primary-200"
-                >
-                  <PlusIcon className="h-3 w-3 mr-1" />
-                  Add Manual
-                </button>
-              </div>
-              
-              <div className={`space-y-3 ${showAllHistory ? 'max-h-96 overflow-y-auto' : ''}`}>
-                {(showAllHistory ? usageHistory : usageHistory.slice(0, 5)).map((usage, index) => (
-                  <div key={usage.id || index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <div className="flex items-center space-x-4">
-                      {/* <div className="flex-shrink-0">
-                        <BeakerIcon className="h-6 w-6 text-blue-600" />
-                      </div> */}
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[10pt] font-semibold text-gray-900 truncate">
-                          Order #{usage.orderId?.orderNumber || 'Unknown'}
-                        </p>
-                        <p className="text-xs text-gray-600 mt-1">
-                          {usage.orderId?.title || 'No title'}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {new Date(usage.processedAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex space-x-2">
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-green-600">
-                          {usage.cost.toFixed(2)} EGP
-                        </p>
-                        <p className="text-xs text-blue-600 mt-1">
-                          {usage.litersUsed.toFixed(2)}L
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {usage.areaProcessed.toFixed(3)} m²
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              {showAllHistory && usageHistory.length > 10 && (
-                <div className="text-center py-3 border-t border-gray-200">
-                  <p className="text-xs text-gray-500">
-                    Showing all {usageHistory.length} usage records
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Refill Modal */}
-      {showRefillModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Add Solvent Solution Barrels</h3>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Number of Barrels (200L each)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={refillBarrels}
-                  onChange={(e) => setRefillBarrels(parseInt(e.target.value) || 1)}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Total: {refillBarrels * 200}L additional capacity
-                </p>
-              </div>
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowRefillModal(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleRefill}
-                  disabled={isRefilling}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50"
-                >
-                  {isRefilling ? 'Adding...' : 'Add Barrels'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {refill && (
+        <Modal
+          title={t('br.refill.title')}
+          onClose={() => setRefill(false)}
+          actions={
+            <>
+              <Button variant="secondary" onClick={() => setRefill(false)}>{t('br.cancel')}</Button>
+              <Button type="submit" form="refill" disabled={busy}>{t('br.refill.confirm')}</Button>
+            </>
+          }
+        >
+          <p>{t('br.refill.text', { liters: Math.round(data.currentLiters) })}</p>
+          <form id="refill" onSubmit={doRefill} noValidate>
+            <Field label={t('br.refill.count')} type="number" dir="ltr" min="1" step="1" value={count} onChange={(e) => setCount(e.target.value)} required />
+          </form>
+        </Modal>
       )}
 
-      {/* Manual Usage Modal */}
-      {showManualUsageModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Record Manual Solvent Usage</h3>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Length (cm)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={manualUsage.length}
-                      onChange={(e) => setManualUsage({...manualUsage, length: e.target.value})}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Width (cm)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={manualUsage.width}
-                      onChange={(e) => setManualUsage({...manualUsage, width: e.target.value})}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Length Repeat
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={manualUsage.lengthRepeat}
-                      onChange={(e) => setManualUsage({...manualUsage, lengthRepeat: e.target.value})}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Width Repeat
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={manualUsage.widthRepeat}
-                      onChange={(e) => setManualUsage({...manualUsage, widthRepeat: e.target.value})}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                    />
-                  </div>
-                </div>
-
-                {manualUsage.length && manualUsage.width && (
-                  <div className="p-3 bg-blue-50 rounded-md">
-                    <div className="text-sm text-blue-800">
-                      <p><strong>Calculated Area:</strong> {((parseFloat(manualUsage.length) * parseInt(manualUsage.lengthRepeat) * parseFloat(manualUsage.width) * parseInt(manualUsage.widthRepeat)) / 10000).toFixed(3)} m²</p>
-                      <p><strong>Solvent Needed:</strong> {((parseFloat(manualUsage.length) * parseInt(manualUsage.lengthRepeat) * parseFloat(manualUsage.width) * parseInt(manualUsage.widthRepeat)) / 1000).toFixed(2)} L</p>
-                      <p><strong>Estimated Cost:</strong> {((parseFloat(manualUsage.length) * parseInt(manualUsage.lengthRepeat) * parseFloat(manualUsage.width) * parseInt(manualUsage.widthRepeat)) / 10000 * 424.44).toFixed(2)} EGP</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-end space-x-3 mt-6">
-                <button
-                  onClick={() => setShowManualUsageModal(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleManualUsageRecord}
-                  disabled={!manualUsage.length || !manualUsage.width}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-                >
-                  Record Usage
-                </button>
-              </div>
+      {manual && (
+        <Modal
+          title={t('as.manual.title')}
+          onClose={() => setManual(false)}
+          actions={
+            <>
+              <Button variant="secondary" onClick={() => setManual(false)}>{t('br.cancel')}</Button>
+              <Button type="submit" form="manual" disabled={busy}>{t('as.manual.save')}</Button>
+            </>
+          }
+        >
+          <p>{t('as.manual.text')}</p>
+          <form id="manual" onSubmit={doManual} noValidate style={{ display: 'grid', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+              <Field label={t('as.manual.length')} type="number" dir="ltr" min="0" step="0.1" value={m.length} onChange={(e) => setM({ ...m, length: e.target.value })} required />
+              <Field label={t('as.manual.width')} type="number" dir="ltr" min="0" step="0.1" value={m.width} onChange={(e) => setM({ ...m, width: e.target.value })} required />
+              <Field label={t('as.manual.lengthRepeat')} type="number" dir="ltr" min="1" step="1" value={m.lengthRepeat} onChange={(e) => setM({ ...m, lengthRepeat: e.target.value })} />
+              <Field label={t('as.manual.widthRepeat')} type="number" dir="ltr" min="1" step="1" value={m.widthRepeat} onChange={(e) => setM({ ...m, widthRepeat: e.target.value })} />
             </div>
-          </div>
-        </div>
+            {area > 0 && <p className="ud-hint" style={{ margin: 0 }} aria-live="polite">{t('as.manual.preview', { m2: num(area, 3), liters: num(area * litersPer, 2) })}</p>}
+          </form>
+        </Modal>
       )}
-    </div>
+    </>
   );
 };
 
-export default AcidSolutionMonitor; 
+export default AcidSolutionMonitor;

@@ -38,8 +38,12 @@ import empworkEn from '../locales/empwork.en';
 import empworkAr from '../locales/empwork.ar';
 import templatesEn from '../locales/templates.en';
 import templatesAr from '../locales/templates.ar';
+import acidEn from '../locales/acid.en';
+import acidAr from '../locales/acid.ar';
+import platesEn from '../locales/plates.en';
+import platesAr from '../locales/plates.ar';
 
-const dictionaries = { en: { ...en, ...landingEn, ...phase5En, ...prepressEn, ...activityEn, ...courierEn, ...ordersEn, ...managerEn, ...accountEn, ...profileEn, ...claimsEn, ...clientOrderEn, ...wizEn, ...peopleEn, ...tasksEn, ...mreportsEn, ...barrelsEn, ...empworkEn, ...templatesEn }, ar: { ...ar, ...landingAr, ...phase5Ar, ...prepressAr, ...activityAr, ...courierAr, ...ordersAr, ...managerAr, ...accountAr, ...profileAr, ...claimsAr, ...clientOrderAr, ...wizAr, ...peopleAr, ...tasksAr, ...mreportsAr, ...barrelsAr, ...empworkAr, ...templatesAr } };
+const dictionaries = { en: { ...en, ...landingEn, ...phase5En, ...prepressEn, ...activityEn, ...courierEn, ...ordersEn, ...managerEn, ...accountEn, ...profileEn, ...claimsEn, ...clientOrderEn, ...wizEn, ...peopleEn, ...tasksEn, ...mreportsEn, ...barrelsEn, ...empworkEn, ...templatesEn, ...acidEn, ...platesEn }, ar: { ...ar, ...landingAr, ...phase5Ar, ...prepressAr, ...activityAr, ...courierAr, ...ordersAr, ...managerAr, ...accountAr, ...profileAr, ...claimsAr, ...clientOrderAr, ...wizAr, ...peopleAr, ...tasksAr, ...mreportsAr, ...barrelsAr, ...empworkAr, ...templatesAr, ...acidAr, ...platesAr } };
 const STORAGE_KEY = 'unidots_lang';
 
 const readStored = () => {

@@ -36,6 +36,10 @@ import empworkEn from './empwork.en';
 import empworkAr from './empwork.ar';
 import templatesEn from './templates.en';
 import templatesAr from './templates.ar';
+import acidEn from './acid.en';
+import acidAr from './acid.ar';
+import platesEn from './plates.en';
+import platesAr from './plates.ar';
 
 const placeholders = (s) => (s.match(/\{\w+\}/g) || []).sort().join(',');
 
@@ -59,6 +63,8 @@ const pairs = [
   ['barrels', barrelsEn, barrelsAr],
   ['empwork', empworkEn, empworkAr],
   ['templates', templatesEn, templatesAr],
+  ['acid', acidEn, acidAr],
+  ['plates', platesEn, platesAr],
 ];
 
 describe.each(pairs)('%s translations', (name, enDict, arDict) => {
