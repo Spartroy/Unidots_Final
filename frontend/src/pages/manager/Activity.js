@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import api from '../../utils/api';
+import { translateServer } from '../../utils/serverText';
 import useAutoRefresh from '../../hooks/useAutoRefresh';
 import { useLanguage } from '../../context/LanguageContext';
 import { usePageChrome } from '../../components/shell/PortalShell';
@@ -57,9 +58,9 @@ const Activity = () => {
     return {
       w: when(e.createdAt),
       p: e.actorName ? `${e.actorName}${e.actorRole ? ` (${t(`role.${e.actorRole}`)})` : ''}` : '—',
-      a: t(`activity.action.${e.action}`) === `activity.action.${e.action}` ? e.action : t(`activity.action.${e.action}`),
+      a: t(`activity.action.${e.action}`) === `activity.action.${e.action}` ? translateServer(e.action, lang) : t(`activity.action.${e.action}`),
       r: e.entityLabel || '—',
-      d: e.details || '',
+      d: translateServer(e.details || '', lang),
       s: (
         <span className="ud-badge" style={{ background: r.background, color: r.color }}>
           <Shape shape={r.shape} />

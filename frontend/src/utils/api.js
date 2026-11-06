@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { currentLang, translateServer } from './serverText';
 
 // Create axios instance with base URL
 // Normalize REACT_APP_API_URL. If not provided, use '' in production (Vercel proxy) and localhost in dev.
@@ -43,8 +44,15 @@ api.interceptors.request.use(
 
 // Global response interceptor: handle 401/403 by clearing user and redirecting to login
 api.interceptors.response.use(
-  response => response,
+  response => {
+    // Server messages are written in English; show them in the page language
+    if (response?.data && typeof response.data.message === 'string') response.data.message = translateServer(response.data.message, currentLang());
+    return response;
+  },
   error => {
+    if (error?.response?.data && typeof error.response.data.message === 'string') {
+      error.response.data.message = translateServer(error.response.data.message, currentLang());
+    }
     // Don't handle cancellation errors
     if (axios.isCancel(error)) {
       return Promise.reject(error);

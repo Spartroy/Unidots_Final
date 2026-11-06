@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../utils/api';
 import { useLanguage } from '../../context/LanguageContext';
+import { translateServer } from '../../utils/serverText';
 
 // What happened on an order, trimmed by the server to what the signed-in role may see.
 const OrderTimeline = ({ orderId, refreshKey }) => {
@@ -36,10 +37,10 @@ const OrderTimeline = ({ orderId, refreshKey }) => {
               <span aria-hidden="true" style={{ flex: 'none', width: 10, height: 10, borderRadius: 9999, marginBlockStart: 7, background: e.outcome === 'denied' ? 'var(--danger)' : 'var(--accent)' }} />
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontWeight: 600 }}>
-                  {e.action}
+                  {translateServer(e.action, lang)}
                   {e.actor?.name ? <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}> {t('timeline.by', { name: e.actor.name })}</span> : null}
                 </div>
-                {e.details ? <div style={{ color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{e.details}</div> : null}
+                {e.details ? <div style={{ color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>{translateServer(e.details, lang)}</div> : null}
                 <div className="ud-hint">{when(e.at)}</div>
               </div>
             </li>

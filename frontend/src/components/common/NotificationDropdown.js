@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import NotificationContext from '../../context/NotificationContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { translateServer } from '../../utils/serverText';
 
 const BellIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -130,8 +131,8 @@ const NotificationDropdown = () => {
                           <span style={{ color: `var(--status-${TONE[n.type] || 'designing'}-fg)`, fontWeight: 600 }}>{t(`nt.type.${n.type}`) === `nt.type.${n.type}` ? t('nt.type.info') : t(`nt.type.${n.type}`)}</span>
                           <span>{ago(n.createdAt)}</span>
                         </span>
-                        <b>{n.title}</b>
-                        <span className="ud-notif-text">{n.message}</span>
+                        <b>{translateServer(n.title, lang)}</b>
+                        <span className="ud-notif-text">{translateServer(n.message, lang)}</span>
                         {!n.read && <span className="ud-sr">{t('nt.unread')}</span>}
                       </span>
                     </button>
