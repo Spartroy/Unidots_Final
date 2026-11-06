@@ -43,7 +43,10 @@ const AppLayout = ({ portal }) => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <Disclosure as="nav" className="bg-primary-900 shadow-lg">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-primary-700 focus:shadow-lg">
+        {t('nav.skipToContent')}
+      </a>
+      <Disclosure as="nav" aria-label={t('nav.mainNavigation')} className="bg-primary-900 shadow-lg">
         {({ open }) => (
           <>
             <div className="mx-auto max-w-full px-4 sm:px-8 lg:px-12">
@@ -260,7 +263,7 @@ const AppLayout = ({ portal }) => {
           </h1>
         </div>
       </header>
-      <main>
+      <main id="main-content" tabIndex={-1} className="focus:outline-none">
         <div className="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
           <Outlet />
         </div>

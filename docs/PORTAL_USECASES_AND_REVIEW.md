@@ -133,3 +133,10 @@ Confirmed by you: the default shipping company ("Middle East") stays.
 ## Phase 2 progress
 - **Manager "Needs attention" panel** on the dashboard: overdue orders (past deadline), orders on hold, and new orders with no designer, each linking to the order. Refreshes every minute; translated EN/AR.
 - **New Order wizard:** three steps (Basics, Specifications, Review) with a progress indicator, per-step checks for the required fields (order name, size, material + thickness, at least one color), a review screen with Edit links, and an estimated price shown in EGP labelled as an estimate. Unfinished orders auto-save as a draft in the browser (per user, per device) with a "Start over" option. Wizard text is translated EN/AR; the field labels inside the form are still English.
+- **Client tracking:** the order detail page opens with a plain-language status banner (what stage the order is in and what happens next), in English and Arabic.
+- **Prepress floor:** all plate-step buttons are now at least 52 px tall with large text (the two exposure steps were tiny), plus a "x / 9 completed" bar with a percentage at the top of the steps.
+- **Courier:** call, open-in-maps and Complete Delivery are large touch buttons; Complete Delivery is full width on phones.
+- **Accessibility:** skip-to-content link, main landmark and labelled navigation in every portal.
+- **Notifications:** in-app notifications already fire on status changes (backend). Email / WhatsApp / SMS were **not** added: they need a provider and credentials (you skipped email earlier). Pick a provider when you want them.
+
+Phase 2 status: done except external notifications.

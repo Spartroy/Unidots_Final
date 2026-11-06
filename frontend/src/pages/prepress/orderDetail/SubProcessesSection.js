@@ -1,8 +1,22 @@
 import React from 'react';
 
-const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdate, updating, user }) => (
+const STEP_KEYS = ['positioning', 'backExposure', 'laserImaging', 'mainExposure', 'washout', 'drying', 'postExposure', 'uvcExposure', 'finishing'];
+
+const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdate, updating, user }) => {
+  const done = STEP_KEYS.filter((k) => getSubProcessStatusDisplay(k).status === 'Completed').length;
+  const percent = Math.round((done / STEP_KEYS.length) * 100);
+  return (
   <div className="px-6 py-6 bg-gradient-to-r from-gray-50 to-gray-100 border-t border-gray-200">
-    <h5 className="text-lg font-semibold text-gray-700 mb-6 text-right">عمليات ما قبل الطباعة</h5>
+    <h5 className="text-lg font-semibold text-gray-700 mb-3 text-right">عمليات ما قبل الطباعة</h5>
+    <div className="mb-6" dir="rtl">
+      <div className="flex items-center justify-between text-base font-semibold text-gray-800">
+        <span>{done} / {STEP_KEYS.length} مكتملة</span>
+        <span>{percent}%</span>
+      </div>
+      <div className="mt-2 h-4 w-full overflow-hidden rounded-full bg-gray-200" role="progressbar" aria-valuemin={0} aria-valuemax={STEP_KEYS.length} aria-valuenow={done} aria-label="تقدم عمليات ما قبل الطباعة">
+        <div className="h-full rounded-full bg-green-600 transition-all" style={{ width: `${percent}%` }} />
+      </div>
+    </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
     {/* Positioning Process */}
       <div className={`bg-white border-2 ${getSubProcessStatusDisplay('positioning').status === 'Completed' ? 'border-green-300 shadow-lg' : 'border-gray-200'} rounded-xl p-6 transition-all hover:shadow-xl`}>
@@ -26,7 +40,7 @@ const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdat
                 type="button"
                 onClick={() => handleSubProcessUpdate('positioning', 'Completed')}
                 disabled={updating}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 hover:shadow-md"
+                className="inline-flex items-center justify-center px-6 py-3 min-h-[52px] min-w-[96px] border border-transparent text-base font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 hover:shadow-md"
               >
                 إكمال
               </button>
@@ -35,7 +49,7 @@ const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdat
                 type="button"
                 onClick={() => handleSubProcessUpdate('positioning', 'Pending')}
                 disabled={updating}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-semibold rounded-lg text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200"
+                className="inline-flex items-center justify-center px-6 py-3 min-h-[52px] min-w-[96px] border border-transparent text-base font-semibold rounded-lg text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200"
               >
                 إعادة
               </button>
@@ -66,7 +80,7 @@ const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdat
                 type="button"
               onClick={() => handleSubProcessUpdate('backExposure', 'Completed')}
               disabled={updating}
-              className="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
+              className="inline-flex items-center justify-center px-6 py-3 min-h-[52px] min-w-[96px] border border-transparent text-base font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
               >
               إكمال
               </button>
@@ -75,7 +89,7 @@ const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdat
                   type="button"
               onClick={() => handleSubProcessUpdate('backExposure', 'Pending')}
               disabled={updating}
-              className="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-semibold rounded-lg text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
+              className="inline-flex items-center justify-center px-6 py-3 min-h-[52px] min-w-[96px] border border-transparent text-base font-semibold rounded-lg text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
                 >
               إعادة
                 </button>
@@ -105,7 +119,7 @@ const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdat
               type="button"
               onClick={() => handleSubProcessUpdate('laserImaging', 'Completed')}
               disabled={updating}
-              className="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
+              className="inline-flex items-center justify-center px-6 py-3 min-h-[52px] min-w-[96px] border border-transparent text-base font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
             >
               إكمال
             </button>
@@ -114,7 +128,7 @@ const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdat
               type="button"
               onClick={() => handleSubProcessUpdate('laserImaging', 'Pending')}
               disabled={updating}
-              className="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-semibold rounded-lg text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
+              className="inline-flex items-center justify-center px-6 py-3 min-h-[52px] min-w-[96px] border border-transparent text-base font-semibold rounded-lg text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
             >
               إعادة
             </button>
@@ -144,7 +158,7 @@ const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdat
                 type="button"
               onClick={() => handleSubProcessUpdate('mainExposure', 'Completed')}
               disabled={updating}
-              className="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
+              className="inline-flex items-center justify-center px-6 py-3 min-h-[52px] min-w-[96px] border border-transparent text-base font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
             >
               إكمال
             </button>
@@ -153,7 +167,7 @@ const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdat
               type="button"
               onClick={() => handleSubProcessUpdate('mainExposure', 'Pending')}
               disabled={updating}
-              className="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-semibold rounded-lg text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
+              className="inline-flex items-center justify-center px-6 py-3 min-h-[52px] min-w-[96px] border border-transparent text-base font-semibold rounded-lg text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
             >
               إعادة
             </button>
@@ -183,7 +197,7 @@ const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdat
                 type="button"
               onClick={() => handleSubProcessUpdate('washout', 'Completed')}
               disabled={updating}
-              className="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
+              className="inline-flex items-center justify-center px-6 py-3 min-h-[52px] min-w-[96px] border border-transparent text-base font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
               >
               إكمال
               </button>
@@ -192,7 +206,7 @@ const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdat
                   type="button"
               onClick={() => handleSubProcessUpdate('washout', 'Pending')}
               disabled={updating}
-              className="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-semibold rounded-lg text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
+              className="inline-flex items-center justify-center px-6 py-3 min-h-[52px] min-w-[96px] border border-transparent text-base font-semibold rounded-lg text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
                 >
               إعادة
                 </button>
@@ -222,7 +236,7 @@ const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdat
                   type="button"
               onClick={() => handleSubProcessUpdate('drying', 'Completed')}
               disabled={updating}
-              className="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
+              className="inline-flex items-center justify-center px-6 py-3 min-h-[52px] min-w-[96px] border border-transparent text-base font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
             >
               إكمال
             </button>
@@ -231,7 +245,7 @@ const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdat
               type="button"
               onClick={() => handleSubProcessUpdate('drying', 'Pending')}
               disabled={updating}
-              className="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-semibold rounded-lg text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
+              className="inline-flex items-center justify-center px-6 py-3 min-h-[52px] min-w-[96px] border border-transparent text-base font-semibold rounded-lg text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
             >
               إعادة
             </button>
@@ -282,7 +296,7 @@ const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdat
                 type="button"
               onClick={() => handleSubProcessUpdate('postExposure', 'Completed')}
               disabled={updating}
-              className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              className="inline-flex items-center justify-center px-6 py-3 min-h-[52px] min-w-[96px] border border-transparent text-base font-semibold rounded text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
               >
              نهائي
               </button>
@@ -291,7 +305,7 @@ const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdat
                   type="button"
               onClick={() => handleSubProcessUpdate('postExposure', 'Pending')}
               disabled={updating}
-              className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              className="inline-flex items-center justify-center px-6 py-3 min-h-[52px] min-w-[96px] border border-transparent text-base font-semibold rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                 >
               Reset
                 </button>
@@ -303,7 +317,7 @@ const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdat
                   type="button"
               onClick={() => handleSubProcessUpdate('uvcExposure', 'Completed')}
               disabled={updating}
-              className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
+              className="inline-flex items-center justify-center px-6 py-3 min-h-[52px] min-w-[96px] border border-transparent text-base font-semibold rounded text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
             >
                UVC
             </button>
@@ -312,7 +326,7 @@ const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdat
               type="button"
               onClick={() => handleSubProcessUpdate('uvcExposure', 'Pending')}
               disabled={updating}
-              className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
+              className="inline-flex items-center justify-center px-6 py-3 min-h-[52px] min-w-[96px] border border-transparent text-base font-semibold rounded text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
             >
               Reset UVC
             </button>
@@ -341,7 +355,7 @@ const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdat
               type="button"
               onClick={() => handleSubProcessUpdate('finishing', 'Completed')}
               disabled={updating}
-              className="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
+              className="inline-flex items-center justify-center px-6 py-3 min-h-[52px] min-w-[96px] border border-transparent text-base font-semibold rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
             >
               إكمال
             </button>
@@ -350,7 +364,7 @@ const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdat
               type="button"
               onClick={() => handleSubProcessUpdate('finishing', 'Pending')}
               disabled={updating}
-              className="inline-flex items-center px-5 py-2.5 border border-transparent text-sm font-semibold rounded-lg text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
+              className="inline-flex items-center justify-center px-6 py-3 min-h-[52px] min-w-[96px] border border-transparent text-base font-semibold rounded-lg text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 transition-all duration-200 shadow-sm"
             >
               إعادة
             </button>
@@ -359,6 +373,7 @@ const SubProcessesSection = ({ getSubProcessStatusDisplay, handleSubProcessUpdat
       </div>
     </div>
   </div>
-);
+  );
+};
 
 export default SubProcessesSection;

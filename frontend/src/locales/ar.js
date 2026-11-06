@@ -90,6 +90,30 @@ const ar = {
   'wizard.review.printing': 'نوع الطباعة',
   'wizard.price.label': 'السعر التقديري',
   'wizard.price.note': 'هذا السعر تقديري، ويؤكد يونيدوتس السعر النهائي.',
+
+  'nav.skipToContent': 'تخطَّ إلى المحتوى الرئيسي',
+  'nav.mainNavigation': 'التنقل الرئيسي',
+
+  'status.title.Submitted': 'تم استلام الأوردر',
+  'status.next.Submitted': 'سيتم تعيين مصمم قريبًا. سنخطرك فور بدء العمل.',
+  'status.title.Designing': 'التصميم جارٍ',
+  'status.next.Designing': 'يجهّز المصمم التصميم. قد يُطلب منك الموافقة عليه.',
+  'status.title.Design Done': 'اكتمل التصميم',
+  'status.next.Design Done': 'اكتمل التصميم وينتقل بعده إلى تصنيع الكليشيهات.',
+  'status.title.In Review': 'قيد المراجعة',
+  'status.next.In Review': 'نراجع تفاصيل أوردرك وسنتواصل معك إذا كان هناك شيء غير واضح.',
+  'status.title.In Prepress': 'جارٍ تصنيع الكليشيهات',
+  'status.next.In Prepress': 'كليشيهاتك في الإنتاج. هذه المرحلة من تسع خطوات وهي الأطول.',
+  'status.title.Ready for Delivery': 'جاهز للتسليم',
+  'status.next.Ready for Delivery': 'أوردرك جاهز وسيتم ترتيب طريقة التسليم.',
+  'status.title.Delivering': 'في الطريق',
+  'status.next.Delivering': 'أوردرك خرج للتسليم.',
+  'status.title.Completed': 'مكتمل',
+  'status.next.Completed': 'تم تسليم أوردرك. شكرًا لك. يمكنك إعادة الطلب أو تقديم شكوى إذا كان هناك خطأ.',
+  'status.title.Cancelled': 'ملغي',
+  'status.next.Cancelled': 'تم إلغاء هذا الأوردر. يمكنك تقديم أوردر جديد في أي وقت.',
+  'status.title.On Hold': 'معلّق',
+  'status.next.On Hold': 'العمل متوقف مؤقتًا. راجع التعليقات أو تواصل مع يونيدوتس.',
 };
 
 export default ar;

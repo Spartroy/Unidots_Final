@@ -157,7 +157,7 @@ const CourierOrderDetail = () => {
               <PhoneIcon className="h-5 w-5 text-gray-400" />
               <span>{order.client?.name}</span>
               <span>·</span>
-              <a href={`tel:${order.client?.phone || ''}`} className="text-primary-600 hover:underline">
+              <a href={`tel:${order.client?.phone || ''}`} aria-label={`Call ${order.client?.name || 'client'}`} className="inline-flex items-center justify-center min-h-[44px] rounded-md bg-primary-600 px-4 py-2 font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                 {order.client?.phone || 'No phone'}
               </a>
             </div>
@@ -191,7 +191,7 @@ const CourierOrderDetail = () => {
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([destination.street, destination.city, destination.state, destination.postalCode, destination.country].filter(Boolean).join(', '))}`} 
                           target="_blank" 
                           rel="noreferrer" 
-                          className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700"
+                          className="inline-flex items-center justify-center gap-2 min-h-[44px] rounded-md border border-primary-300 bg-white px-4 py-2 font-semibold text-primary-700 hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-500"
                         >
                           <MapPinIcon className="h-5 w-5" />
                           Open in Google Maps
@@ -226,7 +226,7 @@ const CourierOrderDetail = () => {
               ) : (
                 <button 
                   onClick={completeDelivery}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-emerald-600 text-white font-medium shadow hover:bg-emerald-700"
+                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 min-h-[56px] px-6 py-3 rounded-md bg-emerald-600 text-white text-lg font-semibold shadow hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
                 >
                   <CheckCircleIcon className="h-5 w-5" />
                   Complete Delivery
@@ -323,7 +323,7 @@ const CourierOrderDetail = () => {
               ) : (
                 <button 
                   onClick={completeDelivery}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-emerald-600 text-white font-medium shadow hover:bg-emerald-700"
+                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 min-h-[56px] px-6 py-3 rounded-md bg-emerald-600 text-white text-lg font-semibold shadow hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
                 >
                   <CheckCircleIcon className="h-5 w-5" />
                   Complete Delivery

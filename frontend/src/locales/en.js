@@ -96,6 +96,32 @@ const en = {
   'wizard.review.printing': 'Printing mode',
   'wizard.price.label': 'Estimated price',
   'wizard.price.note': 'This is an estimate. The final price is confirmed by UniDots.',
+
+  // Accessibility
+  'nav.skipToContent': 'Skip to main content',
+  'nav.mainNavigation': 'Main navigation',
+
+  // Order status explainer (what the client should expect next)
+  'status.title.Submitted': 'Order received',
+  'status.next.Submitted': 'A designer will be assigned shortly. You will be notified as soon as work starts.',
+  'status.title.Designing': 'Design in progress',
+  'status.next.Designing': 'Your designer is preparing the artwork. You may be asked to approve it.',
+  'status.title.Design Done': 'Design finished',
+  'status.next.Design Done': 'The artwork is complete and moves to plate making next.',
+  'status.title.In Review': 'Under review',
+  'status.next.In Review': 'We are checking your order details. We will contact you if anything is unclear.',
+  'status.title.In Prepress': 'Plates being made',
+  'status.next.In Prepress': 'Your plates are in production. This stage has nine steps and takes the longest.',
+  'status.title.Ready for Delivery': 'Ready for delivery',
+  'status.next.Ready for Delivery': 'Your order is packed. A delivery method will be arranged.',
+  'status.title.Delivering': 'On the way',
+  'status.next.Delivering': 'Your order is out for delivery.',
+  'status.title.Completed': 'Completed',
+  'status.next.Completed': 'Your order has been delivered. Thank you. You can reorder or open a claim if something is wrong.',
+  'status.title.Cancelled': 'Cancelled',
+  'status.next.Cancelled': 'This order was cancelled. You can place a new order any time.',
+  'status.title.On Hold': 'On hold',
+  'status.next.On Hold': 'Work is paused. Please check the comments or contact UniDots.',
 };
 
 export default en;
