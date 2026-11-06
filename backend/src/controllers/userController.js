@@ -306,6 +306,7 @@ const updateUser = asyncHandler(async (req, res) => {
     user.role = req.body.role || user.role;
     user.isActive = req.body.isActive !== undefined ? req.body.isActive : user.isActive;
     user.phone = req.body.phone || user.phone;
+    if (req.body.company !== undefined) user.company = req.body.company;
     
     // Handle address updates
     if (req.body.address) {
