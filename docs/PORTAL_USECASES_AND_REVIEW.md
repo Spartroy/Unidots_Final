@@ -99,8 +99,10 @@ Internal stages: **Production** (design + ripping) → **Prepress** (9 plate sub
 
 Confirmed by you: the default shipping company ("Middle East") stays.
 
+18. **Order detail pages split.** Client, employee, manager and prepress detail pages went from 1,224 / 1,865 / 1,372 / 1,352 lines to 499 / 667 / 525 / 863, with tabs, modals and sections moved to `pages/<portal>/orderDetail/*.js` (e.g. `DetailsTab`, `FilesTab`, `CancelModal`, `SubProcessesSection`). The build compiles. Remaining dead code (unused helpers, e.g. in prepress and client) is only warned about, not removed.
+19. **Lint config fixed.** `.eslintrc.js` referenced a TypeScript rule that does not exist in this JavaScript project and failed the build; removed.
+
 ### Decided, not yet built
-- Split the 1,200–1,900-line order detail pages into smaller components.
 - EN/AR language toggle with RTL across all portals (Prepress defaults to Arabic).
 - Show all hidden features in the nav, grouped (a "More" menu on desktop, sections in the mobile drawer).
 - Biggest user pain points to design for: creating an order, tracking status, prepress floor use, manager oversight.
