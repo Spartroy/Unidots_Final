@@ -4,8 +4,10 @@ import en from '../locales/en';
 import ar from '../locales/ar';
 import landingEn from '../locales/landing.en';
 import landingAr from '../locales/landing.ar';
+import phase5En from '../locales/phase5.en';
+import phase5Ar from '../locales/phase5.ar';
 
-const dictionaries = { en: { ...en, ...landingEn }, ar: { ...ar, ...landingAr } };
+const dictionaries = { en: { ...en, ...landingEn, ...phase5En }, ar: { ...ar, ...landingAr, ...phase5Ar } };
 const STORAGE_KEY = 'unidots_lang';
 
 const readStored = () => {

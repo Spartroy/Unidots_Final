@@ -25,10 +25,16 @@ import {
   chooseDeliveryMethod
 } from '../controllers/orderController.js';
 import { protect, client, staff, manager, prepress, prepressOrManager, courier } from '../middleware/authMiddleware.js';
+import { getSuggestedQuote, sendQuote, respondToQuote } from '../controllers/quoteController.js';
+import { getClientReport } from '../controllers/reportController.js';
 
 // Client dashboard routes (must be defined before the /:id routes to avoid conflicts)
 router.route('/client-stats')
   .get(protect, client, getClientStats);
+
+// Client's own monthly report (before /:id)
+router.route('/client-report')
+  .get(protect, client, getClientReport);
 
 router.route('/recent')
   .get(protect, getRecentOrders);
@@ -52,6 +58,11 @@ router.route('/')
 router.route('/:id')
   .get(protect, getOrderById)
   .put(protect, updateOrder);
+
+// Quotes: manager prepares and sends, the client approves or rejects
+router.route('/:id/quote/suggest').get(protect, manager, getSuggestedQuote);
+router.route('/:id/quote').put(protect, manager, sendQuote);
+router.route('/:id/quote/respond').put(protect, client, respondToQuote);
 
 // Client cancel order route
 router.route('/:id/cancel')

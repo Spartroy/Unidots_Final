@@ -68,6 +68,9 @@ const ManagerClientDetail = lazy(() => import('./pages/manager/ClientDetail'));
 const ManagerProfile = lazy(() => import('./pages/manager/Profile'));
 const MonthlyReports = lazy(() => import('./pages/manager/MonthlyReports'));
 const ManagerMessages = lazy(() => import('./pages/manager/Messages'));
+const ManagerPriceList = lazy(() => import('./pages/manager/PriceList'));
+const ManagerInventory = lazy(() => import('./pages/manager/Inventory'));
+const ClientReports = lazy(() => import('./pages/client/Reports'));
 const BarrelManagement = lazy(() => import('./pages/manager/BarrelManagement'));
 const ManagerPlateMonitoring = lazy(() => import('./pages/manager/PlateMonitoring'));
 const PrepressOrders = lazy(() => import('./pages/prepress/Orders'));
@@ -116,6 +119,7 @@ function App() {
             <Route path="claims" element={<ClientClaims />} />
             <Route path="claims/:id" element={<ClientClaimDetail />} />
             <Route path="claims/new" element={<ClientNewClaim />} />
+            <Route path="reports" element={<ClientReports />} />
             <Route path="profile" element={<ClientProfile />} />
           </Route>
 
@@ -160,6 +164,8 @@ function App() {
             <Route path="plate-monitoring" element={<ManagerPlateMonitoring />} />
             <Route path="reports" element={<MonthlyReports />} />
             <Route path="messages" element={<ManagerMessages />} />
+            <Route path="price-list" element={<ManagerPriceList />} />
+            <Route path="inventory" element={<ManagerInventory />} />
             <Route path="profile" element={<ManagerProfile />} />
           </Route>
 

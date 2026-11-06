@@ -14,6 +14,7 @@ import ProgressTab from './orderDetail/ProgressTab';
 import FilesTab from './orderDetail/FilesTab';
 import CommentsTab from './orderDetail/CommentsTab';
 import StatusActionsPanel from './orderDetail/StatusActionsPanel';
+import QuotePanel from '../../components/manager/QuotePanel';
 const OrderDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -516,6 +517,7 @@ const OrderDetail = () => {
           </div>
           
           {/* Status Update Buttons */}
+          <div className="w-full"><QuotePanel order={order} onChanged={refreshOrder} /></div>
           {!['Completed', 'Cancelled'].includes(order.status) && <StatusActionsPanel handleStatusUpdate={handleStatusUpdate} order={order} updating={updating} />}
         </div>
       </div>

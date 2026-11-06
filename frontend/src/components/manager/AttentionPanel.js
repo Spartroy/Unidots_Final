@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ExclamationTriangleIcon, PauseCircleIcon, UserMinusIcon } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon, PauseCircleIcon, UserMinusIcon, ClockIcon, ArchiveBoxIcon } from '@heroicons/react/24/outline';
 import api from '../../utils/api';
 import useAutoRefresh from '../../hooks/useAutoRefresh';
 import { useLanguage } from '../../context/LanguageContext';
@@ -10,7 +10,7 @@ const DAY = 24 * 60 * 60 * 1000;
 
 const daysLate = (deadline) => Math.max(1, Math.ceil((Date.now() - new Date(deadline).getTime()) / DAY));
 
-const Group = ({ icon: Icon, tone, title, orders, empty, renderNote, linkBase }) => (
+const Group = ({ icon: Icon, tone, title, orders, empty, renderNote, linkBase, linkFor }) => (
   <div className="rounded-lg border border-gray-200 bg-white p-4">
     <div className="flex items-center gap-2">
       <Icon className={`h-5 w-5 ${tone}`} aria-hidden="true" />
@@ -23,7 +23,7 @@ const Group = ({ icon: Icon, tone, title, orders, empty, renderNote, linkBase })
       <ul className="mt-3 divide-y divide-gray-100">
         {orders.slice(0, 5).map((o) => (
           <li key={o._id} className="py-2">
-            <Link to={`${linkBase}/${o._id}`} className="block rounded hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500">
+            <Link to={linkFor ? linkFor(o) : `${linkBase}/${o._id}`} className="block rounded hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500">
               <span className="text-sm font-medium text-primary-700">{o.orderNumber}</span>
               <span className="ms-2 text-sm text-gray-700">{o.title}</span>
               <span className="block text-xs text-gray-500">{renderNote(o)}</span>
@@ -39,6 +39,7 @@ const Group = ({ icon: Icon, tone, title, orders, empty, renderNote, linkBase })
 const AttentionPanel = () => {
   const { t } = useLanguage();
   const [groups, setGroups] = useState(null);
+  const [lowStock, setLowStock] = useState([]);
   const [failed, setFailed] = useState(false);
 
   const load = useCallback(async () => {
@@ -46,10 +47,18 @@ const AttentionPanel = () => {
       const res = await api.get('/api/orders?limit=200');
       setGroups(groupOrdersNeedingAttention(res.data.orders));
       setFailed(false);
+      try {
+        const stock = await api.get('/api/inventory/low');
+        const rows = stock.data.items.map((i) => ({ _id: i._id, orderNumber: `${i.material} ${i.thickness} mm`, title: '', qty: i.quantity }));
+        if (stock.data.solvent) rows.push({ _id: 'solvent', orderNumber: t('attention.solventLow'), title: '', liters: Math.round(stock.data.solvent.currentLiters) });
+        setLowStock(rows);
+      } catch (_) {
+        setLowStock([]);
+      }
     } catch (e) {
       setFailed(true);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     load();
@@ -59,7 +68,7 @@ const AttentionPanel = () => {
   if (failed && !groups) return null; // the rest of the dashboard already reports API problems
   if (!groups) return null;
 
-  const total = groups.overdue.length + groups.onHold.length + groups.unassigned.length;
+  const total = groups.overdue.length + groups.onHold.length + groups.unassigned.length + groups.awaitingApproval.length + lowStock.length;
 
   return (
     <section aria-labelledby="attention-title" className="bg-white shadow rounded-lg p-4 sm:p-6">
@@ -96,6 +105,24 @@ const AttentionPanel = () => {
           empty={t('attention.noneUnassigned')}
           renderNote={(o) => t('attention.submitted', { date: new Date(o.createdAt).toLocaleDateString() })}
           linkBase="/manager/orders"
+        />
+        <Group
+          icon={ClockIcon}
+          tone="text-blue-600"
+          title={t('attention.awaiting')}
+          orders={groups.awaitingApproval}
+          empty={t('attention.noneAwaiting')}
+          renderNote={(o) => t('attention.awaitingNote', { date: o.quote?.sentAt ? new Date(o.quote.sentAt).toLocaleDateString() : '' })}
+          linkBase="/manager/orders"
+        />
+        <Group
+          icon={ArchiveBoxIcon}
+          tone="text-orange-600"
+          title={t('attention.lowStock')}
+          orders={lowStock}
+          empty={t('attention.noneLowStock')}
+          renderNote={(o) => (o.liters !== undefined ? t('attention.solventNote', { liters: o.liters }) : t('attention.lowStockNote', { qty: o.qty }))}
+          linkFor={() => '/manager/inventory'}
         />
       </div>
     </section>

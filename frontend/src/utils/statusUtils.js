@@ -64,6 +64,8 @@ export const getStatusColor = (status) => {
       return 'bg-indigo-100 text-indigo-800';
     case 'Delivering':
       return 'bg-cyan-100 text-cyan-800';
+    case 'Awaiting Approval':
+      return 'bg-amber-100 text-amber-800';
     case 'Cancelled':
       return 'bg-red-100 text-red-800';
     case 'On Hold':

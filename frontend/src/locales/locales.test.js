@@ -2,12 +2,15 @@ import en from './en';
 import ar from './ar';
 import landingEn from './landing.en';
 import landingAr from './landing.ar';
+import phase5En from './phase5.en';
+import phase5Ar from './phase5.ar';
 
 const placeholders = (s) => (s.match(/\{\w+\}/g) || []).sort().join(',');
 
 const pairs = [
   ['app', en, ar],
   ['landing', landingEn, landingAr],
+  ['phase5', phase5En, phase5Ar],
 ];
 
 describe.each(pairs)('%s translations', (name, enDict, arDict) => {

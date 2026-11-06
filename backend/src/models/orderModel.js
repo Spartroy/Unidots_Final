@@ -134,6 +134,7 @@ const orderSchema = mongoose.Schema(
       required: true,
       enum: [
         'Submitted',
+        'Awaiting Approval',
         'Designing',
         'Design Done',
         'In Review',
@@ -357,6 +358,29 @@ const orderSchema = mongoose.Schema(
         createdAt: { type: Date },
       },
       },
+    },
+    // Quote sent to the client. If `required`, work cannot start until the client approves it.
+    quote: {
+      status: { type: String, enum: ['None', 'Sent', 'Approved', 'Rejected'], default: 'None' },
+      required: { type: Boolean, default: false },
+      amount: Number,
+      currency: { type: String, default: 'EGP' },
+      note: String,
+      sentAt: Date,
+      sentBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      respondedAt: Date,
+      rejectionReason: String,
+      approval: {
+        signedName: String,
+        ip: String,
+        at: Date,
+        amount: Number,
+      },
+    },
+    // Set once plate material has been taken out of stock for this order
+    inventory: {
+      platesDeducted: { type: Boolean, default: false },
+      areaM2: Number,
     },
     priority: {
       type: String,

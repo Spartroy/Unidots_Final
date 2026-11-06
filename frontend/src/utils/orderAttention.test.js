@@ -12,13 +12,15 @@ test('finds overdue, on-hold and unassigned orders, ignoring closed ones', () =>
     { _id: '5', status: 'Submitted', assignedTo: 'u1' },
     { _id: '6', status: 'Completed', deadline: new Date(now - 5 * day).toISOString() },
     { _id: '7', status: 'Cancelled', deadline: new Date(now - 5 * day).toISOString() },
+    { _id: '8', status: 'Awaiting Approval' },
   ];
   const g = groupOrdersNeedingAttention(orders, now);
   expect(g.overdue.map((o) => o._id)).toEqual(['1']);
   expect(g.onHold.map((o) => o._id)).toEqual(['3']);
   expect(g.unassigned.map((o) => o._id)).toEqual(['4']);
+  expect(g.awaitingApproval.map((o) => o._id)).toEqual(['8']);
 });
 
 test('handles empty input', () => {
-  expect(groupOrdersNeedingAttention(undefined, now)).toEqual({ overdue: [], onHold: [], unassigned: [] });
+  expect(groupOrdersNeedingAttention(undefined, now)).toEqual({ overdue: [], onHold: [], unassigned: [], awaitingApproval: [] });
 });

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import StatusExplainer from '../../components/client/StatusExplainer';
+import QuoteCard from '../../components/client/QuoteCard';
 import api from '../../utils/api';
 import { toast } from 'react-toastify';
 import AuthContext from '../../context/AuthContext';
@@ -336,6 +337,7 @@ const OrderDetail = () => {
   return (
     <div className="space-y-4 sm:space-y-6">
       <StatusExplainer status={order?.status} />
+      <QuoteCard order={order} onChanged={fetchOrderData} />
 
       {/* Mobile-optimized Order Header */}
       <div className="bg-white shadow rounded-lg overflow-hidden">

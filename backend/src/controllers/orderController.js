@@ -4,6 +4,8 @@ import User from '../models/userModel.js';
 import Claim from '../models/claimModel.js';
 import { createSystemNotification } from './notificationController.js';
 import mongoose from 'mongoose';
+import { isWorkBlockedByQuote, isBlockedTransition } from '../utils/quoteLogic.js';
+import { deductPlatesForOrder } from '../services/inventoryService.js';
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -205,6 +207,10 @@ const completeRippingAndStartPrepress = asyncHandler(async (req, res) => {
     res.status(403);
     throw new Error('Order not assigned to you');
   }
+  if (isWorkBlockedByQuote(order)) {
+    res.status(400);
+    throw new Error('Work cannot continue until the client approves the quote.');
+  }
   // Ensure design is completed first
   if (order.status !== 'Design Done' && order.status !== 'Designing') {
     res.status(400);
@@ -225,7 +231,8 @@ const completeRippingAndStartPrepress = asyncHandler(async (req, res) => {
     order.stages.production.completionDate = Date.now();
   }
 
-  // Move to Prepress
+  // Move to Prepress (plate material is taken out of stock here)
+  await deductPlatesForOrder(order, req.user._id);
   order.status = 'In Prepress';
   order.stages.prepress.status = 'In Progress';
   if (!order.stages.prepress.startDate) {
@@ -552,6 +559,12 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Order not found');
   }
+
+  // A quote that needs the client's approval blocks the start of work
+  if (isBlockedTransition(order, status)) {
+    res.status(400);
+    throw new Error('Work cannot start until the client approves the quote.');
+  }
   
   console.log('Current order details:', {
     orderStatus: order.status,
@@ -777,6 +790,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
         order.stages.production.startDate = Date.now();
     }
   } else if (status === 'In Prepress') {
+    await deductPlatesForOrder(order, req.user._id);
     // Start prepress stage without automatically marking design as completed
     order.stages.prepress.status = 'In Progress';
     if (!order.stages.prepress.startDate) {

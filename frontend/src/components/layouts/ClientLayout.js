@@ -9,6 +9,7 @@ const portal = {
     { labelKey: 'nav.dashboard', href: '/client', match: (p) => p === '/client' },
     { labelKey: 'nav.orders', href: '/client/orders' },
     { labelKey: 'nav.claims', href: '/client/claims' },
+    { labelKey: 'nav.reports', href: '/client/reports' },
   ],
   extras: <ChatBot />,
 };
