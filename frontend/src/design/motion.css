@@ -64,3 +64,19 @@ html.ud-theme-fade, html.ud-theme-fade * { transition: background-color 320ms ea
   .ud-rise, .ud-pop, .ud-sheet, .ud-sheet-panel, .ud-toast, .ud-dialog, .ud-skel, .ud-progress span, .ud-step .ud-dot { animation: none !important; }
   .ud-btn, .ud-card, .ud-side nav a { transition: none !important; transform: none !important; }
 }
+
+/* Language switch: full-screen veil that hides the swap of text and direction */
+.ud-langswitch { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; background: var(--nav, #0b3a5b); color: var(--on-nav, #fff); animation: ud-lang-in 320ms var(--ease-out, ease-out) both; }
+.ud-langswitch[data-leaving='true'] { animation: ud-lang-out 350ms var(--ease-out, ease-out) both; pointer-events: none; }
+.ud-langswitch-inner { display: flex; flex-direction: column; align-items: center; gap: 20px; text-align: center; padding: 24px; animation: ud-lang-rise 500ms var(--ease-out, ease-out) both; }
+.ud-langswitch-inner img { height: auto; }
+.ud-langswitch-inner p { margin: 0; font: 600 18px/26px var(--font-sans, system-ui); letter-spacing: 0; }
+.ud-langswitch-dots { display: flex; gap: 10px; }
+.ud-langswitch-dots span { width: 10px; height: 10px; border-radius: 50%; background: currentColor; opacity: 0.35; animation: ud-lang-dot 900ms ease-in-out infinite; }
+.ud-langswitch-dots span:nth-child(2) { animation-delay: 150ms; }
+.ud-langswitch-dots span:nth-child(3) { animation-delay: 300ms; }
+@keyframes ud-lang-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ud-lang-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes ud-lang-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes ud-lang-dot { 0%, 100% { opacity: 0.25; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.15); } }
+@media (prefers-reduced-motion: reduce) { .ud-langswitch, .ud-langswitch-inner, .ud-langswitch-dots span { animation: none; } }

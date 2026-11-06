@@ -40,6 +40,12 @@ import acidEn from './acid.en';
 import acidAr from './acid.ar';
 import platesEn from './plates.en';
 import platesAr from './plates.ar';
+import notifEn from './notif.en';
+import notifAr from './notif.ar';
+import chatEn from './chat.en';
+import chatAr from './chat.ar';
+import detectorEn from './detector.en';
+import detectorAr from './detector.ar';
 
 const placeholders = (s) => (s.match(/\{\w+\}/g) || []).sort().join(',');
 
@@ -65,6 +71,9 @@ const pairs = [
   ['templates', templatesEn, templatesAr],
   ['acid', acidEn, acidAr],
   ['plates', platesEn, platesAr],
+  ['notif', notifEn, notifAr],
+  ['chat', chatEn, chatAr],
+  ['detector', detectorEn, detectorAr],
 ];
 
 describe.each(pairs)('%s translations', (name, enDict, arDict) => {

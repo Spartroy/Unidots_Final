@@ -1,213 +1,153 @@
-import React, { useContext, useRef, useState } from 'react';
-import { Fragment } from 'react';
-import { Menu, Transition } from '@headlessui/react';
-import { BellIcon, CheckIcon, TrashIcon } from '@heroicons/react/24/outline';
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import NotificationContext from '../../context/NotificationContext';
+import { useLanguage } from '../../context/LanguageContext';
 
-const NotificationDropdown = ({ colorClasses = 'text-primary-200 bg-primary-600' }) => {
+const BellIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+  </svg>
+);
+
+const TONE = { success: 'completed', warning: 'submitted', error: 'cancelled', info: 'designing' };
+const PANEL_W = 380;
+const GAP = 8;
+
+// Bell + panel. The panel is drawn in a portal on top of everything and kept inside the screen,
+// so it never hides behind the page header or runs off the edge, in either text direction.
+const NotificationDropdown = () => {
   const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useContext(NotificationContext);
-  const [isOpen, setIsOpen] = useState(false);
+  const { t, lang, dir } = useLanguage();
   const navigate = useNavigate();
-  const buttonRef = useRef(null);
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState(null);
+  const button = useRef(null);
+  const panel = useRef(null);
 
-  // Format date to readable format
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMilliseconds = now - date;
-    const diffInMinutes = Math.floor(diffInMilliseconds / (1000 * 60));
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    const diffInDays = Math.floor(diffInHours / 24);
+  const place = useCallback(() => {
+    const b = button.current?.getBoundingClientRect();
+    if (!b) return;
+    const vw = window.innerWidth;
+    const width = Math.min(PANEL_W, vw - GAP * 2);
+    const rtl = dir === 'rtl';
+    // line the panel's end edge up with the bell, then keep it on screen
+    let left = rtl ? b.left : b.right - width;
+    left = Math.max(GAP, Math.min(left, vw - width - GAP));
+    const top = Math.min(b.bottom + GAP, window.innerHeight - 160);
+    setPos({ left, top, width, maxHeight: window.innerHeight - top - GAP });
+  }, [dir]);
 
-    if (diffInMinutes < 1) {
-      return 'Just now';
-    } else if (diffInMinutes < 60) {
-      return `${diffInMinutes} ${diffInMinutes === 1 ? 'minute' : 'minutes'} ago`;
-    } else if (diffInHours < 24) {
-      return `${diffInHours} ${diffInHours === 1 ? 'hour' : 'hours'} ago`;
-    } else if (diffInDays < 7) {
-      return `${diffInDays} ${diffInDays === 1 ? 'day' : 'days'} ago`;
-    } else {
-      return date.toLocaleDateString();
-    }
+  useLayoutEffect(() => {
+    if (open) place();
+  }, [open, place]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        button.current?.focus();
+      }
+    };
+    const onDown = (e) => {
+      if (panel.current?.contains(e.target) || button.current?.contains(e.target)) return;
+      setOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onDown);
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    panel.current?.focus();
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onDown);
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [open, place]);
+
+  const ago = (d) => {
+    const secs = Math.round((new Date(d).getTime() - Date.now()) / 1000);
+    const rtf = new Intl.RelativeTimeFormat(lang === 'ar' ? 'ar-EG' : 'en', { numeric: 'auto' });
+    const abs = Math.abs(secs);
+    if (abs < 60) return rtf.format(0, 'second');
+    if (abs < 3600) return rtf.format(Math.round(secs / 60), 'minute');
+    if (abs < 86400) return rtf.format(Math.round(secs / 3600), 'hour');
+    if (abs < 604800) return rtf.format(Math.round(secs / 86400), 'day');
+    return new Date(d).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-GB', { dateStyle: 'medium' });
   };
 
-  // Get notification type styles
-  const getTypeStyles = (type) => {
-    switch (type) {
-      case 'success':
-        return 'bg-green-50 text-green-700 border-green-200';
-      case 'warning':
-        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-      case 'error':
-        return 'bg-red-50 text-red-700 border-red-200';
-      default:
-        return 'bg-blue-50 text-blue-700 border-blue-200';
-    }
-  };
-
-  // Get notification icon
-  const getNotificationIcon = (type) => {
-    switch (type) {
-      case 'success':
-        return '✓';
-      case 'warning':
-        return '⚠';
-      case 'error':
-        return '✕';
-      default:
-        return 'ℹ';
-    }
-  };
-
-  // Handle notification click
-  const handleNotificationClick = (notification) => {
-    if (!notification.read) {
-      markAsRead(notification._id);
-    }
-    
-    if (notification.link) {
-      navigate(notification.link);
-    }
-    
-    setIsOpen(false);
+  const openItem = (n) => {
+    if (!n.read) markAsRead(n._id);
+    setOpen(false);
+    if (n.link) navigate(n.link);
   };
 
   return (
-    <Menu as="div" className="relative">
-      <div>
-        <Menu.Button
-          ref={buttonRef}
-          className={`rounded-full p-2 ${colorClasses} hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-slate-800 transition-all duration-200 hover:scale-105`}
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          <span className="sr-only">View notifications</span>
-          <div className="relative">
-            <BellIcon className="h-5 w-5" aria-hidden="true" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-xs font-bold text-white shadow-lg animate-pulse">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </div>
-        </Menu.Button>
-      </div>
-
-      <Transition
-        show={isOpen}
-        as={Fragment}
-        enter="transition ease-out duration-200"
-        enterFrom="transform opacity-0 scale-95 translate-y-2"
-        enterTo="transform opacity-100 scale-100 translate-y-0"
-        leave="transition ease-in duration-150"
-        leaveFrom="transform opacity-100 scale-100 translate-y-0"
-        leaveTo="transform opacity-0 scale-95 translate-y-2"
+    <>
+      <button
+        ref={button}
+        type="button"
+        className="ud-bell"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-label={unreadCount > 0 ? t('nt.openUnread', { n: unreadCount }) : t('nt.open')}
+        onClick={() => setOpen((v) => !v)}
       >
-        <Menu.Items
-          static
-          className="absolute right-0 z-50 mt-3 w-80 sm:w-96 origin-top-right rounded-xl bg-white shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none max-h-[80vh] overflow-hidden border border-gray-100"
-        >
-          {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                <BellIcon className="h-5 w-5 mr-2 text-gray-600" />
-                Notifications
-                {unreadCount > 0 && (
-                  <span className="ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-xs font-bold text-white">
-                    {unreadCount}
-                  </span>
-                )}
-              </h3>
-              {unreadCount > 0 && (
-                <button
-                  onClick={markAllAsRead}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200"
-                >
-                  Mark all read
-                </button>
-              )}
-            </div>
-          </div>
+        <BellIcon />
+        {unreadCount > 0 && <span className="ud-bell-n" aria-hidden="true">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+      </button>
 
-          {/* Notifications List */}
-          <div className="max-h-96 overflow-y-auto">
-            {notifications.length > 0 ? (
-              <div className="divide-y divide-gray-50">
-                {notifications.map((notification) => (
-                  <div
-                    key={notification._id}
-                    className={`px-6 py-4 hover:bg-gray-50 cursor-pointer transition-all duration-200 ${
-                      !notification.read ? 'bg-blue-50/50 border-l-4 border-blue-400' : 'bg-white'
-                    }`}
-                    onClick={() => handleNotificationClick(notification)}
-                  >
-                    <div className="flex items-start space-x-3">
-                      {/* Notification Icon */}
-                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${getTypeStyles(notification.type)}`}>
-                        {getNotificationIcon(notification.type)}
-                      </div>
-                      
-                      {/* Notification Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start mb-1">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getTypeStyles(notification.type)}`}>
-                            {notification.type.charAt(0).toUpperCase() + notification.type.slice(1)}
-                          </span>
-                          <span className="text-xs text-gray-500 font-medium">
-                            {formatDate(notification.createdAt)}
-                          </span>
-                        </div>
-                        <p className="text-sm font-semibold text-gray-900 mb-1 line-clamp-2">
-                          {notification.title}
-                        </p>
-                        <p className="text-sm text-gray-600 line-clamp-2">
-                          {notification.message}
-                        </p>
-                      </div>
-                      
-                      {/* Action Buttons */}
-                      <div className="flex-shrink-0 flex flex-col gap-1">
-                        {!notification.read && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              markAsRead(notification._id);
-                            }}
-                            className="p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors duration-200"
-                            title="Mark as read"
-                          >
-                            <CheckIcon className="h-4 w-4" />
-                          </button>
-                        )}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteNotification(notification._id);
-                          }}
-                          className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors duration-200"
-                          title="Delete notification"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+      {open && pos &&
+        createPortal(
+          <div
+            ref={panel}
+            className="ud-notif ud-root"
+            role="dialog"
+            aria-label={t('nt.title')}
+            tabIndex={-1}
+            dir={dir}
+            style={{ left: pos.left, top: pos.top, width: pos.width, maxHeight: pos.maxHeight }}
+          >
+            <div className="ud-notif-head">
+              <h2>{t('nt.title')}</h2>
+              {unreadCount > 0 && <button type="button" className="ud-link" onClick={markAllAsRead}>{t('nt.markAll')}</button>}
+            </div>
+            {notifications.length === 0 ? (
+              <div className="ud-notif-empty">
+                <strong>{t('nt.empty')}</strong>
+                <span>{t('nt.emptyText')}</span>
               </div>
             ) : (
-              <div className="px-6 py-12 text-center">
-                <BellIcon className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                <p className="text-sm font-medium text-gray-900 mb-1">No notifications</p>
-                <p className="text-sm text-gray-500">You're all caught up!</p>
-              </div>
+              <ul className="ud-notif-list">
+                {notifications.map((n) => (
+                  <li key={n._id} data-unread={!n.read ? 'true' : 'false'}>
+                    <button type="button" className="ud-notif-item" onClick={() => openItem(n)}>
+                      <span className="ud-notif-dot" aria-hidden="true" style={{ background: `var(--status-${TONE[n.type] || 'designing'}-fg)` }} />
+                      <span className="ud-notif-body">
+                        <span className="ud-notif-meta">
+                          <span style={{ color: `var(--status-${TONE[n.type] || 'designing'}-fg)`, fontWeight: 600 }}>{t(`nt.type.${n.type}`) === `nt.type.${n.type}` ? t('nt.type.info') : t(`nt.type.${n.type}`)}</span>
+                          <span>{ago(n.createdAt)}</span>
+                        </span>
+                        <b>{n.title}</b>
+                        <span className="ud-notif-text">{n.message}</span>
+                        {!n.read && <span className="ud-sr">{t('nt.unread')}</span>}
+                      </span>
+                    </button>
+                    <span className="ud-notif-actions">
+                      {!n.read && <button type="button" className="ud-notif-act" aria-label={t('nt.markRead')} title={t('nt.markRead')} onClick={() => markAsRead(n._id)}>✓</button>}
+                      <button type="button" className="ud-notif-act" aria-label={t('nt.delete')} title={t('nt.delete')} onClick={() => deleteNotification(n._id)}>×</button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
             )}
-          </div>
-        </Menu.Items>
-      </Transition>
-    </Menu>
+          </div>,
+          document.body
+        )}
+    </>
   );
 };
 
-export default NotificationDropdown; 
+export default NotificationDropdown;

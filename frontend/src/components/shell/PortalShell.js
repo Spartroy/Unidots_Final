@@ -147,7 +147,7 @@ const PortalShell = ({ portal }) => {
           <header className="ud-mbar">
             <h1>{title}</h1>
             <LangGroup />
-            <span className="ud-tool-bell"><NotificationDropdown colorClasses="bg-transparent text-white" /></span>
+            <span className="ud-tool-bell"><NotificationDropdown /></span>
           </header>
 
           {/* Desktop page header (the one place the page title appears) */}
@@ -158,7 +158,7 @@ const PortalShell = ({ portal }) => {
             </div>
             <div className="ud-pagehead-tools">
               {chrome.actions || null}
-              <span className="ud-tool-bell"><NotificationDropdown colorClasses="bg-transparent text-gray-800" /></span>
+              <span className="ud-tool-bell"><NotificationDropdown /></span>
               <LangGroup />
               <ThemeButton />
             </div>

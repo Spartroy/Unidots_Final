@@ -1,4 +1,5 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import logoWhite from '../assets/logo-white.png';
 import AuthContext from './AuthContext';
 import en from '../locales/en';
 import ar from '../locales/ar';
@@ -42,8 +43,14 @@ import acidEn from '../locales/acid.en';
 import acidAr from '../locales/acid.ar';
 import platesEn from '../locales/plates.en';
 import platesAr from '../locales/plates.ar';
+import notifEn from '../locales/notif.en';
+import notifAr from '../locales/notif.ar';
+import chatEn from '../locales/chat.en';
+import chatAr from '../locales/chat.ar';
+import detectorEn from '../locales/detector.en';
+import detectorAr from '../locales/detector.ar';
 
-const dictionaries = { en: { ...en, ...landingEn, ...phase5En, ...prepressEn, ...activityEn, ...courierEn, ...ordersEn, ...managerEn, ...accountEn, ...profileEn, ...claimsEn, ...clientOrderEn, ...wizEn, ...peopleEn, ...tasksEn, ...mreportsEn, ...barrelsEn, ...empworkEn, ...templatesEn, ...acidEn, ...platesEn }, ar: { ...ar, ...landingAr, ...phase5Ar, ...prepressAr, ...activityAr, ...courierAr, ...ordersAr, ...managerAr, ...accountAr, ...profileAr, ...claimsAr, ...clientOrderAr, ...wizAr, ...peopleAr, ...tasksAr, ...mreportsAr, ...barrelsAr, ...empworkAr, ...templatesAr, ...acidAr, ...platesAr } };
+const dictionaries = { en: { ...en, ...landingEn, ...phase5En, ...prepressEn, ...activityEn, ...courierEn, ...ordersEn, ...managerEn, ...accountEn, ...profileEn, ...claimsEn, ...clientOrderEn, ...wizEn, ...peopleEn, ...tasksEn, ...mreportsEn, ...barrelsEn, ...empworkEn, ...templatesEn, ...acidEn, ...platesEn, ...notifEn, ...chatEn, ...detectorEn }, ar: { ...ar, ...landingAr, ...phase5Ar, ...prepressAr, ...activityAr, ...courierAr, ...ordersAr, ...managerAr, ...accountAr, ...profileAr, ...claimsAr, ...clientOrderAr, ...wizAr, ...peopleAr, ...tasksAr, ...mreportsAr, ...barrelsAr, ...empworkAr, ...templatesAr, ...acidAr, ...platesAr, ...notifAr, ...chatAr, ...detectorAr } };
 const STORAGE_KEY = 'unidots_lang';
 
 const readStored = () => {
@@ -76,12 +83,30 @@ export const LanguageProvider = ({ children }) => {
     document.documentElement.dir = dir;
   }, [lang, dir]);
 
-  const setLang = useCallback((next) => {
+  const apply = useCallback((next) => {
     setChosen(next);
     try {
       localStorage.setItem(STORAGE_KEY, next);
     } catch (_) {}
   }, []);
+
+  // Switching language shows a short full-screen transition so the swap of text and direction
+  // never looks like a broken layout. Reduced-motion users get an instant switch.
+  const [switching, setSwitching] = useState(null); // { to, leaving }
+  const timers = useRef([]);
+  const setLang = useCallback(
+    (next) => {
+      if (next === lang || switching) return;
+      const reduce = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce) return apply(next);
+      setSwitching({ to: next, leaving: false });
+      timers.current.push(setTimeout(() => apply(next), 320));
+      timers.current.push(setTimeout(() => setSwitching({ to: next, leaving: true }), 1000));
+      timers.current.push(setTimeout(() => setSwitching(null), 1350));
+    },
+    [lang, switching, apply]
+  );
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   const toggleLang = useCallback(() => setLang(lang === 'ar' ? 'en' : 'ar'), [lang, setLang]);
 
@@ -102,7 +127,29 @@ export const LanguageProvider = ({ children }) => {
 
   const value = useMemo(() => ({ lang, dir, t, setLang, toggleLang }), [lang, dir, t, setLang, toggleLang]);
 
-  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
+  return (
+    <LanguageContext.Provider value={value}>
+      {children}
+      {switching && (
+        <div
+          className="ud-langswitch"
+          data-leaving={switching.leaving ? 'true' : 'false'}
+          dir={switching.to === 'ar' ? 'rtl' : 'ltr'}
+          lang={switching.to}
+          role="status"
+          aria-live="polite"
+        >
+          <div className="ud-langswitch-inner">
+            <img src={logoWhite} alt="" width="132" height="auto" />
+            <div className="ud-langswitch-dots" aria-hidden="true">
+              <span /><span /><span />
+            </div>
+            <p>{dictionaries[switching.to]['lang.switching']}</p>
+          </div>
+        </div>
+      )}
+    </LanguageContext.Provider>
+  );
 };
 
 export const useLanguage = () => useContext(LanguageContext);

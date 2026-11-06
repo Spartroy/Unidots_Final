@@ -23,7 +23,8 @@ html, body { background: var(--bg-app); color: var(--text); font-family: var(--f
 /* Page head tools on a light surface */
 .ud-themebtn { min-width: var(--control-h); min-height: var(--control-h); display: grid; place-items: center; background: transparent; border: 1px solid var(--border-control); border-radius: var(--radius-md); color: var(--text); cursor: pointer; }
 .ud-themebtn:hover { background: var(--selected); }
-.ud-tool-bell button { color: var(--text); }
+.ud-tool-bell .ud-bell { color: var(--text); }
+.ud-mbar .ud-tool-bell .ud-bell { color: var(--on-nav); }
 
 /* Skip link */
 .ud-skip { position: absolute; inset-inline-start: -9999px; top: 8px; z-index: 100; background: var(--bg-card); color: var(--link); padding: 8px 16px; border-radius: var(--radius-md); box-shadow: var(--shadow-overlay); font-weight: 600; }
@@ -88,3 +89,41 @@ body:has(.ud-auth) { background: var(--bg-card); }
 /* Secondary navigation heading in the sidebar */
 .ud-side-group { margin: 14px 12px 2px; font: 600 13px/18px var(--font-sans); color: var(--on-nav); opacity: 0.7; }
 .ud-side nav { overflow-y: auto; }
+
+/* Notifications: bell and a panel drawn above everything (portal) */
+.ud-bell { position: relative; display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: var(--radius-full); border: 0; background: transparent; color: inherit; cursor: pointer; transition: background-color var(--dur-fast) var(--ease-out); }
+.ud-bell:hover { background: rgba(127, 127, 127, 0.18); }
+.ud-bell:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.ud-bell-n { position: absolute; inset-block-start: 2px; inset-inline-end: 2px; min-width: 18px; height: 18px; padding-inline: 4px; border-radius: 9px; background: var(--danger); color: #fff; font: 700 11px/18px var(--font-sans); text-align: center; }
+.ud-notif { position: fixed; z-index: 90; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-card); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-overlay); outline: none; animation: ud-fade var(--dur-base) var(--ease-out) both; }
+.ud-notif-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-block-end: 1px solid var(--border); }
+.ud-notif-head h2 { margin: 0; font: 600 16px/24px var(--font-sans); }
+.ud-notif-head .ud-link { background: none; border: 0; cursor: pointer; font-size: 14px; }
+.ud-notif-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
+.ud-notif-list li { position: relative; display: flex; align-items: flex-start; border-block-end: 1px solid var(--border); }
+.ud-notif-list li:last-child { border-block-end: 0; }
+.ud-notif-list li[data-unread='true'] { background: var(--bg-app); }
+.ud-notif-item { flex: 1; min-width: 0; display: flex; gap: 10px; align-items: flex-start; text-align: start; padding: 12px 8px 12px 16px; padding-inline: 16px 4px; background: none; border: 0; color: inherit; cursor: pointer; font: inherit; }
+.ud-notif-item:hover { background: rgba(127, 127, 127, 0.08); }
+.ud-notif-item:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+.ud-notif-dot { flex: none; width: 8px; height: 8px; margin-block-start: 8px; border-radius: 50%; }
+.ud-notif-body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ud-notif-meta { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--text-muted); }
+.ud-notif-body b { font-weight: 600; overflow-wrap: anywhere; }
+.ud-notif-text { color: var(--text-muted); font-size: 14px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.ud-notif-actions { display: flex; flex-direction: column; padding: 6px 8px 6px 0; padding-inline: 0 8px; }
+.ud-notif-act { width: 32px; height: 32px; border-radius: 8px; border: 0; background: none; color: var(--text-muted); cursor: pointer; font-size: 18px; line-height: 1; }
+.ud-notif-act:hover { background: rgba(127, 127, 127, 0.16); color: var(--text); }
+.ud-notif-act:focus-visible { outline: 2px solid var(--focus-ring); }
+.ud-notif-empty { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 40px 16px; color: var(--text-muted); text-align: center; }
+.ud-notif-empty strong { color: var(--text); }
+
+/* Order finder (client): button and panel sit on the inline-end side, clear of the sidebar in both directions */
+.ud-chatfab { position: fixed; z-index: 45; inset-inline-end: 20px; inset-block-end: 20px; width: 56px; height: 56px; border-radius: var(--radius-full); border: 0; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow-overlay); transition: transform var(--dur-fast) var(--ease-out); }
+.ud-chatfab:hover { transform: translateY(-2px); }
+.ud-chatfab:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+.ud-chatpanel { position: fixed; z-index: 46; inset-inline-end: 20px; inset-block-end: 88px; width: min(380px, calc(100vw - 32px)); max-height: min(560px, calc(100vh - 120px)); overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 16px; background: var(--bg-card); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-overlay); animation: ud-fade var(--dur-base) var(--ease-out) both; }
+.ud-chatpanel header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ud-chatpanel h2 { margin: 0; font: 600 16px/24px var(--font-sans); }
+.ud-chatorder { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-app); }
+@media (max-width: 800px) { .ud-chatfab { inset-block-end: 84px; inset-inline-end: 16px; } .ud-chatpanel { inset-block-end: 148px; inset-inline-end: 16px; } }
