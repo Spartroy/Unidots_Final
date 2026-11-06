@@ -6,6 +6,8 @@ import { createSystemNotification } from './notificationController.js';
 import mongoose from 'mongoose';
 import { isWorkBlockedByQuote, isBlockedTransition } from '../utils/quoteLogic.js';
 import { deductPlatesForOrder } from '../services/inventoryService.js';
+import { visibleOrderFilter, canViewOrder, redactOrderForUser } from '../utils/orderVisibility.js';
+import { recordAudit } from '../services/auditService.js';
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -383,6 +385,10 @@ const getOrders = asyncHandler(async (req, res) => {
     query['stages.delivery.courierInfo.mode'] = { $exists: true, $ne: null };
   }
 
+  // Every role only gets the orders it is allowed to see (search and filters cannot widen this)
+  const scope = visibleOrderFilter(req.user);
+  if (Object.keys(scope).length) query = { $and: [scope, query] };
+
   // Pagination
   const page = parseInt(req.query.page, 10) || 1;
   const limit = parseInt(req.query.limit, 10) || 10;
@@ -408,7 +414,7 @@ const getOrders = asyncHandler(async (req, res) => {
   const total = await Order.countDocuments(query);
 
   res.json({
-    orders,
+    orders: orders.map((o) => redactOrderForUser(o.toObject(), req.user)),
     page,
     pages: Math.ceil(total / limit),
     total,
@@ -447,16 +453,14 @@ const getOrderById = asyncHandler(async (req, res) => {
     .populate('history.user', 'name email role');
 
   if (order) {
-    // Check if user has permission to view this order
-    if (
-      req.user.role === 'client' &&
-      order.client._id.toString() !== req.user.id
-    ) {
+    // Clients, designers, prepress and couriers only open orders that belong to their work
+    if (!canViewOrder(req.user, order)) {
+      await recordAudit(req, { action: 'order.view', entityType: 'order', entityId: order._id, entityLabel: order.orderNumber, outcome: 'denied', details: 'Tried to open an order outside their access' });
       res.status(403);
       throw new Error('Not authorized to view this order');
     }
 
-    res.json(order);
+    res.json(redactOrderForUser(order.toObject(), req.user));
   } else {
     res.status(404);
     throw new Error('Order not found');
@@ -870,6 +874,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
 
   try {
     await order.save();
+    await recordAudit(req, { action: 'order.status', entityType: 'order', entityId: order._id, entityLabel: order.orderNumber, details: `Status is now ${order.status}` });
     console.log('Order successfully saved with status:', order.status);
     console.log('Updated order stages:', {
       review: order.stages.review?.status,
@@ -1345,11 +1350,11 @@ const getRecentOrders = asyncHandler(async (req, res) => {
         .populate('stages.prepress.subProcesses.uvcExposure.completedBy', 'name')
         .populate('stages.prepress.subProcesses.finishing.completedBy', 'name');
 
-      return res.json(recentOrders);
+      return res.json(recentOrders.map((o) => redactOrderForUser(o.toObject(), req.user)));
     } 
     
     // For managers/employees, show all recent orders
-    const recentOrders = await Order.find()
+    const recentOrders = await Order.find(visibleOrderFilter(req.user))
       .sort({ createdAt: -1 })
       .limit(limit)
       .populate('client', 'name email company')
@@ -1363,7 +1368,7 @@ const getRecentOrders = asyncHandler(async (req, res) => {
       .populate('stages.prepress.subProcesses.uvcExposure.completedBy', 'name')
       .populate('stages.prepress.subProcesses.finishing.completedBy', 'name');
 
-    res.json(recentOrders);
+    res.json(recentOrders.map((o) => redactOrderForUser(o.toObject(), req.user)));
   } catch (error) {
     console.error('Error fetching recent orders:', error);
     res.status(500);

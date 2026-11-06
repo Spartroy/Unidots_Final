@@ -6,6 +6,10 @@ import fs from 'fs';
 import { Readable } from 'stream';
 import { fileURLToPath } from 'url';
 import { persistUploadedFile, getUploadDir } from '../config/cloudStorage.js';
+import Claim from '../models/claimModel.js';
+import { canViewOrder, isManager } from '../utils/orderVisibility.js';
+import { canAccessFile, signFileToken } from '../services/fileAccess.js';
+import { recordAudit } from '../services/auditService.js';
 import Order from '../models/orderModel.js';
 
 // Calculate the __dirname equivalent for ES modules
@@ -116,6 +120,27 @@ export const uploadFile = asyncHandler(async (req, res) => {
 export const getFiles = asyncHandler(async (req, res) => {
   let query = {};
 
+  // Non-managers may only list files of an order or claim they can see, or their own uploads
+  const restricted = !isManager(req.user);
+  if (restricted) {
+    if (req.query.order) {
+      const o = await Order.findById(req.query.order).select('client assignedTo status stages');
+      if (!o || !canViewOrder(req.user, o)) {
+        res.status(403);
+        throw new Error('Not authorized to list these files');
+      }
+    } else if (req.query.claim) {
+      const c = await Claim.findById(req.query.claim).select('client assignedTo');
+      const ok = c && [c.client, c.assignedTo].some((x) => x && String(x) === String(req.user._id));
+      if (!ok) {
+        res.status(403);
+        throw new Error('Not authorized to list these files');
+      }
+    } else {
+      query.uploadedBy = req.user._id;
+    }
+  }
+
   // Filter by related order if provided
   if (req.query.order) {
     query.relatedOrder = req.query.order;
@@ -132,7 +157,7 @@ export const getFiles = asyncHandler(async (req, res) => {
   }
 
   // Filter by uploader if provided
-  if (req.query.uploadedBy) {
+  if (req.query.uploadedBy && !restricted) {
     query.uploadedBy = req.query.uploadedBy;
   }
 
@@ -180,6 +205,10 @@ export const getFileById = asyncHandler(async (req, res) => {
     .populate('previousVersions');
 
   if (file) {
+    if (!(await canAccessFile(req.user, file))) {
+      res.status(403);
+      throw new Error('Not authorized to view this file');
+    }
     res.json(file);
   } else {
     res.status(404);
@@ -187,9 +216,26 @@ export const getFileById = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Get a short-lived download link (the link itself proves who asked)
+// @route   GET /api/files/:id/link
+// @access  Private
+export const getFileLink = asyncHandler(async (req, res) => {
+  const file = await File.findById(req.params.id);
+  if (!file) {
+    res.status(404);
+    throw new Error('File not found');
+  }
+  if (!(await canAccessFile(req.user, file))) {
+    await recordAudit(req, { action: 'file.download', entityType: 'file', entityId: file._id, entityLabel: file.originalname, outcome: 'denied' });
+    res.status(403);
+    throw new Error('Not authorized to download this file');
+  }
+  res.json({ url: `/api/files/${file._id}/download?token=${signFileToken(file._id, req.user._id)}` });
+});
+
 // @desc    Download file
 // @route   GET /api/files/:id/download
-// @access  Public (with basic validation)
+// @access  Signed-in users who may see the file (Authorization header, or a short-lived ?token= link)
 export const downloadFile = asyncHandler(async (req, res) => {
   console.log('Download file request for ID:', req.params.id);
   
@@ -205,6 +251,13 @@ export const downloadFile = asyncHandler(async (req, res) => {
       res.status(404);
       throw new Error('File not found');
     }
+
+    if (!(await canAccessFile(req.user, file))) {
+      await recordAudit(req, { action: 'file.download', entityType: file.relatedOrder ? 'order' : 'file', entityId: file.relatedOrder?._id || file._id, entityLabel: file.originalname, outcome: 'denied' });
+      res.status(403).send('Not authorized to download this file');
+      return;
+    }
+    await recordAudit(req, { action: 'file.download', entityType: file.relatedOrder ? 'order' : 'file', entityId: file.relatedOrder?._id || file._id, entityLabel: file.relatedOrder?.orderNumber || file.originalname, details: file.originalname });
 
     console.log('Found file in database:', file.filename, 'path:', file.path);
 

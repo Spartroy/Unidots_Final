@@ -27,6 +27,7 @@ import {
 import { protect, client, staff, manager, prepress, prepressOrManager, courier } from '../middleware/authMiddleware.js';
 import { getSuggestedQuote, sendQuote, respondToQuote } from '../controllers/quoteController.js';
 import { getClientReport } from '../controllers/reportController.js';
+import { getOrderTimeline } from '../controllers/auditController.js';
 
 // Client dashboard routes (must be defined before the /:id routes to avoid conflicts)
 router.route('/client-stats')
@@ -58,6 +59,9 @@ router.route('/')
 router.route('/:id')
   .get(protect, getOrderById)
   .put(protect, updateOrder);
+
+// Who did what on this order, trimmed for the caller's role
+router.route('/:id/timeline').get(protect, getOrderTimeline);
 
 // Quotes: manager prepares and sends, the client approves or rejects
 router.route('/:id/quote/suggest').get(protect, manager, getSuggestedQuote);

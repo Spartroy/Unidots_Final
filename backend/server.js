@@ -22,6 +22,7 @@ import contactRoutes from './src/routes/contactRoutes.js';
 import clientErrorRoutes from './src/routes/clientErrorRoutes.js';
 import inventoryRoutes from './src/routes/inventoryRoutes.js';
 import priceListRoutes from './src/routes/priceListRoutes.js';
+import auditRoutes from './src/routes/auditRoutes.js';
 
 // Import middleware
 import { errorHandler } from './src/middleware/errorMiddleware.js';
@@ -69,6 +70,7 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/client-errors', clientErrorRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/price-list', priceListRoutes);
+app.use('/api/audit', auditRoutes);
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

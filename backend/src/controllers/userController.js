@@ -1,3 +1,4 @@
+import { recordAudit } from '../services/auditService.js';
 import asyncHandler from 'express-async-handler';
 import User from '../models/userModel.js';
 import Task from '../models/taskModel.js';
@@ -390,6 +391,7 @@ const deleteUser = asyncHandler(async (req, res) => {
     // Instead of deleting, set as inactive
     user.isActive = false;
     await user.save();
+    await recordAudit(req, { action: 'user.deactivate', entityType: 'user', entityId: user._id, entityLabel: user.email, details: user.role });
     
     res.json({ message: 'User deactivated' });
   } else {
@@ -434,6 +436,7 @@ const createEmployee = asyncHandler(async (req, res) => {
   });
 
   if (user) {
+    await recordAudit(req, { action: 'user.create', entityType: 'user', entityId: user._id, entityLabel: user.email, details: `Employee in ${user.department}` });
     res.status(201).json({
       _id: user._id,
       name: user.name,
@@ -502,6 +505,7 @@ const updateUserStatus = asyncHandler(async (req, res) => {
     user.isActive = status === 'active';
     
     const updatedUser = await user.save();
+    await recordAudit(req, { action: updatedUser.isActive ? 'user.activate' : 'user.deactivate', entityType: 'user', entityId: updatedUser._id, entityLabel: updatedUser.email, details: updatedUser.role });
 
     res.json({
       _id: updatedUser._id,

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { openFile } from '../../utils/files';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 import AuthContext from '../../context/AuthContext';
@@ -661,7 +662,7 @@ const PrepressOrderDetail = () => {
                       </div>
                       <div className="ml-4 flex-shrink-0">
                         <a
-                          href={`/api/files/${file._id}/download`}
+                          href="#" onClick={(e) => openFile(e, file._id)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="font-medium text-primary-600 hover:text-primary-500"
@@ -695,7 +696,7 @@ const PrepressOrderDetail = () => {
                       </div>
                       <div className="ml-4 flex-shrink-0">
                         <a
-                          href={`/api/files/${file._id}/download`}
+                          href="#" onClick={(e) => openFile(e, file._id)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="font-medium text-primary-600 hover:text-primary-500"
@@ -729,7 +730,7 @@ const PrepressOrderDetail = () => {
                       </div>
                       <div className="ml-4 flex-shrink-0">
                         <a
-                          href={`/api/files/${file._id}/download`}
+                          href="#" onClick={(e) => openFile(e, file._id)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="font-medium text-primary-600 hover:text-primary-500"
@@ -768,7 +769,7 @@ const PrepressOrderDetail = () => {
                       </div>
                       <div className="ml-4 flex-shrink-0">
                         <a
-                          href={`/api/files/${file._id}/download`}
+                          href="#" onClick={(e) => openFile(e, file._id)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="font-medium text-primary-600 hover:text-primary-500"

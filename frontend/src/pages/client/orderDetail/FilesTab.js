@@ -1,4 +1,5 @@
 import React from 'react';
+import { openFile } from '../../../utils/files';
 import { PaperClipIcon } from '@heroicons/react/24/outline';
 
 const FilesTab = ({ getInputProps, getRootProps, handleFileUpload, isDragActive, order, removeFile, uploadFiles, uploading, user }) => (
@@ -26,7 +27,7 @@ const FilesTab = ({ getInputProps, getRootProps, handleFileUpload, isDragActive,
                     </div>
                     <div className="ml-4 flex-shrink-0">
                       <a
-                        href={`/api/files/${file._id}/download`}
+                        href="#" onClick={(e) => openFile(e, file._id)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-medium text-primary-600 hover:text-primary-500"
@@ -60,7 +61,7 @@ const FilesTab = ({ getInputProps, getRootProps, handleFileUpload, isDragActive,
                     </div>
                     <div className="ml-4 flex-shrink-0">
                       <a
-                        href={`/api/files/${file._id}/download`}
+                        href="#" onClick={(e) => openFile(e, file._id)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-medium text-primary-600 hover:text-primary-500"
@@ -111,7 +112,7 @@ const FilesTab = ({ getInputProps, getRootProps, handleFileUpload, isDragActive,
                     </div>
                     <div className="ml-4 flex-shrink-0">
                       <a
-                        href={`/api/files/${file._id}/download`}
+                        href="#" onClick={(e) => openFile(e, file._id)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-medium text-blue-600 hover:text-blue-500"

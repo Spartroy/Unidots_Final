@@ -3,6 +3,7 @@ import StockItem from '../models/stockItemModel.js';
 import StockMovement from '../models/stockMovementModel.js';
 import AcidSolution from '../models/acidSolutionModel.js';
 import { isLow } from '../utils/inventoryLogic.js';
+import { recordAudit } from '../services/auditService.js';
 
 const solventSnapshot = async () => {
   try {
@@ -108,6 +109,7 @@ export const receiveStock = asyncHandler(async (req, res) => {
     note: req.body?.note,
     quantityAfter: item.quantity,
   });
+  await recordAudit(req, { action: 'inventory.receive', entityType: 'inventory', entityId: item._id, entityLabel: `${item.material} ${item.thickness} mm`, details: `+${qty} m2` });
   res.json(withFlags(item));
 });
 
@@ -136,6 +138,7 @@ export const adjustStock = asyncHandler(async (req, res) => {
     note: req.body?.note || 'Stock count',
     quantityAfter: item.quantity,
   });
+  await recordAudit(req, { action: 'inventory.adjust', entityType: 'inventory', entityId: item._id, entityLabel: `${item.material} ${item.thickness} mm`, details: `Counted ${counted} m2 (change ${delta})` });
   res.json(withFlags(item));
 });
 

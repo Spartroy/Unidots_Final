@@ -7,9 +7,11 @@ import {
   updateFile,
   deleteFile,
   downloadFile,
+  getFileLink,
   uploadMultipleFiles,
 } from '../controllers/fileController.js';
 import { protect } from '../middleware/authMiddleware.js';
+import { fileDownloadAuth } from '../middleware/fileDownloadAuth.js';
 
 // All authenticated users can upload and view files
 router.route('/')
@@ -25,8 +27,12 @@ router.route('/:id')
   .put(protect, updateFile)
   .delete(protect, deleteFile);
 
-// Download file route - no auth required to allow direct browser downloads
+// Short-lived signed link for plain browser downloads
+router.route('/:id/link')
+  .get(protect, getFileLink);
+
+// Download: signed-in users only (header or signed link)
 router.route('/:id/download')
-  .get(downloadFile);
+  .get(fileDownloadAuth, downloadFile);
 
 export default router;

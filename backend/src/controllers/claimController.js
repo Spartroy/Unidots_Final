@@ -110,6 +110,10 @@ const getClaims = asyncHandler(async (req, res) => {
   } else if (req.user.role === 'employee') {
     // Employees can see claims assigned to them
     query.assignedTo = req.user.id;
+  } else if (req.user.role !== 'manager' && req.user.role !== 'admin') {
+    // Prepress and couriers have no claims to handle
+    res.status(403);
+    throw new Error('Not authorized to view claims');
   }
   // Managers and admins can see all claims
 
@@ -203,10 +207,11 @@ const getClaimById = asyncHandler(async (req, res) => {
       throw new Error('Not authorized to view this claim');
     }
 
+    // Employees only see claims assigned to them; prepress and couriers see none
     if (
-      req.user.role === 'employee' &&
-      claim.assignedTo &&
-      claim.assignedTo._id.toString() !== req.user.id
+      (req.user.role === 'employee' && (!claim.assignedTo || claim.assignedTo._id.toString() !== req.user.id)) ||
+      req.user.role === 'prepress' ||
+      req.user.role === 'courier'
     ) {
       res.status(403);
       throw new Error('Not authorized to view this claim');

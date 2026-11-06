@@ -1,4 +1,5 @@
 import React from 'react';
+import { openFile } from '../../../utils/files';
 import { getDisplayStatus } from '../../../utils/statusUtils';
 import OrderProgressBar from '../../../components/common/OrderProgressBar';
 
@@ -306,7 +307,7 @@ const ProgressTab = ({ formatDate, order }) => (
                         <span className="text-sm font-medium text-gray-900">{file.originalname || file.filename}</span>
                       </div>
                       <a
-                        href={`/api/files/${file._id}/download`}
+                        href="#" onClick={(e) => openFile(e, file._id)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"

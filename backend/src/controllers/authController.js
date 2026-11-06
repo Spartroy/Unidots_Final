@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import User from '../models/userModel.js';
 import { requiresManagerAuth } from '../utils/registrationPolicy.js';
+import { recordAudit } from '../services/auditService.js';
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -112,6 +113,7 @@ const loginUser = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email }).select('+password');
 
   if (!user || !(await user.matchPassword(password))) {
+    await recordAudit(req, { action: 'auth.login', entityType: 'auth', entityLabel: String(email || '').slice(0, 120), actorName: String(email || '').slice(0, 120), outcome: 'failed', details: 'Wrong email or password' });
     res.status(401);
     throw new Error('Invalid credentials');
   }
@@ -121,6 +123,8 @@ const loginUser = asyncHandler(async (req, res) => {
     res.status(401);
     throw new Error('Account is inactive. Please contact support.');
   }
+
+  await recordAudit(req, { actor: user, action: 'auth.login', entityType: 'auth', entityId: user._id, entityLabel: user.email });
 
   // Migrate old client data if needed
   if (user.role === 'client') {

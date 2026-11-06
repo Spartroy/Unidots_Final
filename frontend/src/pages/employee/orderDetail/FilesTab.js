@@ -1,4 +1,5 @@
 import React from 'react';
+import { openFile } from '../../../utils/files';
 import { PaperClipIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import api from '../../../utils/api';
 import { toast } from 'react-toastify';
@@ -33,7 +34,7 @@ const FilesTab = ({ files, getInputProps, getRootProps, id, isDragActive, order,
                     </div>
                     <div className="ml-4 flex-shrink-0">
                       <a
-                        href={`/api/files/${file._id}/download`}
+                        href="#" onClick={(e) => openFile(e, file._id)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-medium text-primary-600 hover:text-primary-500"
@@ -67,7 +68,7 @@ const FilesTab = ({ files, getInputProps, getRootProps, id, isDragActive, order,
                     </div>
                     <div className="ml-4 flex-shrink-0">
                       <a
-                        href={`/api/files/${file._id}/download`}
+                        href="#" onClick={(e) => openFile(e, file._id)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-medium text-primary-600 hover:text-primary-500"
@@ -142,7 +143,7 @@ const FilesTab = ({ files, getInputProps, getRootProps, id, isDragActive, order,
                     </div>
                     <div className="ml-4 flex-shrink-0">
                       <a
-                        href={`/api/files/${file._id}/download`}
+                        href="#" onClick={(e) => openFile(e, file._id)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-medium text-primary-600 hover:text-primary-500"

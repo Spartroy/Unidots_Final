@@ -1,3 +1,4 @@
+import { openFile } from './files';
 /**
  * Format date to a readable format
  * @param {string} dateString - The date string to format
@@ -65,5 +66,5 @@ export const normalizeStatus = (status) => {
  */
 export const downloadFile = (fileId) => {
   if (!fileId) return;
-  window.open(`/api/files/${fileId}/download`, '_blank');
+  openFile(null, fileId);
 }; 

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { openFile } from '../../utils/files';
 import { useParams } from 'react-router-dom';
 import api from '../../utils/api';
 import { toast } from 'react-toastify';
@@ -301,7 +302,7 @@ const CourierOrderDetail = () => {
                           </div>
                           <a 
                             className="text-primary-600 hover:underline text-sm"
-                            href={`/api/files/${file._id}/download`} 
+                            href="#" onClick={(e) => openFile(e, file._id)} 
                             target="_blank" 
                             rel="noreferrer"
                           >

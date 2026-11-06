@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { openFile } from '../../utils/files';
 import StatusExplainer from '../../components/client/StatusExplainer';
 import QuoteCard from '../../components/client/QuoteCard';
 import api from '../../utils/api';
@@ -145,7 +146,7 @@ const OrderDetail = () => {
   
   // Function to download a file
   const downloadFile = (fileId) => {
-    window.open(`/api/files/${fileId}/download`, '_blank');
+    openFile(null, fileId);
   };
 
   // Function to handle order cancellation

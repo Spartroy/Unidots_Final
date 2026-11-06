@@ -4,6 +4,7 @@ import PriceList from '../models/priceListModel.js';
 import User from '../models/userModel.js';
 import { createSystemNotification } from './notificationController.js';
 import { suggestQuote } from '../utils/pricing.js';
+import { recordAudit } from '../services/auditService.js';
 import { validateQuoteInput, validateResponseInput, statusAfterResponse } from '../utils/quoteLogic.js';
 
 const clientIp = (req) => String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'unknown';
@@ -58,6 +59,7 @@ export const sendQuote = asyncHandler(async (req, res) => {
     details: `Quote of ${order.quote.amount} ${order.quote.currency} sent${order.quote.required ? ' (client approval required before work starts)' : ''}.`,
   });
   await order.save();
+  await recordAudit(req, { action: 'quote.sent', entityType: 'order', entityId: order._id, entityLabel: order.orderNumber, details: `${order.quote.amount} ${order.quote.currency}${order.quote.required ? ', approval required' : ''}` });
 
   await createSystemNotification(
     order.client,
@@ -114,6 +116,7 @@ export const respondToQuote = asyncHandler(async (req, res) => {
         : `Client rejected the quote${order.quote.rejectionReason ? `: ${order.quote.rejectionReason}` : '.'}`,
   });
   await order.save();
+  await recordAudit(req, { action: decision === 'approve' ? 'quote.approved' : 'quote.rejected', entityType: 'order', entityId: order._id, entityLabel: order.orderNumber, details: decision === 'approve' ? `Signed as "${order.quote.approval.signedName}"` : order.quote.rejectionReason });
 
   // Tell the managers and the assigned designer
   const managers = await User.find({ role: { $in: ['manager', 'admin'] }, isActive: true }).select('_id');
@@ -168,5 +171,6 @@ export const updatePriceList = asyncHandler(async (req, res) => {
   }
   doc.updatedBy = req.user._id;
   await doc.save();
+  await recordAudit(req, { action: 'pricelist.update', entityType: 'pricelist', entityId: doc._id, entityLabel: 'Price list', details: JSON.stringify({ rates: doc.ratePerCm2PerColor, minimumCharge: doc.minimumCharge }) });
   res.json(doc);
 });
