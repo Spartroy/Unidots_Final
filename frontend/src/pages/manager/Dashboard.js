@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../../utils/api';
 import { toast } from 'react-toastify';
 import AuthContext from '../../context/AuthContext';
+import AttentionPanel from '../../components/manager/AttentionPanel';
 import { UsersIcon, DocumentTextIcon, TrophyIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, LineElement, PointElement, TimeScale } from 'chart.js';
 import { Pie, Bar, Line } from 'react-chartjs-2';
@@ -404,6 +405,8 @@ const ManagerDashboard = () => {
         <p className="mt-1 text-sm text-center text-gray-500">
         </p>
       </div>
+
+      <AttentionPanel />
 
       {/* Stats cards */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">

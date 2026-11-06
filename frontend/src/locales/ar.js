@@ -50,6 +50,18 @@ const ar = {
   'login.errorInvalid': 'بيانات الدخول غير صحيحة',
   'login.errorNetwork': 'خطأ في الشبكة. يرجى التحقق من اتصالك.',
   'login.errorGeneric': 'تعذّر تسجيل الدخول. حاول مرة أخرى.',
+
+  'attention.title': 'يحتاج إلى متابعة',
+  'attention.count': '{n} للمراجعة',
+  'attention.allClear': 'لا شيء متأخر',
+  'attention.overdue': 'متأخرة',
+  'attention.onHold': 'معلّقة',
+  'attention.unassigned': 'لم تُسند بعد',
+  'attention.noneOverdue': 'لا توجد أوردرات متأخرة.',
+  'attention.noneOnHold': 'لا توجد أوردرات معلّقة.',
+  'attention.noneUnassigned': 'كل الأوردرات الجديدة لها مصمم.',
+  'attention.daysLate': 'متأخر {n} يوم عن الموعد',
+  'attention.submitted': 'تم الإرسال {date}',
 };
 
 export default ar;

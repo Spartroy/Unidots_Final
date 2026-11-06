@@ -126,3 +126,9 @@ Confirmed by you: the default shipping company ("Middle East") stays.
 - **Accessibility:** colour-only status badges, icon-only buttons without labels, no skip link, nav not RTL-ready.
 - **Security notes (backend):** uploads are served from a committed folder; JWT in `localStorage`.
 - **Courier:** default shipping company is hard-coded to "Middle East" in the UI when none is set.
+
+## Reminders (open)
+- **Cloudinary is paused.** To finish: uncomment the three `CLOUDINARY_*` lines in `backend/.env` and add them to the production host, run `node scripts/migrateUploadsToCloud.js` (then `--apply`), and rotate the API secret that was shared in chat.
+
+## Phase 2 progress
+- **Manager "Needs attention" panel** on the dashboard: overdue orders (past deadline), orders on hold, and new orders with no designer, each linking to the order. Refreshes every minute; translated EN/AR.

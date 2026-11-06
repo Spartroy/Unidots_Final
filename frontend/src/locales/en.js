@@ -54,6 +54,19 @@ const en = {
   'login.errorInvalid': 'Invalid credentials',
   'login.errorNetwork': 'Network error. Please check your connection.',
   'login.errorGeneric': 'Login failed. Please try again.',
+
+  // Manager: needs attention
+  'attention.title': 'Needs attention',
+  'attention.count': '{n} to review',
+  'attention.allClear': 'All clear',
+  'attention.overdue': 'Overdue',
+  'attention.onHold': 'On hold',
+  'attention.unassigned': 'Not assigned yet',
+  'attention.noneOverdue': 'No overdue orders.',
+  'attention.noneOnHold': 'Nothing on hold.',
+  'attention.noneUnassigned': 'Every new order has a designer.',
+  'attention.daysLate': '{n} day(s) past deadline',
+  'attention.submitted': 'Submitted {date}',
 };
 
 export default en;
