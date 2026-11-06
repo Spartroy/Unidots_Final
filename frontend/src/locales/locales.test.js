@@ -18,6 +18,8 @@ import accountEn from './account.en';
 import accountAr from './account.ar';
 import profileEn from './profile.en';
 import profileAr from './profile.ar';
+import claimsEn from './claims.en';
+import claimsAr from './claims.ar';
 
 const placeholders = (s) => (s.match(/\{\w+\}/g) || []).sort().join(',');
 
@@ -32,6 +34,7 @@ const pairs = [
   ['manager', managerEn, managerAr],
   ['account', accountEn, accountAr],
   ['profile', profileEn, profileAr],
+  ['claims', claimsEn, claimsAr],
 ];
 
 describe.each(pairs)('%s translations', (name, enDict, arDict) => {

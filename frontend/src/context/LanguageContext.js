@@ -20,8 +20,10 @@ import accountEn from '../locales/account.en';
 import accountAr from '../locales/account.ar';
 import profileEn from '../locales/profile.en';
 import profileAr from '../locales/profile.ar';
+import claimsEn from '../locales/claims.en';
+import claimsAr from '../locales/claims.ar';
 
-const dictionaries = { en: { ...en, ...landingEn, ...phase5En, ...prepressEn, ...activityEn, ...courierEn, ...ordersEn, ...managerEn, ...accountEn, ...profileEn }, ar: { ...ar, ...landingAr, ...phase5Ar, ...prepressAr, ...activityAr, ...courierAr, ...ordersAr, ...managerAr, ...accountAr, ...profileAr } };
+const dictionaries = { en: { ...en, ...landingEn, ...phase5En, ...prepressEn, ...activityEn, ...courierEn, ...ordersEn, ...managerEn, ...accountEn, ...profileEn, ...claimsEn }, ar: { ...ar, ...landingAr, ...phase5Ar, ...prepressAr, ...activityAr, ...courierAr, ...ordersAr, ...managerAr, ...accountAr, ...profileAr, ...claimsAr } };
 const STORAGE_KEY = 'unidots_lang';
 
 const readStored = () => {
