@@ -1,4 +1,5 @@
 import React from 'react';
+import { reportError } from '../../utils/errorReporter';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -25,6 +26,8 @@ class ErrorBoundary extends React.Component {
       console.warn('ResizeObserver error handled:', error.message);
       return;
     }
+
+    reportError(error, 'react-error-boundary');
 
     // Log other errors
     console.error('Error caught by ErrorBoundary:', error, errorInfo);

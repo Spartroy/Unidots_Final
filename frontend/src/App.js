@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -13,81 +13,91 @@ import Landing from './pages/Landing';
 
 // Auth Pages
 import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
 
 // Client Portal Pages
-import ClientDashboard from './pages/client/Dashboard';
-import ClientOrders from './pages/client/Orders';
-import ClientOrderDetail from './pages/client/OrderDetail';
-import ClientNewOrder from './pages/client/NewOrder';
-import ClientClaims from './pages/client/Claims';
-import ClientClaimDetail from './pages/client/ClaimDetail';
-import ClientNewClaim from './pages/client/NewClaim';
-import ClientProfile from './pages/client/Profile';
 
 // Employee Portal Pages
-import EmployeeDashboard from './pages/employee/Dashboard';
-import EmployeeTasks from './pages/employee/Tasks';
-import EmployeeTaskDetail from './pages/employee/TaskDetail';
-import EmployeeOrders from './pages/employee/Orders';
-import EmployeeOrderDetail from './pages/employee/OrderDetail';
-import EmployeeOrderEdit from './pages/employee/OrderEdit';
-import EmployeeClaims from './pages/employee/Claims';
-import EmployeeClaimDetail from './pages/employee/ClaimDetail';
-import EmployeeProfile from './pages/employee/Profile';
-import Templates from './pages/employee/Templates';
-import TemplateCustomize from './pages/employee/TemplateCustomize';
 
 
 // Manager Portal Pages
-import ManagerDashboard from './pages/manager/Dashboard';
-import ManagerOrders from './pages/manager/Orders';
-import ManagerOrderDetail from './pages/manager/OrderDetail';
-import ManagerClaims from './pages/manager/Claims';
-import ManagerClaimDetail from './pages/manager/ClaimDetail';
-import ManagerTasks from './pages/manager/Tasks';
-import ManagerTaskDetail from './pages/manager/TaskDetail';
-import ManagerEmployees from './pages/manager/Employees';
-import ManagerEmployeeDetail from './pages/manager/EmployeeDetail';
-import ManagerClients from './pages/manager/Clients';
-import ManagerClientDetail from './pages/manager/ClientDetail';
-import ManagerProfile from './pages/manager/Profile';
-import MonthlyReports from './pages/manager/MonthlyReports';
-import ManagerMessages from './pages/manager/Messages';
-import BarrelManagement from './pages/manager/BarrelManagement';
-import ManagerPlateMonitoring from './pages/manager/PlateMonitoring';
 
 // New imports for Prepress
 import PrepressLayout from './components/layouts/PrepressLayout';
-import PrepressOrders from './pages/prepress/Orders';
-import PrepressOrderHistory from './pages/prepress/OrderHistory';
-import PrepressOrderDetail from './pages/prepress/OrderDetail';
-import PrepressProfile from './pages/prepress/Profile';
-import AcidSolutionMonitor from './pages/prepress/AcidSolutionMonitor';
-import PrepressPlateMonitoring from './pages/prepress/PlateMonitoring';
 
 // Courier Portal
 import ProtectedRoute from './components/common/ProtectedRoute';
 import PublicRoute from './components/common/PublicRoute';
-import CourierDashboard from './pages/courier/Dashboard';
-import CourierOrderDetail from './pages/courier/OrderDetail';
 import CourierLayout from './components/layouts/CourierLayout';
-import CourierProfile from './pages/courier/Profile';
 // Layouts
 import ClientLayout from './components/layouts/ClientLayout';
 import EmployeeLayout from './components/layouts/EmployeeLayout';
 import ManagerLayout from './components/layouts/ManagerLayout';
 
+// Pages load on demand so the first visit downloads far less code
+const Register = lazy(() => import('./pages/auth/Register'));
+const ClientDashboard = lazy(() => import('./pages/client/Dashboard'));
+const ClientOrders = lazy(() => import('./pages/client/Orders'));
+const ClientOrderDetail = lazy(() => import('./pages/client/OrderDetail'));
+const ClientNewOrder = lazy(() => import('./pages/client/NewOrder'));
+const ClientClaims = lazy(() => import('./pages/client/Claims'));
+const ClientClaimDetail = lazy(() => import('./pages/client/ClaimDetail'));
+const ClientNewClaim = lazy(() => import('./pages/client/NewClaim'));
+const ClientProfile = lazy(() => import('./pages/client/Profile'));
+const EmployeeDashboard = lazy(() => import('./pages/employee/Dashboard'));
+const EmployeeTasks = lazy(() => import('./pages/employee/Tasks'));
+const EmployeeTaskDetail = lazy(() => import('./pages/employee/TaskDetail'));
+const EmployeeOrders = lazy(() => import('./pages/employee/Orders'));
+const EmployeeOrderDetail = lazy(() => import('./pages/employee/OrderDetail'));
+const EmployeeOrderEdit = lazy(() => import('./pages/employee/OrderEdit'));
+const EmployeeClaims = lazy(() => import('./pages/employee/Claims'));
+const EmployeeClaimDetail = lazy(() => import('./pages/employee/ClaimDetail'));
+const EmployeeProfile = lazy(() => import('./pages/employee/Profile'));
+const Templates = lazy(() => import('./pages/employee/Templates'));
+const TemplateCustomize = lazy(() => import('./pages/employee/TemplateCustomize'));
+const ManagerDashboard = lazy(() => import('./pages/manager/Dashboard'));
+const ManagerOrders = lazy(() => import('./pages/manager/Orders'));
+const ManagerOrderDetail = lazy(() => import('./pages/manager/OrderDetail'));
+const ManagerClaims = lazy(() => import('./pages/manager/Claims'));
+const ManagerClaimDetail = lazy(() => import('./pages/manager/ClaimDetail'));
+const ManagerTasks = lazy(() => import('./pages/manager/Tasks'));
+const ManagerTaskDetail = lazy(() => import('./pages/manager/TaskDetail'));
+const ManagerEmployees = lazy(() => import('./pages/manager/Employees'));
+const ManagerEmployeeDetail = lazy(() => import('./pages/manager/EmployeeDetail'));
+const ManagerClients = lazy(() => import('./pages/manager/Clients'));
+const ManagerClientDetail = lazy(() => import('./pages/manager/ClientDetail'));
+const ManagerProfile = lazy(() => import('./pages/manager/Profile'));
+const MonthlyReports = lazy(() => import('./pages/manager/MonthlyReports'));
+const ManagerMessages = lazy(() => import('./pages/manager/Messages'));
+const BarrelManagement = lazy(() => import('./pages/manager/BarrelManagement'));
+const ManagerPlateMonitoring = lazy(() => import('./pages/manager/PlateMonitoring'));
+const PrepressOrders = lazy(() => import('./pages/prepress/Orders'));
+const PrepressOrderHistory = lazy(() => import('./pages/prepress/OrderHistory'));
+const PrepressOrderDetail = lazy(() => import('./pages/prepress/OrderDetail'));
+const PrepressProfile = lazy(() => import('./pages/prepress/Profile'));
+const AcidSolutionMonitor = lazy(() => import('./pages/prepress/AcidSolutionMonitor'));
+const PrepressPlateMonitoring = lazy(() => import('./pages/prepress/PlateMonitoring'));
+const CourierDashboard = lazy(() => import('./pages/courier/Dashboard'));
+const CourierOrderDetail = lazy(() => import('./pages/courier/OrderDetail'));
+const CourierProfile = lazy(() => import('./pages/courier/Profile'));
+const DotDeformationDetector = lazy(() => import('./pages/DotDeformationDetector'));
+
 // Protected Route Component
 
 // Ai Components
-import DotDeformationDetector from './pages/DotDeformationDetector';
 
 function App() {
   return (
     <AuthProvider>
       <LanguageProvider>
       <NotificationProvider>
+        <Suspense
+          fallback={
+            <div className="flex min-h-screen items-center justify-center" role="status">
+              <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-primary-600" />
+              <span className="sr-only">Loading…</span>
+            </div>
+          }
+        >
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
@@ -185,6 +195,7 @@ function App() {
           {/* Catch all - redirect to landing */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
         
         <ToastContainer position="top-right" autoClose={5000} />
       </NotificationProvider>

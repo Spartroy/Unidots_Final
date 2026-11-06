@@ -4,19 +4,9 @@ import { ExclamationTriangleIcon, PauseCircleIcon, UserMinusIcon } from '@heroic
 import api from '../../utils/api';
 import useAutoRefresh from '../../hooks/useAutoRefresh';
 import { useLanguage } from '../../context/LanguageContext';
+import { groupOrdersNeedingAttention } from '../../utils/orderAttention';
 
-const CLOSED = ['Completed', 'Delivered', 'Cancelled'];
 const DAY = 24 * 60 * 60 * 1000;
-
-// Pure helper (exported for tests): groups open orders into the things a manager must act on.
-export const groupOrdersNeedingAttention = (orders, now = Date.now()) => {
-  const open = (orders || []).filter((o) => !CLOSED.includes(o.status));
-  return {
-    overdue: open.filter((o) => o.deadline && new Date(o.deadline).getTime() < now),
-    onHold: open.filter((o) => o.status === 'On Hold'),
-    unassigned: open.filter((o) => o.status === 'Submitted' && !o.assignedTo),
-  };
-};
 
 const daysLate = (deadline) => Math.max(1, Math.ceil((Date.now() - new Date(deadline).getTime()) / DAY));
 

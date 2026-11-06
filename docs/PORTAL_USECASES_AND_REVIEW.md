@@ -147,3 +147,13 @@ Phase 2 status: done except external notifications.
 - **SEO basics:** page title and meta description, social-sharing tags, LocalBusiness structured data (address, phones, email), `robots.txt` hiding the portals. Not done: `sitemap.xml` (needs the final website address) and pre-rendering for search engines (the site is a single-page app).
 - **Copy to review:** the "Prepress supplies" service text is generic because the site never described it. Please correct it if there is something specific to say. Services, FAQ answers and the process steps describe how the platform actually works.
 - **Brief for Claude Design:** `docs/BRANDING_GUIDE.md` is ready to paste.
+
+## Phase 4 progress (quality and operations)
+- **Automated tests:** 20 frontend tests (route guards, role redirects, status and order-step logic, manager attention logic, EN/AR translation parity, client status banner) and 7 backend tests (role guards including the prepress role-or-department rule, sign-up policy). Writing them found and fixed a bug: completed orders without stage data showed the Ripping step as not done.
+- **CI:** `.github/workflows/ci.yml` runs frontend tests and build and backend tests on every push and pull request.
+- **Hardening:** security headers (helmet), sign-in rate limit (10 failed attempts per 15 minutes), sign-up limit, proxy-aware client addresses.
+- **Monitoring without a paid service:** browser errors are sent to `/api/client-errors` and logged by the server with a `[client-error]` tag; crashes are logged and the process restarts cleanly.
+- **Backups:** `backend/scripts/backup.js` (mongodump wrapper, keeps the newest 14).
+- **Performance:** pages now load on demand; the first-load script dropped from 849 kB to 150 kB (gzip).
+- **Runbook:** `docs/OPERATIONS.md` lists environment variables, the deploy checklist, monitoring, backups and the open reminders (including the CORS placeholder in `backend/server.js`).
+- **Not done:** hosted error tracker and uptime alerts (need accounts), end-to-end and database-backed API tests, scheduling the backup on the server.

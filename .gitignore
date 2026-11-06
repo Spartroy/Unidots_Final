@@ -142,3 +142,6 @@ vite.config.ts.timestamp-*
 # Build output and user uploads (do not commit)
 frontend/build/
 backend/uploads/
+
+# Database backups
+backend/backups/

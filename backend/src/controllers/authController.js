@@ -2,6 +2,7 @@ import asyncHandler from 'express-async-handler';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import User from '../models/userModel.js';
+import { requiresManagerAuth } from '../utils/registrationPolicy.js';
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -27,7 +28,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   // Role validation - only managers/admins can create employees and managers
   // SECURITY: every non-client role (employee, manager, admin, prepress, courier) needs a manager/admin token.
-  if (requestedRole !== 'client') {
+  if (requiresManagerAuth(requestedRole)) {
     // Check if we have a logged-in user with proper permissions
     const token = req.headers.authorization?.split(' ')[1];
     

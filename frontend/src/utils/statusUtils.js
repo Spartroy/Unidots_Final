@@ -112,12 +112,15 @@ export const getOrderSteps = (order) => {
   }
   
   // Standardized steps for all portals (5-step)
+  const inPrepressOrLater = ['In Prepress', 'Ready for Delivery', 'Delivering', 'Completed', 'Delivered'].includes(order.status);
+  const prepressDone = ['Ready for Delivery', 'Delivering', 'Completed', 'Delivered'].includes(order.status);
+  const delivered = ['Completed', 'Delivered'].includes(order.status);
   const steps = [
     { label: 'Submission', completed: true },
-    { label: 'Design', completed: ['In Prepress', 'Ready for Delivery', 'Completed'].includes(order.status) || order.stages?.production?.status === 'Completed' },
-    { label: 'Ripping', completed: order.stages?.production?.subProcesses?.ripping?.status === 'Completed' || order.status === 'In Prepress' },
-    { label: 'Prepress', completed: ['Ready for Delivery', 'Completed'].includes(order.status) || order.stages?.prepress?.status === 'Completed' },
-    { label: 'Delivery', completed: order.status === 'Completed' || order.stages?.delivery?.status === 'Completed' }
+    { label: 'Design', completed: inPrepressOrLater || order.stages?.production?.status === 'Completed' },
+    { label: 'Ripping', completed: inPrepressOrLater || order.stages?.production?.subProcesses?.ripping?.status === 'Completed' },
+    { label: 'Prepress', completed: prepressDone || order.stages?.prepress?.status === 'Completed' },
+    { label: 'Delivery', completed: delivered || order.stages?.delivery?.status === 'Completed' }
   ];
 
   // Determine current step - this indicates where we are in the workflow
@@ -126,8 +129,8 @@ export const getOrderSteps = (order) => {
   if (order.status === 'Submitted') currentStep = 0;
   else if (order.status === 'Designing') currentStep = 1;
   else if (order.status === 'In Prepress') currentStep = 3;
-  else if (order.status === 'Ready for Delivery') currentStep = 4;
-  else if (['Completed', 'Delivered'].includes(order.status) || order.stages?.delivery?.status === 'Completed') currentStep = 5;
+  else if (['Ready for Delivery', 'Delivering'].includes(order.status)) currentStep = 4;
+  else if (delivered || order.stages?.delivery?.status === 'Completed') currentStep = 5;
 
   return { steps, currentStep };
 };

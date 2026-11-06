@@ -4,12 +4,12 @@ import {
   registerUser,
   loginUser,
 } from '../controllers/authController.js';
-import { protect, manager } from '../middleware/authMiddleware.js';
+import { loginLimiter, registerLimiter } from '../middleware/rateLimiters.js';
 
 // Public routes
-router.post('/login', loginUser);
+router.post('/login', loginLimiter, loginUser);
 
 // Client registration is public, employee/manager registration requires manager privileges
-router.post('/register', registerUser);
+router.post('/register', registerLimiter, registerUser);
 
 export default router; 

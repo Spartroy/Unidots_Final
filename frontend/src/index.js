@@ -5,9 +5,11 @@ import App from './App';
 import { BrowserRouter } from 'react-router-dom';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import initializeResizeObserverHandler from './utils/resizeObserverHandler';
+import { installGlobalErrorReporting } from './utils/errorReporter';
 
 // Initialize ResizeObserver error handling
 initializeResizeObserverHandler();
+installGlobalErrorReporting();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
