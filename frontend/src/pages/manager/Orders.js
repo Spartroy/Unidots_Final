@@ -30,9 +30,9 @@ const Orders = () => {
   const [selectedEmployeeForAssign, setSelectedEmployeeForAssign] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
 
-  const fetchOrders = useCallback(async () => {
+  const fetchOrders = useCallback(async ({ silent } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       let endpoint = `/api/orders?page=${pagination.page}&limit=${itemsPerPage}`;
       if (filter === 'all') {
         endpoint += '&status[ne]=Cancelled';

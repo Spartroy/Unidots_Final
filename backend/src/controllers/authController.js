@@ -26,7 +26,8 @@ const registerUser = asyncHandler(async (req, res) => {
   const requestedRole = role || 'client'; // Default to client if not specified
 
   // Role validation - only managers/admins can create employees and managers
-  if ((requestedRole === 'employee' || requestedRole === 'manager')) {
+  // SECURITY: every non-client role (employee, manager, admin, prepress, courier) needs a manager/admin token.
+  if (requestedRole !== 'client') {
     // Check if we have a logged-in user with proper permissions
     const token = req.headers.authorization?.split(' ')[1];
     

@@ -32,7 +32,8 @@ const useAutoRefresh = (callback, interval = 60000, dependencies = []) => {
       abortControllerRef.current = new AbortController();
 
       // Execute callback with error handling
-      const result = callbackRef.current();
+      // `silent` lets callers skip their full-page spinner on background refreshes
+      const result = callbackRef.current({ silent: true });
       
       // If callback returns a promise, handle it
       if (result && typeof result.then === 'function') {

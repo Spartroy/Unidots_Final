@@ -54,9 +54,9 @@ const OrderDetail = () => {
   }, [activeTab, searchParams, setSearchParams]);
 
   // Create a reusable function to fetch order data
-  const fetchOrderData = useCallback(async () => {
+  const fetchOrderData = useCallback(async ({ silent } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       
       // Fetch order details
       const orderResponse = await api.get(`/api/orders/${id}`);
@@ -1141,6 +1141,14 @@ const OrderDetail = () => {
               Back to Orders
             </Link>
             
+            <Link
+              to="/client/orders/new"
+              state={{ reorderFrom: order }}
+              className="inline-flex items-center px-4 py-2 border border-primary-300 text-sm font-medium rounded-md text-primary-700 bg-white hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            >
+              Reorder
+            </Link>
+
             {/* Conditionally render the Cancel Order button */}
             {['Submitted', 'In Review'].includes(order?.status) && (
               <button

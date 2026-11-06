@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AuthContext from '../../context/AuthContext';
 import { toast } from 'react-toastify';
@@ -11,13 +11,18 @@ const Login = () => {
     password: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { login } = useContext(AuthContext);
-  const navigate = useNavigate();
   const location = useLocation();
 
-  // Get redirect path from location state or default to dashboard
-  const from = location.state?.from?.pathname || '/';
+  // Where the user was heading before being sent here (route guard state, or ?from= after a session expiry)
+  const params = new URLSearchParams(location.search);
+  const fromState = location.state?.from;
+  const from = fromState
+    ? `${fromState.pathname || ''}${fromState.search || ''}`
+    : params.get('from') || undefined;
+  const sessionExpired = params.get('expired') === '1';
 
   const handleChange = (e) => {
     setFormData({
@@ -37,7 +42,7 @@ const Login = () => {
     
     try {
       setIsSubmitting(true);
-      await login(formData.email, formData.password);
+      await login(formData.email.trim(), formData.password, from);
       // Successful login will redirect in the AuthContext
     } catch (error) {
       // Handle different error types
@@ -109,6 +114,11 @@ const Login = () => {
           transition={{ duration: 0.6, delay: 0.4 }}
         >
           <div className="bg-white py-8 px-4 shadow-xl sm:rounded-xl sm:px-10 border border-gray-200 relative overflow-hidden">
+            {sessionExpired && (
+              <div role="alert" className="mb-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+                Your session expired. Please sign in again to continue.
+              </div>
+            )}
             {/* Decorative elements */}
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 to-secondary-500"></div>
             <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full bg-gradient-to-br from-primary-500/10 to-secondary-500/10 blur-2xl"></div>
@@ -136,7 +146,7 @@ const Login = () => {
                   />
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                     <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                   </div>
                 </div>
@@ -154,19 +164,23 @@ const Login = () => {
                   <input
                     id="password"
                     name="password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
                     required
                     value={formData.password}
                     onChange={handleChange}
-                    className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300 sm:text-sm"
+                    className="appearance-none block w-full px-4 py-3 pr-16 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300 sm:text-sm"
                     placeholder="Enter your password"
                   />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword}
+                    className="absolute inset-y-0 right-0 px-4 flex items-center text-xs font-medium text-gray-500 hover:text-primary-600 focus:outline-none focus:text-primary-700"
+                  >
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
                 </div>
               </motion.div>
 
@@ -228,7 +242,7 @@ const Login = () => {
             >
               <Link
                 to="/register"
-                className="group w-full flex justify-center py-3 px-4 border border-primary-300 rounded-lg shadow-sm text-sm font-medium text-primary-600 bg-white hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300 transform hover:scale-[1.02]"
+                className="group relative w-full flex justify-center py-3 px-4 border border-primary-300 rounded-lg shadow-sm text-sm font-medium text-primary-600 bg-white hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300 transform hover:scale-[1.02]"
               >
                 <span className="absolute left-0 inset-y-0 flex items-center pl-3">
                   <svg className="h-5 w-5 text-primary-400 group-hover:text-primary-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">

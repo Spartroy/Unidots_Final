@@ -2,9 +2,7 @@ import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import api from '../utils/api';
 import { useNavigate } from 'react-router-dom';
-
-// Base API URL
-const API_URL = 'http://localhost:4000';
+import { getPostLoginPath } from '../utils/roleRoutes';
 
 const AuthContext = createContext();
 
@@ -39,9 +37,9 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Login user
-  const login = async (email, password) => {
+  const login = async (email, password, from) => {
     try {
-      setLoading(true);
+      // NOTE: no global setLoading here. Toggling it unmounts every ProtectedRoute page.
       setError(null);
       
       const response = await api.post('/api/auth/login', { email, password });
@@ -82,22 +80,19 @@ export const AuthProvider = ({ children }) => {
       // Set axios default header with token
       axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
       
-      // Redirect based on role
-      redirectBasedOnRole(response.data.role);
-      
+      // Redirect to the page the user originally asked for (if allowed), else their portal home
+      redirectBasedOnRole(response.data.role, from);
+
       return response.data;
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred during login');
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
   // Register user
   const register = async (userData) => {
     try {
-      setLoading(true);
       setError(null);
       
       const response = await api.post('/api/auth/register', userData);
@@ -121,8 +116,6 @@ export const AuthProvider = ({ children }) => {
          'An error occurred during registration');
       setError(errorMessage);
       throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -142,7 +135,6 @@ export const AuthProvider = ({ children }) => {
   // Update user profile
   const updateProfile = async (userData) => {
     try {
-      setLoading(true);
       setError(null);
       
       const response = await api.put('/api/users/profile', userData);
@@ -157,33 +149,12 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred while updating profile');
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
   // Helper function to redirect based on role
-  const redirectBasedOnRole = (role) => {
-    switch (role) {
-      case 'client':
-        navigate('/client');
-        break;
-      case 'employee':
-        navigate('/employee');
-        break;
-      case 'prepress':
-        navigate('/prepress');
-        break;
-      case 'courier':
-        navigate('/courier');
-        break;
-      case 'manager':
-      case 'admin':
-        navigate('/manager');
-        break;
-      default:
-        navigate('/login');
-    }
+  const redirectBasedOnRole = (role, from) => {
+    navigate(getPostLoginPath(role, from), { replace: true });
   };
 
   return (

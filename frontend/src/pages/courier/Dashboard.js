@@ -1,27 +1,33 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import api from '../../utils/api';
 import { Link } from 'react-router-dom';
+
+const VIEW_BUTTON = 'inline-flex items-center justify-center min-h-[44px] px-5 py-2 rounded-md bg-primary-600 text-white text-sm font-semibold hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 flex-shrink-0';
 
 const CourierDashboard = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('handover');
 
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        setLoading(true);
-        // Fetch all orders that have delivery method chosen (not just Ready for Delivery)
-        const res = await api.get('/api/orders?hasDeliveryMethod=true');
-        setOrders(res.data.orders || []);
-      } catch (e) {
-        console.error('Error fetching orders:', e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetch();
+  const fetchOrders = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      // Fetch all orders that have delivery method chosen (not just Ready for Delivery)
+      const res = await api.get('/api/orders?hasDeliveryMethod=true');
+      setOrders(res.data.orders || []);
+    } catch (e) {
+      console.error('Error fetching orders:', e);
+      setError(e.response?.data?.message || 'We could not load your deliveries.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   // Filter orders by delivery method and status
   const handoverOrders = orders.filter(order => 
@@ -39,15 +45,31 @@ const CourierDashboard = () => {
     order.status === 'Completed'
   );
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64" role="status" aria-live="polite">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+        <span className="sr-only">Loading deliveries</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div role="alert" className="bg-white shadow rounded-lg p-6 text-center">
+        <p className="text-sm text-red-700 mb-4">{error}</p>
+        <button type="button" onClick={fetchOrders} className={VIEW_BUTTON}>Try again</button>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <h2 className="text-lg font-semibold mb-4">Orders</h2>
-      
+    <div className="px-4 sm:px-0">
+      <h2 className="text-lg font-semibold mb-4">My Deliveries</h2>
+
       {/* Tab Navigation */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8">
+      <div className="border-b border-gray-200 mb-6 overflow-x-auto scrollbar-hide">
+        <nav className="-mb-px flex space-x-6 min-w-max">
           <button
             onClick={() => setActiveTab('handover')}
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
@@ -97,7 +119,7 @@ const CourierDashboard = () => {
                       {o.stages?.delivery?.courierInfo?.mode === 'direct' ? 'Direct Handover' : 'Client Self-Collection'}
                     </div>
                   </div>
-                  <Link to={`/courier/orders/${o._id}`} className="text-blue-600 font-bold bg-blue-600 text-white px-4 py-2 rounded-md">View</Link>
+                  <Link to={`/courier/orders/${o._id}`} className={VIEW_BUTTON}>View</Link>
                 </li>
               ))}
             </ul>
@@ -120,7 +142,7 @@ const CourierDashboard = () => {
                       Shipping Company: {o.stages?.delivery?.courierInfo?.shipmentCompany || 'Middle East'}
                     </div>
                   </div>
-                  <Link to={`/courier/orders/${o._id}`} className=" font-bold text-primary-600 bg-blue-600 text-white px-4 py-2 rounded-md">View</Link>
+                  <Link to={`/courier/orders/${o._id}`} className={VIEW_BUTTON}>View</Link>
                 </li>
               ))}
             </ul>
@@ -150,7 +172,7 @@ const CourierDashboard = () => {
                       Delivered on {new Date(o.stages?.delivery?.completionDate || o.updatedAt).toLocaleDateString()}
                     </div>
                   </div>
-                  <Link to={`/courier/orders/${o._id}`} className="text-primary-600 font-bold bg-blue-600 text-white px-4 py-2 rounded-md">View</Link>
+                  <Link to={`/courier/orders/${o._id}`} className={VIEW_BUTTON}>View</Link>
                 </li>
               ))}
             </ul>

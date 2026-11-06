@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import AuthContext from '../../context/AuthContext';
+import { getHomeForRole } from '../../utils/roleRoutes';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, isAuthenticated, loading } = useContext(AuthContext);
@@ -22,20 +23,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   // If authenticated but not authorized for this route, redirect to appropriate dashboard
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // Redirect to appropriate dashboard based on role
-    switch (user.role) {
-      case 'client':
-        return <Navigate to="/client" replace />;
-      case 'employee':
-        return <Navigate to="/employee" replace />;
-      case 'prepress':
-        return <Navigate to="/prepress" replace />;
-      case 'manager':
-      case 'admin':
-        return <Navigate to="/manager" replace />;
-      default:
-        return <Navigate to="/login" replace />;
-    }
+    // Redirect to appropriate dashboard based on role (courier included)
+    const home = getHomeForRole(user.role);
+    return <Navigate to={home === '/login' ? '/' : home} replace />;
   }
 
   // If authenticated and authorized, render the children

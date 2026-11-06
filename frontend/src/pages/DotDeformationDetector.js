@@ -1,7 +1,11 @@
 import React, { useState, useRef, useContext } from 'react';
 import { Upload, Camera, FileText, AlertCircle, CheckCircle, Loader, ArrowLeft, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import AuthContext from '../context/AuthContext';
+
+// Set REACT_APP_AI_URL in production; falls back to the local AI service for development.
+const AI_API_URL = (process.env.REACT_APP_AI_URL || 'http://localhost:8000').replace(/\/+$/, '');
 
 const DotDeformationDetector = () => {
   const { user } = useContext(AuthContext);
@@ -39,7 +43,7 @@ const DotDeformationDetector = () => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file.');
+      toast.error('Please select an image file (JPG, PNG, etc.).');
       return;
     }
 
@@ -57,7 +61,7 @@ const DotDeformationDetector = () => {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("http://localhost:8000/predict", {
+      const response = await fetch(`${AI_API_URL}/predict`, {
         method: "POST",
         body: formData,
       });
@@ -66,7 +70,7 @@ const DotDeformationDetector = () => {
       const result = await response.json();
       setPrediction(result);
     } catch (error) {
-      alert('Failed to analyze image. Please try again.');
+      toast.error('Could not analyze the image. Check your connection and try again.');
       setPrediction(null);
       console.error(error);
     } finally {

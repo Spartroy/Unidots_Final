@@ -18,9 +18,9 @@ const EmployeeDashboard = () => {
   const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchDashboardData = useCallback(async () => {
+  const fetchDashboardData = useCallback(async ({ silent } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const statsResponse = await api.get('/api/tasks/employee-stats');
       setStats(statsResponse.data);
       const tasksResponse = await api.get('/api/tasks/assigned?limit=3');

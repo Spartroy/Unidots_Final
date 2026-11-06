@@ -66,6 +66,7 @@ import PrepressPlateMonitoring from './pages/prepress/PlateMonitoring';
 
 // Courier Portal
 import ProtectedRoute from './components/common/ProtectedRoute';
+import PublicRoute from './components/common/PublicRoute';
 import CourierDashboard from './pages/courier/Dashboard';
 import CourierOrderDetail from './pages/courier/OrderDetail';
 import CourierLayout from './components/layouts/CourierLayout';
@@ -86,8 +87,8 @@ function App() {
       <NotificationProvider>
         <Routes>
           {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+          <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
 
           {/* Client Portal Routes */}
           <Route path="/client" element={

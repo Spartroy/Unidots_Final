@@ -29,9 +29,9 @@ const ClientOrders = () => {
   // Add debouncing for search
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchParam || '');
   
-  const fetchOrders = useCallback(async () => {
+  const fetchOrders = useCallback(async ({ silent } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       let endpoint = `/api/orders?page=${pagination.page}&limit=${itemsPerPage}`;
       if (activeFilter === 'all') {
         endpoint += '&status[ne]=Cancelled';
@@ -300,7 +300,14 @@ const ClientOrders = () => {
                     </div>
                     
                     {/* Right side - centered button */}
-                    <div className="flex-shrink-0 flex justify-end sm:justify-center sm:items-center">
+                    <div className="flex-shrink-0 flex justify-end gap-2 sm:justify-center sm:items-center">
+                      <Link
+                        to="/client/orders/new"
+                        state={{ reorderFrom: order }}
+                        className="inline-flex items-center px-3 py-1.5 border border-primary-300 text-sm font-medium rounded-md text-primary-700 bg-white hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                      >
+                        Reorder
+                      </Link>
                       <Link
                         to={`/client/orders/${order._id}`}
                         className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"

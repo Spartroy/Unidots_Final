@@ -16,6 +16,13 @@ const StatusActions = ({
   updating = false,
   availableActions = ['in progress', 'resolved', 'rejected']
 }) => {
+  // Full class strings (Tailwind purges dynamically-built names like `bg-${color}-600`)
+  const colorClasses = {
+    blue: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500',
+    green: 'bg-green-600 hover:bg-green-700 focus:ring-green-500',
+    red: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
+  };
+
   // Map of status actions to their UI configuration
   const actionConfig = {
     'in progress': {
@@ -39,7 +46,7 @@ const StatusActions = ({
   const filteredActions = availableActions.filter(action => actionConfig[action]);
 
   return (
-    <div className="flex space-x-3">
+    <div className="flex flex-wrap gap-3">
       {filteredActions.map(action => {
         const config = actionConfig[action];
         return (
@@ -48,7 +55,7 @@ const StatusActions = ({
             type="button"
             onClick={() => onStatusUpdate(action)}
             disabled={updating || config.disabled}
-            className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-${config.color}-600 hover:bg-${config.color}-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${config.color}-500 ${(updating || config.disabled) ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${colorClasses[config.color]} focus:outline-none focus:ring-2 focus:ring-offset-2 ${(updating || config.disabled) ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {config.label}
           </button>

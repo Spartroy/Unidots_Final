@@ -26,9 +26,9 @@ const Orders = () => {
   });
   const [itemsPerPage, setItemsPerPage] = useState(parseInt(limitParam) || 10);
 
-  const fetchOrders = useCallback(async () => {
+  const fetchOrders = useCallback(async ({ silent } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       let endpoint = `/api/orders?page=${pagination.page}&limit=${itemsPerPage}`;
       if (filter === 'all') {
         endpoint += '&status[ne]=Cancelled';

@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../../utils/api';
 import AuthContext from '../../context/AuthContext';
@@ -9,6 +9,7 @@ import axios from 'axios';
 const NewOrder = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Calculate default deadline (7 days from now)
   const defaultDeadline = new Date();
@@ -48,6 +49,41 @@ const NewOrder = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [estimatedPrice, setEstimatedPrice] = useState(0);
+
+  // Reorder: prefill the form from a previous order (passed via router state)
+  const reorderFrom = location.state?.reorderFrom;
+  useEffect(() => {
+    if (!reorderFrom) return;
+    const s = reorderFrom.specifications || {};
+    const d = s.dimensions || {};
+    setFormData((prev) => ({
+      ...prev,
+      title: reorderFrom.title || '',
+      description: reorderFrom.description || '',
+      orderType: 'Existing',
+      specifications: {
+        ...prev.specifications,
+        packageType: s.packageType || prev.specifications.packageType,
+        dimensions: {
+          width: d.width ?? '',
+          height: d.height ?? '',
+          widthRepeatCount: d.widthRepeatCount ?? 1,
+          heightRepeatCount: d.heightRepeatCount ?? 1,
+          unit: d.unit || 'mm',
+        },
+        colors: s.colors || prev.specifications.colors,
+        usedColors: s.usedColors || [],
+        customColors: s.customColors || [],
+        printingMode: s.printingMode || prev.specifications.printingMode,
+        material: s.material || prev.specifications.material,
+        materialThickness: s.materialThickness || prev.specifications.materialThickness,
+        distortion: s.distortion ?? '',
+        jobPath: s.jobPath || '',
+        additionalDetails: s.additionalDetails || '',
+      },
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Quick test data filler
   const fillWithRandomData = () => {
@@ -409,12 +445,19 @@ const NewOrder = () => {
         </p>
       </div>
 
+      {reorderFrom && (
+        <div role="status" className="mb-6 rounded-lg border border-secondary-200 bg-secondary-50 px-4 py-3 text-sm text-secondary-800">
+          Reordering <b>{reorderFrom.orderNumber || reorderFrom.title}</b>. The specifications are copied; review them, then submit.
+        </div>
+      )}
+
       <form onSubmit={handleSubmit}>
         <div className="space-y-12 divide-y divide-gray-200">
           {/* Basic Information */}
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             <div className="px-6 py-6 sm:px-8 flex items-center justify-between">
               <h3 className="text-xl leading-7 font-semibold text-gray-900">Basic Information</h3>
+              {process.env.NODE_ENV !== 'production' && (
               <button
                 type="button"
                 onClick={fillWithRandomData}
@@ -423,6 +466,7 @@ const NewOrder = () => {
               >
                 Fill Test Data
               </button>
+              )}
             </div>
             <div className="border-t border-gray-200 px-6 py-8 sm:p-8">
             <div className="grid grid-cols-1 gap-y-8 gap-x-6 sm:grid-cols-6">

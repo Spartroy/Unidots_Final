@@ -51,13 +51,16 @@ api.interceptors.response.use(
     }
 
     const status = error?.response?.status;
-    if (status === 401 || status === 403) {
+    // Only an invalid/expired session (401) ends the session. A 403 just means
+    // "not allowed to do that" and must not log the user out.
+    if (status === 401) {
       try {
         localStorage.removeItem('user');
       } catch (_) {}
-      // Avoid infinite loops if already on login
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-        window.location.assign('/login');
+      // Avoid infinite loops if already on login/register
+      if (typeof window !== 'undefined' && !['/login', '/register'].includes(window.location.pathname)) {
+        const back = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.assign(`/login?expired=1&from=${back}`);
       }
     }
     return Promise.reject(error);

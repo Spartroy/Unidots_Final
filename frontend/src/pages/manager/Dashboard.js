@@ -36,9 +36,9 @@ const ManagerDashboard = () => {
   const [recentClaims, setRecentClaims] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchDashboardData = useCallback(async () => {
+  const fetchDashboardData = useCallback(async ({ silent } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
 
         // Initialize with empty data to prevent errors
         let dashboardStats = {

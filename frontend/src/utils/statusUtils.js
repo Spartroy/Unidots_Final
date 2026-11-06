@@ -22,6 +22,7 @@ export const getDisplayStatus = (status, role = 'client') => {
       case 'In Prepress':
         return 'IN PREPRESS';
       case 'Ready for Delivery':
+      case 'Delivering':
         return 'OUT FOR DELIVERY';
       case 'Delivered':
       case 'Completed':
@@ -61,6 +62,8 @@ export const getStatusColor = (status) => {
       return 'bg-yellow-100 text-yellow-800';
     case 'Ready for Delivery':
       return 'bg-indigo-100 text-indigo-800';
+    case 'Delivering':
+      return 'bg-cyan-100 text-cyan-800';
     case 'Cancelled':
       return 'bg-red-100 text-red-800';
     case 'On Hold':

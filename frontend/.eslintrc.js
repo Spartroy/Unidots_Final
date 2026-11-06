@@ -6,8 +6,7 @@ module.exports = {
   rules: {
     'no-unused-vars': 'warn',
     'react-hooks/exhaustive-deps': 'warn',
-    'default-case': 'warn',
-    '@typescript-eslint/no-unused-vars': 'warn'
+    'default-case': 'warn'
   },
   env: {
     browser: true,

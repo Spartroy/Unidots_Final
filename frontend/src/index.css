@@ -90,10 +90,9 @@ img, video, iframe {
 
 /* Custom styles for better mobile experience */
 @media (max-width: 640px) {
-  /* Ensure proper touch targets on mobile */
-  button, a {
+  /* Ensure proper touch targets on mobile (only real buttons, never inline links/icons) */
+  .btn, button[type="submit"] {
     min-height: 44px;
-    min-width: 44px;
   }
   
   /* Improve text readability on mobile */
@@ -127,7 +126,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
   /* Prevent ResizeObserver issues on body */
   overflow-x: hidden;
-  contain: layout style;
 }
 
 code {

@@ -28,9 +28,9 @@ const Claims = () => {
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
 
-  const fetchClaims = useCallback(async () => {
+  const fetchClaims = useCallback(async ({ silent } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       let endpoint = `/api/claims?page=${pagination.page}&limit=${itemsPerPage}`;
       if (filter !== 'all') {
         const statusMap = {
