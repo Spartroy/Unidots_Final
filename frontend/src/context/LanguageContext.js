@@ -18,8 +18,10 @@ import managerEn from '../locales/manager.en';
 import managerAr from '../locales/manager.ar';
 import accountEn from '../locales/account.en';
 import accountAr from '../locales/account.ar';
+import profileEn from '../locales/profile.en';
+import profileAr from '../locales/profile.ar';
 
-const dictionaries = { en: { ...en, ...landingEn, ...phase5En, ...prepressEn, ...activityEn, ...courierEn, ...ordersEn, ...managerEn, ...accountEn }, ar: { ...ar, ...landingAr, ...phase5Ar, ...prepressAr, ...activityAr, ...courierAr, ...ordersAr, ...managerAr, ...accountAr } };
+const dictionaries = { en: { ...en, ...landingEn, ...phase5En, ...prepressEn, ...activityEn, ...courierEn, ...ordersEn, ...managerEn, ...accountEn, ...profileEn }, ar: { ...ar, ...landingAr, ...phase5Ar, ...prepressAr, ...activityAr, ...courierAr, ...ordersAr, ...managerAr, ...accountAr, ...profileAr } };
 const STORAGE_KEY = 'unidots_lang';
 
 const readStored = () => {
