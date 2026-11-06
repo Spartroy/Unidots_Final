@@ -43,7 +43,7 @@ export const usePageChrome = (chrome) => {
 const LangGroup = () => {
   const { lang, setLang } = useLanguage();
   return (
-    <div className="ud-lang" role="group" aria-label="Language">
+    <div className="ud-lang" role="group" aria-label="Language / اللغة">
       <button type="button" aria-pressed={lang === 'en'} onClick={() => setLang('en')}>EN</button>
       <button type="button" aria-pressed={lang === 'ar'} onClick={() => setLang('ar')}>عربي</button>
     </div>

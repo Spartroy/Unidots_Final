@@ -95,7 +95,7 @@ const Register = () => {
       back={<Link to="/" className="ud-link ud-back">{t('login.backHome')}</Link>}
     >
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBlockEnd: 8 }}>
-        <div className="ud-lang" role="group" aria-label="Language" style={{ borderColor: 'var(--border-control)' }}>
+        <div className="ud-lang" role="group" aria-label="Language / اللغة" style={{ borderColor: 'var(--border-control)' }}>
           <button type="button" aria-pressed={lang === 'en'} onClick={() => setLang('en')} style={{ color: lang === 'en' ? undefined : 'var(--text)' }}>EN</button>
           <button type="button" aria-pressed={lang === 'ar'} onClick={() => setLang('ar')} style={{ color: lang === 'ar' ? undefined : 'var(--text)' }}>عربي</button>
         </div>

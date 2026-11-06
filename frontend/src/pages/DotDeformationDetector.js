@@ -55,7 +55,7 @@ const DotDeformationDetector = () => {
             <p className="ud-card-s" style={{ margin: 0 }}>{t('dd.subtitle')}</p>
           </div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div className="ud-lang" role="group" aria-label="Language" style={{ borderColor: 'var(--border-control)' }}>
+            <div className="ud-lang" role="group" aria-label="Language / اللغة" style={{ borderColor: 'var(--border-control)' }}>
               <button type="button" aria-pressed={lang === 'en'} onClick={() => setLang('en')} style={{ color: lang === 'en' ? undefined : 'var(--text)' }}>EN</button>
               <button type="button" aria-pressed={lang === 'ar'} onClick={() => setLang('ar')} style={{ color: lang === 'ar' ? undefined : 'var(--text)' }}>عربي</button>
             </div>
