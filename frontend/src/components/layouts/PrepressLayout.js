@@ -1,17 +1,16 @@
 import React from 'react';
 import AppLayout from './AppLayout';
 
-// Arabic labels are kept until the EN/AR toggle lands (planned).
 const portal = {
   key: 'prepress',
-  title: 'Prepress Portal',
+  titleKey: 'portal.prepress',
   items: [
-    { name: 'الأوردرات', href: '/prepress', match: (p) => p === '/prepress' || p.startsWith('/prepress/orders') },
-    { name: 'الأوردرات السابقة', href: '/prepress/history' },
+    { labelKey: 'nav.orders', href: '/prepress', match: (p) => p === '/prepress' || p.startsWith('/prepress/orders') },
+    { labelKey: 'nav.orderHistory', href: '/prepress/history' },
   ],
   more: [
-    { name: 'Acid Solution', href: '/prepress/acid-solution' },
-    { name: 'Plate Monitoring', href: '/prepress/plate-monitoring' },
+    { labelKey: 'nav.acidSolution', href: '/prepress/acid-solution' },
+    { labelKey: 'nav.plateMonitoring', href: '/prepress/plate-monitoring' },
   ],
 };
 

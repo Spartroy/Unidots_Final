@@ -28,7 +28,6 @@ const Claims = () => {
       }
       
       const response = await api.get(endpoint);
-      console.log('Claims response:', response.data);
       
       // Handle both data structures - array of claims or object with claims property
       if (Array.isArray(response.data)) {

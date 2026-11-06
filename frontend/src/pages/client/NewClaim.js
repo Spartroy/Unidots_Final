@@ -150,7 +150,6 @@ const NewClaim = () => {
               }
             });
             
-            console.log('File upload response:', fileResponse.data);
             
             if (fileResponse.data) {
               uploadedFiles.push(fileResponse.data);
@@ -180,11 +179,9 @@ const NewClaim = () => {
         files: uploadedFiles.map(file => file._id)
       };
       
-      console.log('Submitting claim data:', claimData);
       
       const response = await api.post('/api/claims', claimData);
       
-      console.log('Claim submission response:', response.data);
       
       // Check if the response contains an actual claim object with an ID
       if (response.data && response.data._id) {

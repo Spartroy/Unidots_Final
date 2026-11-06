@@ -3,15 +3,15 @@ import AppLayout from './AppLayout';
 
 const portal = {
   key: 'employee',
-  title: 'Employee Portal',
+  titleKey: 'portal.employee',
   items: [
-    { name: 'Dashboard', href: '/employee', match: (p) => p === '/employee' },
-    { name: 'Orders', href: '/employee/orders' },
-    { name: 'Claims', href: '/employee/claims' },
+    { labelKey: 'nav.dashboard', href: '/employee', match: (p) => p === '/employee' },
+    { labelKey: 'nav.orders', href: '/employee/orders' },
+    { labelKey: 'nav.claims', href: '/employee/claims' },
   ],
   more: [
-    { name: 'Tasks', href: '/employee/tasks' },
-    { name: 'Templates', href: '/employee/templates' },
+    { labelKey: 'nav.tasks', href: '/employee/tasks' },
+    { labelKey: 'nav.templates', href: '/employee/templates' },
   ],
 };
 

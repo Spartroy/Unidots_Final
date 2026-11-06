@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import AuthContext from '../../context/AuthContext';
 import { toast } from 'react-toastify';
 import logo from '../../assets/logo.png';
+import { useLanguage } from '../../context/LanguageContext';
+import LanguageToggle from '../../components/common/LanguageToggle';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -15,6 +17,7 @@ const Login = () => {
 
   const { login } = useContext(AuthContext);
   const location = useLocation();
+  const { t } = useLanguage();
 
   // Where the user was heading before being sent here (route guard state, or ?from= after a session expiry)
   const params = new URLSearchParams(location.search);
@@ -36,7 +39,7 @@ const Login = () => {
     
     // Basic validation
     if (!formData.email || !formData.password) {
-      toast.error('Please provide both email and password');
+      toast.error(t('login.errorMissing'));
       return;
     }
     
@@ -48,14 +51,14 @@ const Login = () => {
       // Handle different error types
       if (error.response) {
         // Server responded with an error status
-        const errorMessage = error.response.data?.message || 'Invalid credentials';
+        const errorMessage = error.response.data?.message || t('login.errorInvalid');
         toast.error(errorMessage);
       } else if (error.request) {
         // Request was made but no response was received
-        toast.error('Network error. Please check your connection.');
+        toast.error(t('login.errorNetwork'));
       } else {
         // Something else caused the error
-        toast.error('Login failed. Please try again.');
+        toast.error(t('login.errorGeneric'));
       }
     } finally {
       setIsSubmitting(false);
@@ -68,6 +71,10 @@ const Login = () => {
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 opacity-50 blur-3xl"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-gradient-to-br from-secondary-100 to-secondary-200 opacity-50 blur-3xl"></div>
+      </div>
+
+      <div className="absolute top-4 end-4 z-10">
+        <LanguageToggle className="bg-white text-gray-700 border border-gray-300 hover:bg-gray-50" />
       </div>
 
       <div className="relative">
@@ -94,7 +101,7 @@ const Login = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            Welcome Back
+            {t('login.welcomeBack')}
           </motion.h2>
           <motion.p 
             className="mt-2 text-center text-sm text-gray-600"
@@ -102,7 +109,7 @@ const Login = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            Sign in to your account to continue
+            {t('login.subtitle')}
           </motion.p>
         </motion.div>
 
@@ -116,7 +123,7 @@ const Login = () => {
           <div className="bg-white py-8 px-4 shadow-xl sm:rounded-xl sm:px-10 border border-gray-200 relative overflow-hidden">
             {sessionExpired && (
               <div role="alert" className="mb-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-                Your session expired. Please sign in again to continue.
+                {t('login.expired')}
               </div>
             )}
             {/* Decorative elements */}
@@ -130,7 +137,7 @@ const Login = () => {
                 transition={{ duration: 0.5, delay: 0.5 }}
               >
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email address
+                  {t('login.email')}
                 </label>
                 <div className="relative">
                   <input
@@ -142,9 +149,9 @@ const Login = () => {
                     value={formData.email}
                     onChange={handleChange}
                     className="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300 sm:text-sm"
-                    placeholder="Enter your email"
+                    placeholder={t('login.emailPlaceholder')}
                   />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <div className="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none">
                     <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
@@ -158,7 +165,7 @@ const Login = () => {
                 transition={{ duration: 0.5, delay: 0.6 }}
               >
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
+                  {t('login.password')}
                 </label>
                 <div className="relative">
                   <input
@@ -169,17 +176,17 @@ const Login = () => {
                     required
                     value={formData.password}
                     onChange={handleChange}
-                    className="appearance-none block w-full px-4 py-3 pr-16 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300 sm:text-sm"
-                    placeholder="Enter your password"
+                    className="appearance-none block w-full px-4 py-3 pe-16 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-300 sm:text-sm"
+                    placeholder={t('login.passwordPlaceholder')}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
                     aria-pressed={showPassword}
-                    className="absolute inset-y-0 right-0 px-4 flex items-center text-xs font-medium text-gray-500 hover:text-primary-600 focus:outline-none focus:text-primary-700"
+                    className="absolute inset-y-0 end-0 px-4 flex items-center text-xs font-medium text-gray-500 hover:text-primary-600 focus:outline-none focus:text-primary-700"
                   >
-                    {showPassword ? 'Hide' : 'Show'}
+                    {showPassword ? t('login.hide') : t('login.show')}
                   </button>
                 </div>
               </motion.div>
@@ -194,7 +201,7 @@ const Login = () => {
                   disabled={isSubmitting}
                   className="group relative w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg"
                 >
-                  <span className="absolute left-0 inset-y-0 flex items-center pl-3">
+                  <span className="absolute start-0 inset-y-0 flex items-center ps-3">
                     {!isSubmitting && (
                       <svg className="h-5 w-5 text-primary-200 group-hover:text-primary-100 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
@@ -207,10 +214,10 @@ const Login = () => {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      <span>Signing in...</span>
+                      <span>{t('login.submitting')}</span>
                     </div>
                   ) : (
-                    'Sign in to your account'
+                    t('login.submit')
                   )}
                 </button>
               </motion.div>
@@ -228,7 +235,7 @@ const Login = () => {
                   <div className="w-full border-t border-gray-300" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">New to Unidots?</span>
+                  <span className="px-2 bg-white text-gray-500">{t('login.newTo')}</span>
                 </div>
               </div>
             </motion.div>
@@ -244,12 +251,12 @@ const Login = () => {
                 to="/register"
                 className="group relative w-full flex justify-center py-3 px-4 border border-primary-300 rounded-lg shadow-sm text-sm font-medium text-primary-600 bg-white hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-300 transform hover:scale-[1.02]"
               >
-                <span className="absolute left-0 inset-y-0 flex items-center pl-3">
+                <span className="absolute start-0 inset-y-0 flex items-center ps-3">
                   <svg className="h-5 w-5 text-primary-400 group-hover:text-primary-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                   </svg>
                 </span>
-                Create a new account
+                {t('login.createAccount')}
               </Link>
             </motion.div>
           </div>
@@ -266,10 +273,10 @@ const Login = () => {
             to="/" 
             className="inline-flex items-center text-sm text-gray-600 hover:text-primary-600 transition-colors duration-300"
           >
-            <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-4 w-4 me-1 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to Home
+            {t('login.backHome')}
           </Link>
         </motion.div>
       </div>

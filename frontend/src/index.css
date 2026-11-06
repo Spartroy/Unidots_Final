@@ -128,6 +128,11 @@ body {
   overflow-x: hidden;
 }
 
+/* Arabic: use an Arabic-first font stack when the document is right-to-left */
+[dir='rtl'] body {
+  font-family: 'Noto Sans Arabic', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;

@@ -143,7 +143,6 @@ const OrderDetail = () => {
 
   // File upload dropzone setup
   const onDrop = acceptedFiles => {
-    console.log('Files dropped:', acceptedFiles);
     setFiles(prevFiles => [
       ...prevFiles,
       ...acceptedFiles.map(file =>
@@ -171,7 +170,6 @@ const OrderDetail = () => {
 
   // Ripping file dropzone setup
   const onRippingDrop = acceptedFiles => {
-    console.log('Ripping files dropped:', acceptedFiles);
     setRippingFiles(prevFiles => [
       ...prevFiles,
       ...acceptedFiles.map(file =>
@@ -229,7 +227,6 @@ const OrderDetail = () => {
       // Convert "in progress" to "Designing" for proper client display
       // Make sure 'Design Done' status is passed through correctly
       
-      console.log('Sending status update:', { statusToSend });
       
       await api.put(`/api/orders/${id}/status`, { status: statusToSend });
       // Refresh order data
@@ -284,7 +281,6 @@ const OrderDetail = () => {
         formData.append('designLink', designLink.trim());
       }
       
-      console.log('Uploading files/design link to order:', id);
       
       // Upload files or design link
       const uploadResponse = await api.post('/api/files/upload', formData, {
@@ -294,12 +290,10 @@ const OrderDetail = () => {
       });
       
       if (uploadResponse.data) {
-        console.log('Upload successful:', uploadResponse.data);
         
         // Wait a moment to ensure everything is fully processed
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        console.log('About to update status to Design Done');
         
         try {
           // Mark stage as completed - use 'Design Done' status instead of 'Completed'
@@ -361,14 +355,6 @@ const OrderDetail = () => {
         formData.append('designLink', rippingLink.trim());
       }
       
-      console.log('Uploading ripping files/link to order:', id);
-      console.log('FormData contents:', {
-        files: rippingFiles.length,
-        fileType: 'ripping',
-        relatedOrder: id,
-        notes: rippingNote || 'Ripping files',
-        designLink: rippingLink.trim() || 'none'
-      });
       
       // Upload files or ripping link
       const uploadResponse = await api.post('/api/files/upload', formData, {
@@ -378,7 +364,6 @@ const OrderDetail = () => {
       });
       
       if (uploadResponse.data) {
-        console.log('Ripping upload successful:', uploadResponse.data);
         
         // Wait a moment to ensure everything is fully processed
         await new Promise(resolve => setTimeout(resolve, 1000));

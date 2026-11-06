@@ -64,12 +64,10 @@ const OrderDetail = () => {
       
       // Fetch order details
       const orderResponse = await api.get(`/api/orders/${id}`);
-      console.log('Fetched order data:', orderResponse.data);
       setOrder(orderResponse.data);
       
       // Extract files from order response instead of making a separate call
       if (orderResponse.data.files) {
-        console.log('Files from order data:', orderResponse.data.files);
         setFiles(orderResponse.data.files);
       } else {
         // Try to fetch files, but don't fail if endpoint doesn't exist
@@ -77,7 +75,6 @@ const OrderDetail = () => {
           const filesResponse = await api.get(`/api/orders/${id}/files`);
           setFiles(filesResponse.data);
         } catch (error) {
-          console.log('Files endpoint not available, using empty array');
           setFiles([]);
         }
       }
@@ -87,7 +84,6 @@ const OrderDetail = () => {
         const tasksResponse = await api.get(`/api/orders/${id}/tasks`);
         setTasks(tasksResponse.data);
       } catch (error) {
-        console.log('Tasks endpoint not available, using empty array');
         setTasks([]);
       }
     } catch (error) {
@@ -156,12 +152,10 @@ const OrderDetail = () => {
     
     setCancelLoading(true);
     try {
-      console.log('Cancelling order');
       const response = await api.put(`/api/orders/${id}/cancel`, { 
         reason: cancelReason 
       });
       
-      console.log('Cancel order response:', response.data);
       toast.success('Order cancelled successfully');
       setShowCancelModal(false);
       
@@ -182,7 +176,6 @@ const OrderDetail = () => {
       return { steps: [], currentStep: 0 };
     }
     
-    console.log(`Getting step status for order with status: ${order.status}, delivery stage: ${order.stages?.delivery?.status}`);
     
     // Simplified steps based on the new workflow
     const steps = [
@@ -218,7 +211,6 @@ const OrderDetail = () => {
       currentStep = 4; // Complete all steps
     }
 
-    console.log(`Current progress step: ${currentStep} for status: ${order.status}`);
     return { steps, currentStep };
   };
 

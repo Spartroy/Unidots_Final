@@ -97,6 +97,13 @@ Internal stages: **Production** (design + ripping) → **Prepress** (9 plate sub
 16. **Reorder.** Clients get a **Reorder** button on the orders list and order detail; it opens New Order pre-filled from the old order. The "Fill Test Data" button is hidden in production.
 17. **Repo hygiene.** `frontend/build/` and `backend/uploads/` are untracked and git-ignored (files stay on disk). If production serves uploads from the repo checkout, move them to persistent storage first.
 
+20. **Prepress access.** Backend `prepress` / `prepressOrManager` checks now accept role `prepress` as well as department `prepress`.
+21. **Cloud uploads.** With Cloudinary credentials in `backend/.env` (see `.env.example`), new files go to Cloudinary; without them the old local `uploads/` behaviour is unchanged. Existing files can be moved with `node scripts/migrateUploadsToCloud.js` (dry run) and `--apply`. Downloads work for both kinds of file.
+22. **English / Arabic.** `LanguageContext` + `locales/en.js` / `ar.js`, an EN/AR toggle in every navbar and on the login page, right-to-left layout, Arabic font, Prepress defaults to Arabic. Translated so far: all navigation, portal titles, profile/sign-out and the login page. To translate another screen: add keys to both locale files and use `const { t } = useLanguage()`.
+23. **Cleanup.** Removed 25 debug `console.log` calls from the frontend; logo now sits on a white badge on the dark navbar; added `frontend/.env.example`.
+
+Not done from Phase 1: reversed/transparent logo artwork (needs the original vector), moving the login token to an httpOnly cookie (needs CORS and CSRF decisions), password reset (skipped by you), merging the repeated date helpers (they format differently per portal).
+
 Confirmed by you: the default shipping company ("Middle East") stays.
 
 18. **Order detail pages split.** Client, employee, manager and prepress detail pages went from 1,224 / 1,865 / 1,372 / 1,352 lines to 499 / 667 / 525 / 863, with tabs, modals and sections moved to `pages/<portal>/orderDetail/*.js` (e.g. `DetailsTab`, `FilesTab`, `CancelModal`, `SubProcessesSection`). The build compiles. Remaining dead code (unused helpers, e.g. in prepress and client) is only warned about, not removed.

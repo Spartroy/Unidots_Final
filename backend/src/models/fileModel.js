@@ -61,6 +61,13 @@ const fileSchema = mongoose.Schema(
     previewPath: {
       type: String,
     },
+    // 'local' = file on the server disk, 'cloudinary' = remote URL stored in `path`
+    storage: {
+      type: String,
+      enum: ['local', 'cloudinary'],
+      default: 'local',
+    },
+    publicId: String,
     metadata: {
       width: Number,
       height: Number,

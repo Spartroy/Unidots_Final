@@ -4,11 +4,11 @@ import ChatBot from '../common/ChatBot';
 
 const portal = {
   key: 'client',
-  title: 'Client Portal',
+  titleKey: 'portal.client',
   items: [
-    { name: 'Dashboard', href: '/client', match: (p) => p === '/client' },
-    { name: 'Orders', href: '/client/orders' },
-    { name: 'Claims', href: '/client/claims' },
+    { labelKey: 'nav.dashboard', href: '/client', match: (p) => p === '/client' },
+    { labelKey: 'nav.orders', href: '/client/orders' },
+    { labelKey: 'nav.claims', href: '/client/claims' },
   ],
   extras: <ChatBot />,
 };

@@ -3,8 +3,9 @@ import File from '../models/fileModel.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import sharp from 'sharp';
+import { Readable } from 'stream';
 import { fileURLToPath } from 'url';
+import { persistUploadedFile, getUploadDir } from '../config/cloudStorage.js';
 import Order from '../models/orderModel.js';
 
 // Calculate the __dirname equivalent for ES modules
@@ -14,12 +15,8 @@ const __dirname = path.dirname(__filename);
 // Set up multer storage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, '../../uploads');
-    // Create directory if it doesn't exist
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
+    // Local uploads folder, or a temp folder when Cloudinary is configured
+    cb(null, getUploadDir(path.join(__dirname, '../../uploads')));
   },
   filename: function (req, file, cb) {
     // Create unique filename with original extension
@@ -88,13 +85,18 @@ export const uploadFile = asyncHandler(async (req, res) => {
 
     const { fileType, relatedOrder, relatedClaim, version, notes, tags } = req.body;
 
+    const stored = await persistUploadedFile(req.file);
+
     // Create file record in database
     const file = await File.create({
       filename: req.file.filename,
       originalname: req.file.originalname,
       mimetype: req.file.mimetype,
       size: req.file.size,
-      path: req.file.path,
+      path: stored.path,
+      previewPath: stored.previewPath,
+      storage: stored.storage,
+      publicId: stored.publicId,
       fileType: fileType || 'other',
       uploadedBy: req.user.id,
       relatedOrder: relatedOrder || null,
@@ -103,28 +105,6 @@ export const uploadFile = asyncHandler(async (req, res) => {
       notes: notes || '',
       tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
     });
-
-    // Generate preview for image files
-    if (req.file.mimetype.startsWith('image/')) {
-      try {
-        const previewPath = path.join(
-          path.dirname(req.file.path),
-          'preview-' + req.file.filename
-        );
-
-        // Generate preview using sharp
-        await sharp(req.file.path)
-          .resize(300, 300, { fit: 'inside' })
-          .toFile(previewPath);
-
-        // Update file with preview path
-        file.previewPath = previewPath;
-        await file.save();
-      } catch (error) {
-        console.error('Preview generation error:', error);
-        // Continue even if preview generation fails
-      }
-    }
 
     res.status(201).json(file);
   });
@@ -228,8 +208,10 @@ export const downloadFile = asyncHandler(async (req, res) => {
 
     console.log('Found file in database:', file.filename, 'path:', file.path);
 
-    // Check if file exists on disk
-    if (!fs.existsSync(file.path)) {
+    const isRemote = /^https?:\/\//i.test(file.path);
+
+    // Check if file exists on disk (local files only)
+    if (!isRemote && !fs.existsSync(file.path)) {
       console.error('File not found on disk:', file.path);
       res.status(404);
       throw new Error('File not found on server');
@@ -245,6 +227,17 @@ export const downloadFile = asyncHandler(async (req, res) => {
       'Content-Disposition',
       `attachment; filename="${encodeURIComponent(file.originalname || file.filename)}"`
     );
+
+    // Cloud-stored file: stream it from the storage provider
+    if (isRemote) {
+      const upstream = await fetch(file.path);
+      if (!upstream.ok || !upstream.body) {
+        res.status(502).send('Could not fetch file from storage');
+        return;
+      }
+      Readable.fromWeb(upstream.body).on('error', () => res.end()).pipe(res);
+      return;
+    }
 
     // Stream file to response
     const fileStream = fs.createReadStream(file.path);
@@ -318,13 +311,18 @@ export const uploadNewVersion = asyncHandler(async (req, res) => {
       throw new Error('Please upload a file');
     }
 
+    const stored = await persistUploadedFile(req.file);
+
     // Create new file record for the new version
     const newVersion = await File.create({
       filename: req.file.filename,
       originalname: req.file.originalname,
       mimetype: req.file.mimetype,
       size: req.file.size,
-      path: req.file.path,
+      path: stored.path,
+      previewPath: stored.previewPath,
+      storage: stored.storage,
+      publicId: stored.publicId,
       fileType: originalFile.fileType,
       uploadedBy: req.user.id,
       relatedOrder: originalFile.relatedOrder,
@@ -334,27 +332,6 @@ export const uploadNewVersion = asyncHandler(async (req, res) => {
       notes: req.body.notes || `New version of ${originalFile.originalname}`,
       tags: originalFile.tags,
     });
-
-    // Generate preview for image files
-    if (req.file.mimetype.startsWith('image/')) {
-      try {
-        const previewPath = path.join(
-          path.dirname(req.file.path),
-          'preview-' + req.file.filename
-        );
-
-        // Generate preview using sharp
-        await sharp(req.file.path)
-          .resize(300, 300, { fit: 'inside' })
-          .toFile(previewPath);
-
-        // Update file with preview path
-        newVersion.previewPath = previewPath;
-        await newVersion.save();
-      } catch (error) {
-        console.error('Preview generation error:', error);
-      }
-    }
 
     // Mark original file as inactive
     originalFile.isActive = false;
@@ -476,12 +453,17 @@ export const uploadMultipleFiles = asyncHandler(async (req, res) => {
       for (const file of req.files) {
         console.log(`Processing file: ${file.originalname}, size: ${file.size}, type: ${file.mimetype}`);
         
+        const stored = await persistUploadedFile(file);
+
         const fileRecord = await File.create({
           filename: file.filename,
           originalname: file.originalname,
           mimetype: file.mimetype,
           size: file.size,
-          path: file.path,
+          path: stored.path,
+          previewPath: stored.previewPath,
+          storage: stored.storage,
+          publicId: stored.publicId,
           fileType: fileType || 'other',
           uploadedBy: req.user.id,
           relatedOrder: relatedOrder || null,
@@ -491,28 +473,6 @@ export const uploadMultipleFiles = asyncHandler(async (req, res) => {
         });
 
         console.log('Created file record with ID:', fileRecord._id, 'uploadedBy:', fileRecord.uploadedBy);
-
-        // Generate preview for image files
-        if (file.mimetype.startsWith('image/')) {
-          try {
-            const previewPath = path.join(
-              path.dirname(file.path),
-              'preview-' + file.filename
-            );
-
-            // Generate preview using sharp
-            await sharp(file.path)
-              .resize(300, 300, { fit: 'inside' })
-              .toFile(previewPath);
-
-            // Update file with preview path
-            fileRecord.previewPath = previewPath;
-            await fileRecord.save();
-          } catch (error) {
-            console.error('Preview generation error:', error);
-            // Continue even if preview generation fails
-          }
-        }
 
         uploadedFiles.push(fileRecord);
       }

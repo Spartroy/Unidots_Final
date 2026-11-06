@@ -3,19 +3,19 @@ import AppLayout from './AppLayout';
 
 const portal = {
   key: 'manager',
-  title: 'Manager Portal',
+  titleKey: 'portal.manager',
   items: [
-    { name: 'Dashboard', href: '/manager', match: (p) => p === '/manager' },
-    { name: 'Orders', href: '/manager/orders' },
-    { name: 'Claims', href: '/manager/claims' },
-    { name: 'Tasks', href: '/manager/tasks' },
-    { name: 'Employees', href: '/manager/employees' },
-    { name: 'Clients', href: '/manager/clients' },
-    { name: 'Reports', href: '/manager/reports' },
+    { labelKey: 'nav.dashboard', href: '/manager', match: (p) => p === '/manager' },
+    { labelKey: 'nav.orders', href: '/manager/orders' },
+    { labelKey: 'nav.claims', href: '/manager/claims' },
+    { labelKey: 'nav.tasks', href: '/manager/tasks' },
+    { labelKey: 'nav.employees', href: '/manager/employees' },
+    { labelKey: 'nav.clients', href: '/manager/clients' },
+    { labelKey: 'nav.reports', href: '/manager/reports' },
   ],
   more: [
-    { name: 'Barrel Management', href: '/manager/barrel-management' },
-    { name: 'Plate Monitoring', href: '/manager/plate-monitoring' },
+    { labelKey: 'nav.barrelManagement', href: '/manager/barrel-management' },
+    { labelKey: 'nav.plateMonitoring', href: '/manager/plate-monitoring' },
   ],
 };
 

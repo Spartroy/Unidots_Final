@@ -87,8 +87,12 @@ const manager = asyncHandler(async (req, res, next) => {
 });
 
 // Middleware for prepress department access
+// Prepress staff are identified by department OR by the 'prepress' role (older accounts only have one of them).
+const isPrepressUser = (user) =>
+  Boolean(user) && (user.department === 'prepress' || user.role === 'prepress' || user.role === 'manager' || user.role === 'admin');
+
 const prepress = (req, res, next) => {
-  if (req.user && (req.user.department === 'prepress' || req.user.role === 'manager' || req.user.role === 'admin')) {
+  if (isPrepressUser(req.user)) {
     next();
   } else {
     res.status(403);
@@ -98,7 +102,7 @@ const prepress = (req, res, next) => {
 
 // Middleware for prepress or manager access
 const prepressOrManager = (req, res, next) => {
-  if (req.user && (req.user.department === 'prepress' || req.user.role === 'manager' || req.user.role === 'admin')) {
+  if (isPrepressUser(req.user)) {
     next();
   } else {
     res.status(403);

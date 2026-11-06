@@ -91,7 +91,6 @@ const AcidSolutionMonitor = () => {
       const response = await api.get('/api/acid-solution/history');
       setUsageHistory(response.data.usageHistory || []);
     } catch (error) {
-      console.log('API endpoint not available, using mock data');
       // If API fails, use mock data
       const mockHistory = generateMockUsageHistory();
       setUsageHistory(mockHistory);
@@ -163,7 +162,6 @@ const AcidSolutionMonitor = () => {
           areaProcessed: totalAreaM2
         });
       } catch (apiError) {
-        console.log('API not available, record saved locally');
       }
 
       toast.success(`Manual usage recorded: ${litersUsed.toFixed(2)}L consumed`);

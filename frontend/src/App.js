@@ -6,6 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 // Auth Context Provider
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { LanguageProvider } from './context/LanguageContext';
 
 // Landing Page
 import Landing from './pages/Landing';
@@ -84,6 +85,7 @@ import DotDeformationDetector from './pages/DotDeformationDetector';
 function App() {
   return (
     <AuthProvider>
+      <LanguageProvider>
       <NotificationProvider>
         <Routes>
           {/* Public Routes */}
@@ -184,6 +186,7 @@ function App() {
         
         <ToastContainer position="top-right" autoClose={5000} />
       </NotificationProvider>
+      </LanguageProvider>
     </AuthProvider>
   );
 }

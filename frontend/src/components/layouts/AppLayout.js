@@ -3,6 +3,8 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Disclosure, Menu, Transition } from '@headlessui/react';
 import { Bars3Icon, XMarkIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import AuthContext from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
+import LanguageToggle from '../common/LanguageToggle';
 import NotificationDropdown from '../common/NotificationDropdown';
 import logo from '../../assets/logo.png';
 
@@ -15,15 +17,16 @@ function classNames(...classes) {
  *
  * portal = {
  *   key: 'client',              // used for the profile link: /<key>/profile
- *   title: 'Client Portal',     // fallback page title
- *   items: [{ name, href, match?(pathname) }],   // main menu
- *   more:  [{ name, href, match?(pathname) }],   // grouped under a "More" menu
+ *   titleKey: 'portal.client',  // fallback page title (translation key)
+ *   items: [{ labelKey, href, match?(pathname) }],   // main menu
+ *   more:  [{ labelKey, href, match?(pathname) }],   // grouped under a "More" menu
  *   extras: <ReactNode/>,       // optional (e.g. the chatbot)
  * }
  */
 const AppLayout = ({ portal }) => {
   const { user, logout } = useContext(AuthContext);
   const { pathname } = useLocation();
+  const { t } = useLanguage();
 
   const withCurrent = (list = []) =>
     list.map((item) => ({
@@ -47,10 +50,10 @@ const AppLayout = ({ portal }) => {
               <div className="flex h-20 items-center justify-between">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <img src={logo} alt="UniDots" className="h-20 w-auto" />
+                    <img src={logo} alt="UniDots" className="h-16 w-auto rounded-lg bg-white p-1" />
                   </div>
                   <div className="hidden md:block">
-                    <div className="ml-12 flex items-center space-x-4 lg:space-x-6">
+                    <div className="ms-12 flex items-center gap-4 lg:gap-6">
                       {items.map((item) => (
                         <Link
                           key={item.href}
@@ -63,7 +66,7 @@ const AppLayout = ({ portal }) => {
                           )}
                           aria-current={item.current ? 'page' : undefined}
                         >
-                          {item.name}
+                          {t(item.labelKey)}
                         </Link>
                       ))}
 
@@ -77,8 +80,8 @@ const AppLayout = ({ portal }) => {
                               'inline-flex items-center rounded-md px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-white'
                             )}
                           >
-                            More
-                            <ChevronDownIcon className="ml-1 h-4 w-4" aria-hidden="true" />
+                            {t('nav.more')}
+                            <ChevronDownIcon className="ms-1 h-4 w-4" aria-hidden="true" />
                           </Menu.Button>
                           <Transition
                             as={Fragment}
@@ -89,7 +92,7 @@ const AppLayout = ({ portal }) => {
                             leaveFrom="transform opacity-100 scale-100"
                             leaveTo="transform opacity-0 scale-95"
                           >
-                            <Menu.Items className="absolute left-0 z-20 mt-2 w-56 origin-top-left rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                            <Menu.Items className="absolute start-0 z-20 mt-2 w-56 ltr:origin-top-left rtl:origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                               {more.map((item) => (
                                 <Menu.Item key={item.href}>
                                   {({ active }) => (
@@ -101,7 +104,7 @@ const AppLayout = ({ portal }) => {
                                         'block px-4 py-2 text-sm'
                                       )}
                                     >
-                                      {item.name}
+                                      {t(item.labelKey)}
                                     </Link>
                                   )}
                                 </Menu.Item>
@@ -115,12 +118,13 @@ const AppLayout = ({ portal }) => {
                 </div>
 
                 <div className="hidden md:block">
-                  <div className="ml-4 flex items-center md:ml-6">
+                  <div className="ms-4 flex items-center md:ms-6">
+                    <LanguageToggle className="me-2 bg-primary-800 text-slate-200 hover:bg-primary-700 focus:ring-offset-primary-900" />
                     <NotificationDropdown colorClasses="bg-primary-800 text-slate-200 hover:bg-primary-700" />
 
-                    <Menu as="div" className="relative ml-3">
+                    <Menu as="div" className="relative ms-3">
                       <Menu.Button className="flex max-w-xs items-center rounded-full bg-primary-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-900">
-                        <span className="sr-only">Open user menu</span>
+                        <span className="sr-only">{t('nav.openUserMenu')}</span>
                         <div className="h-8 w-8 rounded-full bg-primary-700 flex items-center justify-center">
                           <span className="text-sm font-medium text-white">{initial}</span>
                         </div>
@@ -134,14 +138,14 @@ const AppLayout = ({ portal }) => {
                         leaveFrom="transform opacity-100 scale-100"
                         leaveTo="transform opacity-0 scale-95"
                       >
-                        <Menu.Items className="absolute right-0 z-20 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                        <Menu.Items className="absolute end-0 z-20 mt-2 w-48 ltr:origin-top-right rtl:origin-top-left rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                           <Menu.Item>
                             {({ active }) => (
                               <Link
                                 to={profileHref}
                                 className={classNames(active ? 'bg-gray-100' : '', 'block px-4 py-2 text-sm text-gray-700')}
                               >
-                                Your Profile
+                                {t('nav.yourProfile')}
                               </Link>
                             )}
                           </Menu.Item>
@@ -152,10 +156,10 @@ const AppLayout = ({ portal }) => {
                                 onClick={logout}
                                 className={classNames(
                                   active ? 'bg-gray-100' : '',
-                                  'block w-full text-left px-4 py-2 text-sm text-gray-700'
+                                  'block w-full text-start px-4 py-2 text-sm text-gray-700'
                                 )}
                               >
-                                Sign out
+                                {t('nav.signOut')}
                               </button>
                             )}
                           </Menu.Item>
@@ -165,10 +169,11 @@ const AppLayout = ({ portal }) => {
                   </div>
                 </div>
 
-                <div className="flex items-center md:hidden space-x-2">
+                <div className="flex items-center md:hidden gap-2">
+                  <LanguageToggle className="bg-primary-800 text-slate-200 hover:bg-primary-700 focus:ring-offset-primary-900" />
                   <NotificationDropdown colorClasses="bg-primary-800 text-slate-200 hover:bg-primary-700" />
                   <Disclosure.Button className="inline-flex items-center justify-center rounded-md bg-primary-800 p-2 text-slate-200 hover:bg-primary-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-900">
-                    <span className="sr-only">Open main menu</span>
+                    <span className="sr-only">{t('nav.openMainMenu')}</span>
                     {open ? (
                       <XMarkIcon className="block h-6 w-6" aria-hidden="true" />
                     ) : (
@@ -192,13 +197,13 @@ const AppLayout = ({ portal }) => {
                     )}
                     aria-current={item.current ? 'page' : undefined}
                   >
-                    {item.name}
+                    {t(item.labelKey)}
                   </Disclosure.Button>
                 ))}
 
                 {more.length > 0 && (
                   <>
-                    <p className="px-3 pt-4 pb-1 text-xs font-semibold uppercase tracking-wider text-secondary-300">More</p>
+                    <p className="px-3 pt-4 pb-1 text-xs font-semibold uppercase tracking-wider text-secondary-300">{t('nav.more')}</p>
                     {more.map((item) => (
                       <Disclosure.Button
                         key={item.href}
@@ -210,7 +215,7 @@ const AppLayout = ({ portal }) => {
                         )}
                         aria-current={item.current ? 'page' : undefined}
                       >
-                        {item.name}
+                        {t(item.labelKey)}
                       </Disclosure.Button>
                     ))}
                   </>
@@ -221,7 +226,7 @@ const AppLayout = ({ portal }) => {
                   <div className="h-10 w-10 flex-shrink-0 rounded-full bg-primary-700 flex items-center justify-center">
                     <span className="text-sm font-medium text-white">{initial}</span>
                   </div>
-                  <div className="ml-3 min-w-0">
+                  <div className="ms-3 min-w-0">
                     <div className="truncate text-base font-medium text-white">{user?.name}</div>
                     <div className="truncate text-sm font-medium text-slate-300">{user?.email}</div>
                   </div>
@@ -232,14 +237,14 @@ const AppLayout = ({ portal }) => {
                     to={profileHref}
                     className="block rounded-md px-3 py-3 text-base font-medium text-slate-200 hover:bg-primary-800 hover:text-white"
                   >
-                    Your Profile
+                    {t('nav.yourProfile')}
                   </Disclosure.Button>
                   <Disclosure.Button
                     as="button"
                     onClick={logout}
-                    className="block w-full text-left rounded-md px-3 py-3 text-base font-medium text-slate-200 hover:bg-primary-800 hover:text-white"
+                    className="block w-full text-start rounded-md px-3 py-3 text-base font-medium text-slate-200 hover:bg-primary-800 hover:text-white"
                   >
-                    Sign out
+                    {t('nav.signOut')}
                   </Disclosure.Button>
                 </div>
               </div>
@@ -251,7 +256,7 @@ const AppLayout = ({ portal }) => {
       <header className="bg-white shadow">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
-            {allItems.find((item) => item.current)?.name || portal.title}
+            {t(allItems.find((item) => item.current)?.labelKey || portal.titleKey)}
           </h1>
         </div>
       </header>

@@ -238,7 +238,6 @@ const Tasks = () => {
     try {
       setIsCreating(true);
       const response = await api.post('/api/tasks', newTask);
-      console.log('Task creation response:', response.data);
       
       // Refresh tasks
       const tasksResponse = await api.get('/api/tasks');

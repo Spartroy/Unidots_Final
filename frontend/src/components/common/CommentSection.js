@@ -32,13 +32,11 @@ const CommentSection = ({ comments = [], entityType = 'claim', entityId, onComme
 
     try {
       setSubmittingComment(true);
-      console.log(`Submitting comment to: /api/${entityType}s/${entityId}/comments`);
       
       const response = await api.post(`/api/${entityType}s/${entityId}/comments`, { 
         content: comment.trim() 
       });
       
-      console.log('Comment added successfully:', response.data);
       setComment('');
       toast.success('Comment added successfully');
       
