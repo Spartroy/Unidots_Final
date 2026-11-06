@@ -19,6 +19,7 @@ const ClaimsList = () => {
   const date = useDate();
   const base = `/${user.role}/claims`;
   const isClient = user.role === 'client';
+  const isManager = user.role === 'manager';
 
   const [claims, setClaims] = useState(null);
   const [error, setError] = useState(null);
@@ -31,7 +32,7 @@ const ClaimsList = () => {
     () => (isClient ? <Link to={`${base}/new`} className="ud-btn ud-btn-primary">{t('cl.new')}</Link> : null),
     [isClient, base, t]
   );
-  usePageChrome({ subtitle: t('cl.subtitle.list'), actions });
+  usePageChrome({ subtitle: t(isClient ? 'cl.subtitle.list' : 'cl.subtitle.staff'), actions });
 
   useEffect(() => {
     const id = setTimeout(() => {
@@ -59,15 +60,17 @@ const ClaimsList = () => {
 
   const counts = useMemo(() => {
     const all = claims || [];
-    return { all: all.length, open: all.filter((c) => OPEN_STATUSES.includes(c.status)).length, resolved: all.filter((c) => !OPEN_STATUSES.includes(c.status)).length };
+    return { unassigned: all.filter((c) => !c.assignedTo && OPEN_STATUSES.includes(c.status)).length, all: all.length, open: all.filter((c) => OPEN_STATUSES.includes(c.status)).length, resolved: all.filter((c) => !OPEN_STATUSES.includes(c.status)).length };
   }, [claims]);
-  const shown = useMemo(() => (claims || []).filter((c) => (filter === 'all' ? true : filter === 'open' ? OPEN_STATUSES.includes(c.status) : !OPEN_STATUSES.includes(c.status))), [claims, filter]);
+  const shown = useMemo(() => (claims || []).filter((c) => (filter === 'all' ? true : filter === 'unassigned' ? !c.assignedTo && OPEN_STATUSES.includes(c.status) : filter === 'open' ? OPEN_STATUSES.includes(c.status) : !OPEN_STATUSES.includes(c.status))), [claims, filter]);
   const pages = Math.max(1, Math.ceil(shown.length / PAGE));
   const slice = shown.slice((page - 1) * PAGE, page * PAGE);
 
   const rows = slice.map((c) => ({
     n: <Link className="ud-link" to={`${base}/${c._id}`}>{c.claimNumber || '—'}</Link>,
     t: c.title,
+    c: c.client?.name || '—',
+    a: c.assignedTo?.name || <span style={{ color: 'var(--text-muted)' }}>{t('cl.detail.unassigned')}</span>,
     o: c.order?.orderNumber || '—',
     y: t(`cl.type.${c.claimType}`) === `cl.type.${c.claimType}` ? c.claimType : t(`cl.type.${c.claimType}`),
     s: <ClaimBadge status={c.status} />,
@@ -76,7 +79,7 @@ const ClaimsList = () => {
 
   return (
     <>
-      <Chips dir={dir} label={t('nav.claims')} value={filter} onChange={setFilter} items={['all', 'open', 'resolved'].map((k) => ({ key: k, label: t(`cl.filter.${k}`), count: claims ? counts[k] : undefined }))} />
+      <Chips dir={dir} label={t('nav.claims')} value={filter} onChange={setFilter} items={['all', 'open', ...(isManager ? ['unassigned'] : []), 'resolved'].map((k) => ({ key: k, label: t(`cl.filter.${k}`), count: claims ? counts[k] : undefined }))} />
       <div style={{ maxWidth: 420 }}>
         <SearchField dir={dir} label={t('cl.search')} placeholder={t('cl.search')} value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
@@ -100,9 +103,11 @@ const ClaimsList = () => {
             columns={[
               { key: 'n', label: t('cl.col.claim') },
               { key: 't', label: t('cl.col.title') },
+              ...(isClient ? [] : [{ key: 'c', label: t('cl.col.client') }]),
               { key: 'o', label: t('cl.col.order') },
               { key: 'y', label: t('cl.col.type') },
               { key: 's', label: t('cl.col.status') },
+              ...(isClient ? [] : [{ key: 'a', label: t('cl.col.assigned') }]),
               { key: 'd', label: t('cl.col.date') },
             ]}
             rows={rows}

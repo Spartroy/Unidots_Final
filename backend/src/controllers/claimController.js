@@ -314,9 +314,16 @@ const updateClaimStatus = asyncHandler(async (req, res) => {
   }
 
   // Update fields
+  const allowed = ['Submitted', 'Under Review', 'In Progress', 'Resolved', 'Rejected', 'Closed'];
+  if (!allowed.includes(status)) {
+    res.status(400);
+    throw new Error('Invalid claim status');
+  }
   claim.status = status;
   if (resolution) {
-    claim.resolution = resolution;
+    // Accept plain text (older clients) or a { action, details } object
+    const r = typeof resolution === 'string' ? { action: 'Other', details: resolution } : resolution;
+    claim.resolution = { action: r.action || 'Other', details: r.details || '', date: Date.now(), resolvedBy: req.user.id };
   }
 
   if (status === 'Resolved' || status === 'Closed') {

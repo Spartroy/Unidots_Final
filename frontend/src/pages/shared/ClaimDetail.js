@@ -7,6 +7,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { usePageChrome } from '../../components/shell/PortalShell';
 import { Button, DefList, Notice } from '../../design/kit';
 import { Skeleton } from '../../design/motionKit';
+import ClaimStaffPanel from '../../components/claims/ClaimStaffPanel';
 import { AttachmentList, ClaimBadge, ClaimThread, FilePicker, OPEN_STATUSES, uploadFiles, useDate } from '../../components/claims/ClaimBits';
 
 const tr = (t, prefix, v) => (t(`${prefix}.${v}`) === `${prefix}.${v}` ? v : t(`${prefix}.${v}`));
@@ -79,13 +80,14 @@ const ClaimDetail = () => {
         <DefList
           dir={dir}
           items={[
+            user.role !== 'client' ? [t('cl.detail.client'), claim.client?.name ? `${claim.client.name}${claim.client.company ? ` · ${claim.client.company}` : ''}` : '—'] : null,
             [t('cl.detail.order'), claim.order ? <Link className="ud-link" to={`/${user.role}/orders/${claim.order._id}`}>{claim.order.orderNumber}</Link> : '—'],
             [t('cl.detail.type'), tr(t, 'cl.type', claim.claimType)],
             [t('cl.detail.severity'), tr(t, 'cl.sev', claim.severity)],
             [t('cl.detail.assigned'), claim.assignedTo?.name || t('cl.detail.unassigned')],
             [t('cl.detail.submitted'), date(claim.createdAt, true)],
             [t('cl.detail.updated'), date(claim.updatedAt, true)],
-          ]}
+          ].filter(Boolean)}
         />
       </section>
 
@@ -94,6 +96,8 @@ const ClaimDetail = () => {
           {[r.action && `${t('cl.detail.action')}: ${r.action}`, r.details, r.date && `${t('cl.detail.resolvedOn')} ${date(r.date)}`].filter(Boolean).join(' — ')}
         </Notice>
       )}
+
+      {user.role !== 'client' && <ClaimStaffPanel key={claim.updatedAt} claim={claim} role={user.role} onChanged={load} />}
 
       <section className="ud-card ud-rise" style={{ '--i': 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <h2 className="ud-card-h">{t('cl.detail.attachments')}</h2>
