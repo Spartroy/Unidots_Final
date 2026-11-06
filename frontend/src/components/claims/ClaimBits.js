@@ -24,7 +24,7 @@ export const useDate = () => {
 const size = (n) => (n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 
 // Drop zone + list of chosen files. The parent owns the array of File objects.
-export const FilePicker = ({ files, onChange, disabled }) => {
+export const FilePicker = ({ files, onChange, disabled, accept, maxBytes = MAX_BYTES, hint, label }) => {
   const { t, dir } = useLanguage();
   const onDrop = useCallback(
     (accepted, rejected) => {
@@ -36,15 +36,15 @@ export const FilePicker = ({ files, onChange, disabled }) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     disabled,
-    maxSize: MAX_BYTES,
-    accept: { 'image/jpeg': [], 'image/png': [], 'application/pdf': [] },
+    maxSize: maxBytes,
+    accept: accept || { 'image/jpeg': [], 'image/png': [], 'application/pdf': [] },
   });
   return (
     <div dir={dir}>
       <div {...getRootProps({ className: 'ud-drop', style: isDragActive ? { borderColor: 'var(--accent)', background: 'var(--bg-app)' } : undefined })}>
-        <input {...getInputProps()} aria-label={t('cl.form.files')} />
+        <input {...getInputProps()} aria-label={label || t('cl.form.files')} />
         <strong>{isDragActive ? t('cl.drop.active') : t('cl.drop.title')}</strong>
-        <span>{t('cl.form.filesHint')}</span>
+        <span>{hint || t('cl.form.filesHint')}</span>
         <span className="ud-btn ud-btn-secondary" aria-hidden="true">{t('cl.drop.browse')}</span>
       </div>
       {files.length > 0 && (
