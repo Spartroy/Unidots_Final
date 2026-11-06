@@ -110,7 +110,7 @@ const OrderDetail = () => {
     [t('co.type'), order.orderType || '—'],
     [t('co.package'), spec.packageType || '—'],
     [t('co.material'), spec.material || '—'],
-    [t('co.thickness'), spec.materialThickness ? <bdi dir="ltr">{spec.materialThickness} µm</bdi> : '—'],
+    [t('co.thickness'), spec.materialThickness ? <bdi dir="ltr">{spec.materialThickness} mm</bdi> : '—'],
     [t('co.size'), dim.width && dim.height ? <bdi dir="ltr">{`${dim.width} × ${dim.height} ${unit}`}</bdi> : '—'],
     [t('co.repeat'), <bdi dir="ltr">{`${dim.widthRepeatCount || 1} × ${dim.heightRepeatCount || 1}`}</bdi>],
     [t('co.colors'), spec.colors || '—'],
