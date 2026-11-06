@@ -10,6 +10,7 @@ import logoWhite from '../../assets/logo-white.png';
 
 const ICONS = {
   'nav.dashboard': 'home',
+  'nav.deliveries': 'truck',
   'nav.orders': 'orders',
   'nav.orderHistory': 'history',
   'nav.claims': 'claims',
@@ -27,9 +28,6 @@ const ICONS = {
   'nav.acidSolution': 'production',
 };
 
-// Pages that already use the new design and follow the dark theme. Other pages keep their light look
-// inside the dark shell until they are redesigned.
-const THEMED_PATHS = ['/client', '/prepress'];
 
 // Pages can add a subtitle and primary action to the page header.
 const ChromeContext = createContext({ setChrome: () => {} });
@@ -99,8 +97,7 @@ const PortalShell = ({ portal }) => {
   const more = withCurrent(portal.more);
   const all = [...items, ...more];
   const active = all.find((i) => i.current);
-  const title = chrome.title || (active ? t(active.labelKey) : t(portal.titleKey));
-  const themed = THEMED_PATHS.includes(pathname) || pathname === '/prepress/history' || pathname.startsWith('/prepress/orders/') || pathname === '/manager/activity';
+  const title = chrome.title || (active ? t(active.labelKey) : pathname.endsWith('/profile') ? t('nav.yourProfile') : t(portal.titleKey));
   const profile = `/${portal.key}/profile`;
   const roleLabel = t(`role.${user?.role || portal.key}`);
 
@@ -163,7 +160,7 @@ const PortalShell = ({ portal }) => {
             </div>
           </header>
 
-          <main id="main-content" tabIndex={-1} className="ud-content ud-root" data-theme={themed ? undefined : 'light'}>
+          <main id="main-content" tabIndex={-1} className="ud-content ud-root" data-theme={undefined}>
             <PageTransition><Outlet /></PageTransition>
           </main>
         </div>

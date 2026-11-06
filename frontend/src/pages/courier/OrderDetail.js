@@ -1,343 +1,189 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { openFile } from '../../utils/files';
-import { useParams } from 'react-router-dom';
-import api from '../../utils/api';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { PhoneIcon, MapPinIcon, BuildingOffice2Icon, TruckIcon, CloudArrowUpIcon, ArrowDownTrayIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import api from '../../utils/api';
 import useAutoRefresh from '../../hooks/useAutoRefresh';
+import { useLanguage } from '../../context/LanguageContext';
+import { usePageChrome } from '../../components/shell/PortalShell';
+import { Button, Check, Notice, DefList } from '../../design/kit';
+import { Skeleton } from '../../design/motionKit';
+import OrderStatusBadge from '../../components/common/OrderStatusBadge';
+import { openFile } from '../../utils/files';
 
+const modeKey = { direct: 'cr.mode.direct', 'client-collection': 'cr.mode.clientCollection', 'shipping-company': 'cr.mode.shipping' };
+
+// One delivery: who and where, three huge actions (call, map, confirm), and the shipment label for carrier jobs.
 const CourierOrderDetail = () => {
   const { id } = useParams();
+  const { t, lang, dir } = useLanguage();
   const [order, setOrder] = useState(null);
+  const [error, setError] = useState(null);
   const [labelFile, setLabelFile] = useState(null);
-  const [uploadingLabel, setUploadingLabel] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const fileInput = useRef(null);
 
-  useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        setLoading(true);
-        const res = await api.get(`/api/orders/${id}`);
-        setOrder(res.data);
-      } catch (error) {
-        toast.error('Failed to load order details');
-        console.error('Error fetching order:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchOrder();
-  }, [id]);
-
-  const refreshOrder = useCallback(async () => {
+  const load = useCallback(async () => {
     try {
       const res = await api.get(`/api/orders/${id}`);
       setOrder(res.data);
-    } catch (_e) {}
-  }, [id]);
+      setError(null);
+    } catch (e) {
+      setError(e.response?.data?.message || t('cr.notFound'));
+    }
+  }, [id, t]);
 
-  useAutoRefresh(refreshOrder, 60000, [refreshOrder]); // 60 seconds (1 minute)
+  useEffect(() => {
+    load();
+  }, [load]);
+  useAutoRefresh(load, 60000, [load]);
+  usePageChrome({ title: order ? `${order.orderNumber}` : undefined });
 
   const uploadLabel = async () => {
     if (!labelFile) {
-      toast.error('Please choose a shipment label file first');
+      toast.error(t('cr.pickFile'));
       return;
     }
     try {
-      setUploadingLabel(true);
-      const formData = new FormData();
-      formData.append('files', labelFile);
-      formData.append('relatedOrder', id);
-      formData.append('fileType', 'courier');
-      formData.append('notes', 'Shipment label');
-      
-      const response = await api.post('/api/files/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      
-      // Try common response shapes
-      let uploaded;
-      if (response?.data?.files?.length) uploaded = response.data.files[0];
-      else if (Array.isArray(response?.data) && response.data.length) uploaded = response.data[0];
-      else if (response?.data?.file) uploaded = response.data.file;
-      else if (response?.data?._id) uploaded = response.data;
-      
-      if (!uploaded?._id) {
-        toast.error('Upload succeeded but response was unexpected. Please retry.');
-        return;
-      }
-      
+      setUploading(true);
+      const fd = new FormData();
+      fd.append('files', labelFile);
+      fd.append('relatedOrder', id);
+      fd.append('fileType', 'courier');
+      fd.append('notes', 'Shipment label');
+      await api.post('/api/files/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       setLabelFile(null);
-      toast.success('Shipment label uploaded successfully');
-      
-      // Refresh order data
-      const res = await api.get(`/api/orders/${id}`);
-      setOrder(res.data);
-    } catch (error) {
-      toast.error('Failed to upload shipment label');
-      console.error('Error uploading label:', error);
+      if (fileInput.current) fileInput.current.value = '';
+      toast.success(t('cr.uploaded'));
+      await load();
+    } catch (e) {
+      toast.error(e.response?.data?.message || t('cr.uploadError'));
     } finally {
-      setUploadingLabel(false);
+      setUploading(false);
     }
   };
 
-  const completeDelivery = async () => {
+  const confirmDelivery = async () => {
     try {
+      setConfirming(true);
       await api.put(`/api/orders/${id}/status`, { status: 'Completed' });
-      toast.success('Order marked as delivered');
-      
-      // Refresh order data
-      const res = await api.get(`/api/orders/${id}`);
-      setOrder(res.data);
-    } catch (error) {
-      toast.error('Failed to complete delivery');
-      console.error('Error completing delivery:', error);
+      toast.success(t('cr.confirmed'));
+      await load();
+    } catch (e) {
+      toast.error(e.response?.data?.message || t('cr.confirmError'));
+    } finally {
+      setConfirming(false);
     }
   };
 
-  const isCompleted = order?.status === 'Completed';
-
-  const getDeliveryMethodText = () => {
-    const mode = order?.stages?.delivery?.courierInfo?.mode;
-    if (mode === 'direct') return 'Direct Handover';
-    if (mode === 'client-collection') return 'Client Self-Collection';
-    if (mode === 'shipping-company') return 'Shipping Company';
-    return 'Unknown';
-  };
-
-  const getDeliveryMethodColor = () => {
-    const mode = order?.stages?.delivery?.courierInfo?.mode;
-    if (mode === 'direct') return 'text-green-600 bg-green-50';
-    if (mode === 'client-collection') return 'text-yellow-600 bg-yellow-50';
-    if (mode === 'shipping-company') return 'text-blue-600 bg-blue-50';
-    return 'text-gray-600 bg-gray-50';
-  };
-
-  if (loading) {
+  if (error && !order) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
-      </div>
+      <>
+        <Notice tone="error">{error}</Notice>
+        <Link to="/courier" className="ud-btn ud-btn-secondary ud-btn-lg" style={{ alignSelf: 'flex-start' }}>{t('cr.back')}</Link>
+      </>
     );
   }
-
   if (!order) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow">
-        <p className="text-center text-gray-500">Order not found</p>
+      <div role="status" aria-label={t('common.loading')} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Skeleton height={130} />
+        <Skeleton height={200} />
       </div>
     );
   }
 
-  const deliveryMode = order.stages?.delivery?.courierInfo?.mode;
-  const isHandover = deliveryMode === 'direct' || deliveryMode === 'client-collection';
-  const isShipping = deliveryMode === 'shipping-company';
-  const destination = order.stages?.delivery?.courierInfo?.destination;
+  const info = order.stages?.delivery?.courierInfo || {};
+  const mode = info.mode;
+  const isShipping = mode === 'shipping-company';
+  const dest = info.destination;
+  const done = order.status === 'Completed';
+  const addressLine = dest ? [dest.street, dest.city, dest.state, dest.postalCode, dest.country].filter(Boolean).join(', ') : '';
+  const phone = order.client?.phone;
+  const labels = (order.files || []).filter((f) => f.fileType === 'courier');
+  const bigAction = { size: 'lg', className: 'ud-big', style: { minHeight: 'var(--tap-courier)' } };
 
   return (
-    <div className="space-y-6">
-      {/* Order Information Card */}
-      <div className="bg-white rounded-xl shadow-sm border">
-        <div className="p-6">
-          <div className="flex items-start justify-between flex-wrap gap-4">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">Order Information</h2>
-              <div className="mt-1 text-sm text-gray-600">{order.orderNumber} — {order.title}</div>
-              <div className="mt-2 flex gap-2">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getDeliveryMethodColor()}`}>
-                  {getDeliveryMethodText()}
-                </span>
-                {isCompleted && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Delivered
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-700">
-              <PhoneIcon className="h-5 w-5 text-gray-400" />
-              <span>{order.client?.name}</span>
-              <span>·</span>
-              <a href={`tel:${order.client?.phone || ''}`} aria-label={`Call ${order.client?.name || 'client'}`} className="inline-flex items-center justify-center min-h-[44px] rounded-md bg-primary-600 px-4 py-2 font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                {order.client?.phone || 'No phone'}
+    <>
+      <section className="ud-card ud-root ud-rise" dir={dir} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span className="ud-order-no">{order.orderNumber}</span>
+          <OrderStatusBadge status={order.status} />
+          <span className="ud-badge" style={{ background: 'var(--selected)', color: 'var(--accent-ink)' }}>{t(modeKey[mode] || 'cr.mode.direct')}</span>
+        </div>
+        <div style={{ fontSize: 18, fontWeight: 600 }}>{order.client?.name}{order.client?.company ? ` · ${order.client.company}` : ''}</div>
+        <div style={{ color: 'var(--text-muted)' }}>{order.title}</div>
+      </section>
+
+      {done && (
+        <Notice tone="success" title={t('cr.completed')} dir={dir}>
+          {t('cr.deliveredOn', { date: new Date(order.stages?.delivery?.completionDate || order.updatedAt).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US') })}
+        </Notice>
+      )}
+
+      {!isShipping && (
+        <section className="ud-card ud-root" dir={dir} aria-labelledby="addr-title">
+          <h2 id="addr-title" className="ud-card-h">{mode === 'client-collection' ? t('cr.collectAddress') : t('cr.address')}</h2>
+          {addressLine ? <p style={{ margin: '4px 0 16px', fontSize: 16 }}>{addressLine}</p> : <p className="ud-card-s">—</p>}
+          <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+            {phone ? (
+              <a href={`tel:${phone}`} className="ud-btn ud-btn-secondary ud-btn-lg ud-big" style={{ minHeight: 'var(--tap-courier)' }} aria-label={`${t('cr.call')} ${order.client?.name || ''}`}>
+                {t('cr.call')} <bdi dir="ltr">{phone}</bdi>
               </a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Handover Orders - Show Order Details + Address */}
-      {isHandover && (
-        <div className="bg-white rounded-xl shadow-sm border">
-          <div className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Delivery Details</h3>
-            
-            {/* Address Information */}
-            {destination && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-1">
-                  <div className="flex items-start gap-3">
-                    <BuildingOffice2Icon className="h-5 w-5 text-gray-400 mt-0.5" />
-                    <div>
-                      <div className="text-xs uppercase tracking-wider text-gray-500">
-                        {deliveryMode === 'direct' ? 'Delivery Address' : 'Collection Address'}
-                      </div>
-                      <div className="mt-1 text-sm text-gray-800">
-                        <div>{destination.street}</div>
-                        <div>{[destination.city, destination.state, destination.postalCode].filter(Boolean).join(', ')}</div>
-                        <div>{destination.country}</div>
-                      </div>
-                      <div className="mt-2">
-                        <a 
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([destination.street, destination.city, destination.state, destination.postalCode, destination.country].filter(Boolean).join(', '))}`} 
-                          target="_blank" 
-                          rel="noreferrer" 
-                          className="inline-flex items-center justify-center gap-2 min-h-[44px] rounded-md border border-primary-300 bg-white px-4 py-2 font-semibold text-primary-700 hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        >
-                          <MapPinIcon className="h-5 w-5" />
-                          Open in Google Maps
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="lg:col-span-2"></div>
-              </div>
+            ) : (
+              <Button variant="secondary" disabled {...bigAction}>{t('cr.noPhone')}</Button>
             )}
-
-            {/* Delivery Instructions */}
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-2 text-sm text-gray-700">
-                <TruckIcon className="h-5 w-5 text-gray-400" />
-                <span>
-                  {deliveryMode === 'direct' 
-                    ? 'Deliver directly to the client at the specified address' 
-                    : 'Client will collect the order from the specified address'
-                  }
-                </span>
-              </div>
-            </div>
-
-            {/* Complete Delivery Button */}
-            <div className="mt-6 flex justify-end">
-              {isCompleted ? (
-                <div className="text-sm text-green-600 font-medium">
-                  ✓ Order completed on {new Date(order.stages?.delivery?.completionDate || order.updatedAt).toLocaleDateString()}
-                </div>
-              ) : (
-                <button 
-                  onClick={completeDelivery}
-                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 min-h-[56px] px-6 py-3 rounded-md bg-emerald-600 text-white text-lg font-semibold shadow hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
-                >
-                  <CheckCircleIcon className="h-5 w-5" />
-                  Complete Delivery
-                </button>
-              )}
-            </div>
+            {addressLine && (
+              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressLine)}`} target="_blank" rel="noreferrer" className="ud-btn ud-btn-secondary ud-btn-lg ud-big" style={{ minHeight: 'var(--tap-courier)' }}>
+                {t('cr.map')}
+              </a>
+            )}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Shipping Company Orders - Show Order Info + Capture Function */}
       {isShipping && (
-        <div className="bg-white rounded-xl shadow-sm border">
-          <div className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Shipping Company Details</h3>
-            
-            {/* Shipping Company Info */}
-            <div className="mb-6">
-              <div className="text-sm text-gray-600 mb-2">Shipping Company</div>
-              <div className="text-lg font-medium text-gray-900">
-                {order.stages?.delivery?.courierInfo?.shipmentCompany || 'Middle East'}
-              </div>
-            </div>
-
-            {/* Shipment Label Upload */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Shipment Label
-                </label>
-                <div className="flex items-center gap-3">
-                  <label className="inline-flex items-center gap-2 px-3 py-2 rounded-md border bg-white cursor-pointer hover:bg-gray-50">
-                    <CloudArrowUpIcon className="h-5 w-5 text-gray-500" />
-                    <span className="text-sm text-gray-700">Choose File</span>
-                    <input 
-                      type="file" 
-                      accept="image/*,application/pdf" 
-                      onChange={(e) => setLabelFile(e.target.files?.[0] || null)} 
-                      className="hidden" 
-                    />
-                  </label>
-                  <button 
-                    type="button" 
-                    onClick={uploadLabel} 
-                    disabled={uploadingLabel || !labelFile} 
-                    className="px-4 py-2 rounded-md bg-primary-600 text-white text-sm disabled:opacity-50"
-                  >
-                    {uploadingLabel ? 'Uploading…' : 'Upload'}
-                  </button>
-                  {labelFile && (
-                    <div className="text-sm text-gray-600 truncate max-w-[40ch]">
-                      {labelFile.name}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Existing Shipment Labels */}
-              {order.files && order.files.some(file => file.fileType === 'courier') && (
-                <div>
-                  <div className="text-sm font-medium text-gray-700 mb-2">Uploaded Labels</div>
-                  <div className="space-y-2">
-                    {order.files
-                      .filter(file => file.fileType === 'courier')
-                      .map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center gap-2">
-                            <ArrowDownTrayIcon className="h-4 w-4 text-gray-400" />
-                            <span className="text-sm text-gray-700">
-                              {file.originalname || file.filename}
-                            </span>
-                          </div>
-                          <a 
-                            className="text-primary-600 hover:underline text-sm"
-                            href="#" onClick={(e) => openFile(e, file._id)} 
-                            target="_blank" 
-                            rel="noreferrer"
-                          >
-                            Download
-                          </a>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Complete Delivery Button */}
-            <div className="mt-6 flex justify-end">
-              {isCompleted ? (
-                <div className="text-sm text-green-600 font-medium">
-                  ✓ Order completed on {new Date(order.stages?.delivery?.completionDate || order.updatedAt).toLocaleDateString()}
-                </div>
-              ) : (
-                <button 
-                  onClick={completeDelivery}
-                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 min-h-[56px] px-6 py-3 rounded-md bg-emerald-600 text-white text-lg font-semibold shadow hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
-                >
-                  <CheckCircleIcon className="h-5 w-5" />
-                  Complete Delivery
-                </button>
-              )}
-            </div>
+        <section className="ud-card ud-root" dir={dir} aria-labelledby="ship-title">
+          <h2 id="ship-title" className="ud-card-h">{t('cr.company')}</h2>
+          <DefList dir={dir} cols={1} items={[[t('cr.company'), info.shipmentCompany || t('cr.defaultCompany')]]} />
+          <h3 className="ud-card-h" style={{ marginBlockStart: 20 }}>{t('cr.label')}</h3>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginBlockStart: 8 }}>
+            <input ref={fileInput} id="label-file" type="file" accept="image/*,application/pdf" style={{ display: 'none' }} onChange={(e) => setLabelFile(e.target.files?.[0] || null)} />
+            <label htmlFor="label-file" className="ud-btn ud-btn-secondary ud-btn-lg" style={{ minHeight: 'var(--tap-courier)', cursor: 'pointer' }}>{t('cr.chooseFile')}</label>
+            {labelFile && <span style={{ color: 'var(--text-muted)', overflowWrap: 'anywhere' }} dir="ltr">{labelFile.name}</span>}
+            <Button size="lg" onClick={uploadLabel} disabled={uploading || !labelFile} style={{ minHeight: 'var(--tap-courier)' }}>
+              {uploading ? t('cr.uploading') : t('cr.upload')}
+            </Button>
           </div>
+          {labels.length > 0 && (
+            <>
+              <h3 className="ud-card-h" style={{ marginBlockStart: 20 }}>{t('cr.labels')}</h3>
+              <ul className="ud-files">
+                {labels.map((f) => (
+                  <li key={f._id} className="ud-file">
+                    <span className="ud-file-name">{f.originalname || f.filename}</span>
+                    <button type="button" className="ud-btn ud-btn-secondary" onClick={(e) => openFile(e, f._id)}>{t('cr.download')}</button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </section>
+      )}
+
+      {!done && (
+        <div className="ud-actionbar ud-root" dir={dir}>
+          <Button size="lg" onClick={confirmDelivery} disabled={confirming} className="ud-big ud-confirm" style={{ minHeight: 'var(--tap-courier)', width: '100%' }}>
+            <Check size={24} />
+            {t('cr.confirm')}
+          </Button>
         </div>
       )}
-    </div>
+      <div dir={dir}>
+        <Link to="/courier" className="ud-btn ud-btn-ghost ud-btn-lg">{t('cr.back')}</Link>
+      </div>
+    </>
   );
 };
 
 export default CourierOrderDetail;
-
-

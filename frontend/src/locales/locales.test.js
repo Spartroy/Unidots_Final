@@ -8,6 +8,10 @@ import prepressEn from './prepress.en';
 import prepressAr from './prepress.ar';
 import activityEn from './activity.en';
 import activityAr from './activity.ar';
+import courierEn from './courier.en';
+import courierAr from './courier.ar';
+import ordersEn from './orders.en';
+import ordersAr from './orders.ar';
 
 const placeholders = (s) => (s.match(/\{\w+\}/g) || []).sort().join(',');
 
@@ -17,6 +21,8 @@ const pairs = [
   ['phase5', phase5En, phase5Ar],
   ['prepress', prepressEn, prepressAr],
   ['activity', activityEn, activityAr],
+  ['courier', courierEn, courierAr],
+  ['orders', ordersEn, ordersAr],
 ];
 
 describe.each(pairs)('%s translations', (name, enDict, arDict) => {

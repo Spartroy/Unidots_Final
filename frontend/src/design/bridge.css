@@ -1,0 +1,102 @@
+/*
+ * Token bridge: the pages that still use Tailwind utility classes follow the design system's colours, dark theme,
+ * form controls and focus rings, so every portal looks like one product while screens are rebuilt one by one.
+ * Light theme keeps the existing utility colours (they are already the brand palette). Dark theme maps them to tokens.
+ */
+
+/* ---------- Both themes: form controls, focus, type ---------- */
+.ud-app input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
+.ud-app select,
+.ud-app textarea {
+  font-family: inherit;
+  border-radius: var(--radius-md);
+}
+.ud-app :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.ud-app h1, .ud-app h2, .ud-app h3 { letter-spacing: -0.005em; }
+.ud-app table { font-variant-numeric: tabular-nums; }
+[dir='rtl'] .ud-app .space-x-2 > :not([hidden]) ~ :not([hidden]),
+[dir='rtl'] .ud-app .space-x-3 > :not([hidden]) ~ :not([hidden]),
+[dir='rtl'] .ud-app .space-x-4 > :not([hidden]) ~ :not([hidden]) { --tw-space-x-reverse: 1; }
+[dir='rtl'] .ud-app .text-left { text-align: right; }
+[dir='rtl'] .ud-app .text-right { text-align: left; }
+
+/* ---------- Dark theme ---------- */
+[data-theme='dark'] {
+  --bridge-subtle: #172b3a;
+  --bridge-body: #c3d0db;
+}
+[data-theme='dark'] .ud-app .bg-white { background-color: var(--bg-card); }
+[data-theme='dark'] .ud-app .bg-gray-50,
+[data-theme='dark'] .ud-app .bg-gray-100,
+[data-theme='dark'] .ud-app .bg-slate-50,
+[data-theme='dark'] .ud-app .bg-slate-100 { background-color: var(--bridge-subtle); }
+[data-theme='dark'] .ud-app .bg-gray-200,
+[data-theme='dark'] .ud-app .bg-gray-300 { background-color: var(--border); }
+[data-theme='dark'] .ud-app .text-gray-900,
+[data-theme='dark'] .ud-app .text-gray-800,
+[data-theme='dark'] .ud-app .text-slate-900 { color: var(--text); }
+[data-theme='dark'] .ud-app .text-gray-700,
+[data-theme='dark'] .ud-app .text-gray-600 { color: var(--bridge-body); }
+[data-theme='dark'] .ud-app .text-gray-500,
+[data-theme='dark'] .ud-app .text-gray-400 { color: var(--text-muted); }
+[data-theme='dark'] .ud-app .border-gray-100,
+[data-theme='dark'] .ud-app .border-gray-200,
+[data-theme='dark'] .ud-app .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+[data-theme='dark'] .ud-app .divide-gray-200 > :not([hidden]) ~ :not([hidden]) { border-color: var(--border); }
+[data-theme='dark'] .ud-app .border-gray-300,
+[data-theme='dark'] .ud-app .ring-gray-300 { border-color: var(--border-control); --tw-ring-color: var(--border-control); }
+[data-theme='dark'] .ud-app .hover\:bg-gray-50:hover,
+[data-theme='dark'] .ud-app .hover\:bg-gray-100:hover { background-color: var(--selected); }
+[data-theme='dark'] .ud-app .shadow,
+[data-theme='dark'] .ud-app .shadow-md,
+[data-theme='dark'] .ud-app .shadow-lg,
+[data-theme='dark'] .ud-app .shadow-xl { --tw-shadow-color: rgba(0, 0, 0, 0.5); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+
+/* Inputs */
+[data-theme='dark'] .ud-app input:not([type='checkbox']):not([type='radio']):not([type='range']),
+[data-theme='dark'] .ud-app select,
+[data-theme='dark'] .ud-app textarea {
+  background-color: var(--bg-card);
+  color: var(--text);
+  border-color: var(--border-control);
+}
+[data-theme='dark'] .ud-app ::placeholder { color: var(--text-muted); opacity: 1; }
+[data-theme='dark'] .ud-app option { background: var(--bg-card); color: var(--text); }
+
+/* Links and brand text */
+[data-theme='dark'] .ud-app .text-blue-600,
+[data-theme='dark'] .ud-app .text-blue-700,
+[data-theme='dark'] .ud-app .text-primary-600,
+[data-theme='dark'] .ud-app .text-primary-700,
+[data-theme='dark'] .ud-app .text-primary-800,
+[data-theme='dark'] .ud-app .text-primary-900 { color: var(--link); }
+
+/* Status tints: same colours as the StatusBadge tokens */
+[data-theme='dark'] .ud-app .bg-green-50, [data-theme='dark'] .ud-app .bg-green-100 { background-color: var(--status-completed-bg); }
+[data-theme='dark'] .ud-app .text-green-500, [data-theme='dark'] .ud-app .text-green-600, [data-theme='dark'] .ud-app .text-green-700,
+[data-theme='dark'] .ud-app .text-green-800, [data-theme='dark'] .ud-app .text-green-900 { color: var(--status-completed-fg); }
+[data-theme='dark'] .ud-app .bg-red-50, [data-theme='dark'] .ud-app .bg-red-100 { background-color: var(--status-cancelled-bg); }
+[data-theme='dark'] .ud-app .text-red-500, [data-theme='dark'] .ud-app .text-red-600, [data-theme='dark'] .ud-app .text-red-700,
+[data-theme='dark'] .ud-app .text-red-800, [data-theme='dark'] .ud-app .text-red-900 { color: var(--status-cancelled-fg); }
+[data-theme='dark'] .ud-app .bg-yellow-50, [data-theme='dark'] .ud-app .bg-yellow-100 { background-color: var(--status-submitted-bg); }
+[data-theme='dark'] .ud-app .text-yellow-600, [data-theme='dark'] .ud-app .text-yellow-700, [data-theme='dark'] .ud-app .text-yellow-800,
+[data-theme='dark'] .ud-app .text-yellow-900 { color: var(--status-submitted-fg); }
+[data-theme='dark'] .ud-app .bg-blue-50, [data-theme='dark'] .ud-app .bg-blue-100 { background-color: var(--status-designing-bg); }
+[data-theme='dark'] .ud-app .text-blue-800, [data-theme='dark'] .ud-app .text-blue-900 { color: var(--status-designing-fg); }
+[data-theme='dark'] .ud-app .bg-purple-50, [data-theme='dark'] .ud-app .bg-purple-100 { background-color: var(--status-in-prepress-bg); }
+[data-theme='dark'] .ud-app .text-purple-600, [data-theme='dark'] .ud-app .text-purple-800 { color: var(--status-in-prepress-fg); }
+[data-theme='dark'] .ud-app .bg-orange-50, [data-theme='dark'] .ud-app .bg-orange-100 { background-color: var(--status-on-hold-bg); }
+[data-theme='dark'] .ud-app .text-orange-700, [data-theme='dark'] .ud-app .text-orange-800 { color: var(--status-on-hold-fg); }
+[data-theme='dark'] .ud-app .bg-indigo-50, [data-theme='dark'] .ud-app .bg-indigo-100 { background-color: var(--status-ready-bg); }
+[data-theme='dark'] .ud-app .text-indigo-600, [data-theme='dark'] .ud-app .text-indigo-800 { color: var(--status-ready-fg); }
+[data-theme='dark'] .ud-app .bg-cyan-100 { background-color: var(--status-delivering-bg); }
+[data-theme='dark'] .ud-app .text-cyan-800 { color: var(--status-delivering-fg); }
+[data-theme='dark'] .ud-app .bg-teal-100 { background-color: var(--status-design-done-bg); }
+[data-theme='dark'] .ud-app .text-teal-800 { color: var(--status-design-done-fg); }
+[data-theme='dark'] .ud-app .bg-amber-100 { background-color: var(--status-awaiting-approval-bg); }
+[data-theme='dark'] .ud-app .text-amber-800 { color: var(--status-awaiting-approval-fg); }
+[data-theme='dark'] .ud-app [class*='border-green-'], [data-theme='dark'] .ud-app [class*='border-red-'],
+[data-theme='dark'] .ud-app [class*='border-yellow-'], [data-theme='dark'] .ud-app [class*='border-blue-'] { border-color: var(--border-control); }

@@ -75,3 +75,8 @@ body:has(.ud-auth) { background: var(--bg-card); }
 .ud-auth-aside img { display: block; margin-block-end: var(--space-6); }
 .ud-auth .ud-lang button[aria-pressed='true'] { background: var(--nav); color: var(--on-nav); }
 @media (max-width: 799px) { .ud-auth { grid-template-columns: minmax(0, 1fr); } .ud-auth-aside { padding: var(--space-5); } .ud-auth-aside ul { display: none; } }
+
+/* Notice tones used by the screens */
+.ud-notice[data-tone='error'] { background: var(--danger-bg); color: var(--danger); }
+.ud-notice[data-tone='success'] { background: var(--status-completed-bg); color: var(--status-completed-fg); }
+.ud-notice[data-tone='info'] { background: var(--status-designing-bg); color: var(--status-designing-fg); }

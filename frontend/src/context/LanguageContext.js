@@ -10,8 +10,12 @@ import prepressEn from '../locales/prepress.en';
 import prepressAr from '../locales/prepress.ar';
 import activityEn from '../locales/activity.en';
 import activityAr from '../locales/activity.ar';
+import courierEn from '../locales/courier.en';
+import courierAr from '../locales/courier.ar';
+import ordersEn from '../locales/orders.en';
+import ordersAr from '../locales/orders.ar';
 
-const dictionaries = { en: { ...en, ...landingEn, ...phase5En, ...prepressEn, ...activityEn }, ar: { ...ar, ...landingAr, ...phase5Ar, ...prepressAr, ...activityAr } };
+const dictionaries = { en: { ...en, ...landingEn, ...phase5En, ...prepressEn, ...activityEn, ...courierEn, ...ordersEn }, ar: { ...ar, ...landingAr, ...phase5Ar, ...prepressAr, ...activityAr, ...courierAr, ...ordersAr } };
 const STORAGE_KEY = 'unidots_lang';
 
 const readStored = () => {

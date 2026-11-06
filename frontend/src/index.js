@@ -4,6 +4,7 @@ import './design/tokens.css';
 import './design/ud.css';
 import './design/shell.css';
 import './design/motion.css';
+import './design/bridge.css';
 import './index.css';
 import App from './App';
 import { BrowserRouter } from 'react-router-dom';

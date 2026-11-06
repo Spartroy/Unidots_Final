@@ -187,3 +187,10 @@ The supplied design system lives in `design/` (spec, tokens, reference kit, scre
 - **Manager > More > Activity:** the read-only activity log with filters for orders, files, sign-ins, people and refused attempts.
 - **Order timeline** card on the client, manager and prepress order pages (trimmed to what each role may see).
 - Checked in a browser with sample data: Prepress home and order page (Arabic, matches the design). Not yet checked in a browser: Order history, the Activity screen, the timeline card, and the phone layout of the new Prepress screens.
+
+## All portals on the design system (status)
+**Done natively (rebuilt on the design system, EN/AR, light/dark, animated):** Client Dashboard, Client Orders, Login; Employee Dashboard and Orders; Prepress Orders, History and Order page; Courier Deliveries and Delivery screen (phone first, 64 px actions); Manager Activity; the shell for every portal.
+
+**Restyled through the design-token bridge (`design/bridge.css`) but not rebuilt:** every other screen, namely Client Register, Order detail, New order (wizard), Claims, New claim, Profile; Employee Order detail, Order edit, Claims, Tasks, Templates; Manager Dashboard, Orders, Order detail, Claims, Tasks, Employees, Clients, Reports, Barrels, Plate monitoring, Messages, Inventory, Price list. They now share the design's colours, fonts, focus rings, form controls, status tints and the dark theme, and sit in the new shell, but their layouts are still the old ones and some text is still English-only.
+
+**Why the split:** these pages total roughly 20,000 lines of old layout code with real behaviour (assignment modals, ripping and delivery dialogs, template editor, reports). Each needs to be rebuilt against its design screenshot and checked, one portal at a time.
