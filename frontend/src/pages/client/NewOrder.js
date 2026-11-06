@@ -1,15 +1,17 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../../utils/api';
 import AuthContext from '../../context/AuthContext';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
+import { useLanguage } from '../../context/LanguageContext';
 
 const NewOrder = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLanguage();
 
   // Calculate default deadline (7 days from now)
   const defaultDeadline = new Date();
@@ -49,6 +51,83 @@ const NewOrder = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [estimatedPrice, setEstimatedPrice] = useState(0);
+
+  // ---- Wizard + draft state ----
+  const [step, setStep] = useState(1);
+  const [errors, setErrors] = useState([]);
+  const [draftRestored, setDraftRestored] = useState(false);
+  const draftKey = `unidots_order_draft_${user?._id || user?.id || 'anon'}`;
+  const initialFormRef = useRef(null);
+  if (!initialFormRef.current) initialFormRef.current = formData;
+  const errorsRef = useRef(null);
+
+  // Restore an unfinished draft (not when reordering)
+  useEffect(() => {
+    if (location.state?.reorderFrom) return;
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (d?.formData) {
+        setFormData(d.formData);
+        setStep(d.step === 3 ? 2 : d.step || 1);
+        setDraftRestored(true);
+      }
+    } catch (_) {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-save the draft in this browser whenever the form has something in it
+  useEffect(() => {
+    const sp = formData.specifications;
+    const dirty = formData.title || formData.description || sp.dimensions.width || sp.dimensions.height || sp.usedColors.length || sp.additionalDetails;
+    if (!dirty || isSubmitting) return;
+    try {
+      localStorage.setItem(draftKey, JSON.stringify({ formData, step, savedAt: Date.now() }));
+    } catch (_) {}
+  }, [formData, step, isSubmitting, draftKey]);
+
+  const discardDraft = () => {
+    try {
+      localStorage.removeItem(draftKey);
+    } catch (_) {}
+    setFormData(initialFormRef.current);
+    setStep(1);
+    setErrors([]);
+    setDraftRestored(false);
+  };
+
+  const validateStep = (n, data = formData) => {
+    const found = [];
+    const sp = data.specifications;
+    if (n === 1 && !data.title.trim()) found.push(t('wizard.err.name'));
+    if (n === 2) {
+      if (!(parseFloat(sp.dimensions.width) > 0 && parseFloat(sp.dimensions.height) > 0)) found.push(t('wizard.err.size'));
+      if (!sp.material || !sp.materialThickness) found.push(t('wizard.err.material'));
+      const hasColor = sp.usedColors.length > 0 || (sp.customColors || []).some((c) => c.trim());
+      if (!hasColor) found.push(t('wizard.err.colors'));
+    }
+    return found;
+  };
+
+  const showErrors = (list) => {
+    setErrors(list);
+    setTimeout(() => errorsRef.current?.focus(), 0);
+  };
+
+  const goNext = () => {
+    const found = validateStep(step);
+    if (found.length) return showErrors(found);
+    setErrors([]);
+    setStep((v) => Math.min(3, v + 1));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const goBack = () => {
+    setErrors([]);
+    setStep((v) => Math.max(1, v - 1));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Reorder: prefill the form from a previous order (passed via router state)
   const reorderFrom = location.state?.reorderFrom;
@@ -401,6 +480,20 @@ const NewOrder = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Enter key on steps 1-2 moves forward instead of submitting
+    if (step < 3) {
+      goNext();
+      return;
+    }
+    for (const n of [1, 2]) {
+      const found = validateStep(n);
+      if (found.length) {
+        setStep(n);
+        showErrors(found);
+        return;
+      }
+    }
+
     try {
       setIsSubmitting(true);
       
@@ -419,6 +512,9 @@ const NewOrder = () => {
       
       const res = await api.post('/api/orders', formattedOrderData);
       
+      try {
+        localStorage.removeItem(draftKey);
+      } catch (_) {}
       toast.success('Order submitted successfully');
       navigate('/client/orders');
     } catch (error) {
@@ -451,9 +547,52 @@ const NewOrder = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
+      {draftRestored && (
+        <div role="status" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-900">
+          <span>{t('wizard.draft.restored')}</span>
+          <button type="button" onClick={discardDraft} className="font-medium underline">
+            {t('wizard.draft.discard')}
+          </button>
+        </div>
+      )}
+
+      <nav aria-label={t('wizard.progress')} className="mb-8">
+        <ol className="flex items-center gap-2">
+          {[t('wizard.step1'), t('wizard.step2'), t('wizard.step3')].map((label, i) => {
+            const n = i + 1;
+            const state = n === step ? 'current' : n < step ? 'done' : 'todo';
+            return (
+              <li key={label} className="flex flex-1 items-center gap-2" aria-current={state === 'current' ? 'step' : undefined}>
+                <span
+                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
+                    state === 'todo' ? 'bg-gray-200 text-gray-600' : 'bg-primary-600 text-white'
+                  }`}
+                >
+                  {state === 'done' ? '✓' : n}
+                </span>
+                <span className={`text-sm ${state === 'current' ? 'font-semibold text-gray-900' : 'text-gray-500'}`}>{label}</span>
+                {n < 3 && <span className="h-px flex-1 bg-gray-300" aria-hidden="true" />}
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
+
+      {errors.length > 0 && (
+        <div ref={errorsRef} tabIndex={-1} role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 focus:outline-none">
+          <p className="font-semibold">{t('wizard.err.title')}</p>
+          <ul className="mt-1 list-disc ps-5">
+            {errors.map((m) => (
+              <li key={m}>{m}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} noValidate>
         <div className="space-y-12 divide-y divide-gray-200">
           {/* Basic Information */}
+          {step === 1 && (<>
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             <div className="px-6 py-6 sm:px-8 flex items-center justify-between">
               <h3 className="text-xl leading-7 font-semibold text-gray-900">Basic Information</h3>
@@ -523,7 +662,10 @@ const NewOrder = () => {
                   </div>
                 </div>
                 
+          </>)}
+
           {/* Technical Specifications */}
+          {step === 2 && (<>
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             <div className="px-6 py-6 sm:px-8">
               <h3 className="text-xl leading-7 font-semibold text-gray-900">Technical Specifications</h3>
@@ -881,50 +1023,96 @@ const NewOrder = () => {
             </div>
           </div>
 
-          {/* Price Estimation */}
-          {/* <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div className="px-6 py-6 sm:px-8">
-              <h3 className="text-xl leading-7 font-semibold text-gray-900">Estimated Price</h3>
-              <p className="mt-2 max-w-2xl text-base text-gray-600">
-                Based on your specifications, the estimated price for this order is:
-              </p>
-            </div>
-            <div className="border-t border-gray-200 px-6 py-8 sm:p-8">
-              <div className="text-center">
-                <span className="text-4xl font-bold text-gray-900">${estimatedPrice}</span>
-                <p className="mt-4 text-base text-gray-600">
-                  This is an estimate based on the dimensions, colors, and material you've selected.
+          </>)}
+
+          {/* Step 3: Review */}
+          {step === 3 && (
+            <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+              <div className="px-6 py-6 sm:px-8">
+                <h3 className="text-xl leading-7 font-semibold text-gray-900">{t('wizard.review.title')}</h3>
+                <p className="mt-1 text-sm text-gray-500">{t('wizard.review.subtitle')}</p>
+              </div>
+              <dl className="border-t border-gray-200 divide-y divide-gray-100">
+                {[
+                  [t('wizard.review.name'), formData.title, 1],
+                  [t('wizard.review.package'), formData.specifications.packageType, 2],
+                  [
+                    t('wizard.review.size'),
+                    `${formData.specifications.dimensions.width} × ${formData.specifications.dimensions.height} ${formData.specifications.dimensions.unit}` +
+                      (formData.specifications.dimensions.widthRepeatCount > 1 || formData.specifications.dimensions.heightRepeatCount > 1
+                        ? ` (${formData.specifications.dimensions.widthRepeatCount} × ${formData.specifications.dimensions.heightRepeatCount})`
+                        : ''),
+                    2,
+                  ],
+                  [t('wizard.review.material'), `${formData.specifications.material}, ${formData.specifications.materialThickness} mm`, 2],
+                  [
+                    t('wizard.review.colors'),
+                    [...formData.specifications.usedColors, ...formData.specifications.customColors.filter((c) => c.trim())].join(', '),
+                    2,
+                  ],
+                  [t('wizard.review.printing'), formData.specifications.printingMode, 2],
+                ].map(([label, value, goTo]) => (
+                  <div key={label} className="px-6 py-4 sm:px-8 sm:grid sm:grid-cols-3 sm:gap-4">
+                    <dt className="text-sm font-medium text-gray-500">{label}</dt>
+                    <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0 flex justify-between gap-4">
+                      <span className="break-words">{value || '—'}</span>
+                      <button type="button" onClick={() => setStep(goTo)} className="text-primary-700 hover:underline text-sm flex-shrink-0">
+                        {t('wizard.edit')}
+                      </button>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              <div className="border-t border-gray-200 bg-primary-50 px-6 py-6 sm:px-8">
+                <p className="text-sm font-medium text-gray-600">{t('wizard.price.label')}</p>
+                <p className="mt-1 text-3xl font-bold text-gray-900">
+                  {Number(estimatedPrice).toLocaleString(undefined, { maximumFractionDigits: 2 })} <span className="text-lg font-semibold">EGP</span>
                 </p>
-                <p className="mt-4 text-base text-gray-600">
-                  Final pricing may vary based on additional factors.
-                </p>
-                <div className="mt-6 text-sm text-gray-500 text-left">
-       
-                </div>
+                <p className="mt-2 text-sm text-gray-600">{t('wizard.price.note')}</p>
               </div>
             </div>
-          </div> */}
-          
-          {/* Submit Button */}
+          )}
+
+          {/* Navigation */}
           <div className="pt-8">
-            <div className="flex justify-end space-x-4">
-              <button
-                type="button"
-                onClick={() => navigate('/client/orders')}
-                className="bg-white py-3 px-6 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="inline-flex justify-center py-3 px-6 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
-              >
-                {isSubmitting ? 'Submitting...' : 'Submit Order'}
-              </button>
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              {step === 1 ? (
+                <button
+                  type="button"
+                  onClick={() => navigate('/client/orders')}
+                  className="bg-white py-3 px-6 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                >
+                  {t('wizard.cancel')}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={goBack}
+                  className="bg-white py-3 px-6 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                >
+                  {t('wizard.back')}
+                </button>
+              )}
+              {step < 3 ? (
+                <button
+                  type="button"
+                  onClick={goNext}
+                  className="inline-flex justify-center py-3 px-6 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                >
+                  {t('wizard.next')}
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="inline-flex justify-center py-3 px-6 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+                >
+                  {isSubmitting ? t('wizard.submitting') : t('wizard.submit')}
+                </button>
+              )}
             </div>
           </div>
-          
+
         </div>
       </form>
 

@@ -132,3 +132,4 @@ Confirmed by you: the default shipping company ("Middle East") stays.
 
 ## Phase 2 progress
 - **Manager "Needs attention" panel** on the dashboard: overdue orders (past deadline), orders on hold, and new orders with no designer, each linking to the order. Refreshes every minute; translated EN/AR.
+- **New Order wizard:** three steps (Basics, Specifications, Review) with a progress indicator, per-step checks for the required fields (order name, size, material + thickness, at least one color), a review screen with Edit links, and an estimated price shown in EGP labelled as an estimate. Unfinished orders auto-save as a draft in the browser (per user, per device) with a "Start over" option. Wizard text is translated EN/AR; the field labels inside the form are still English.
