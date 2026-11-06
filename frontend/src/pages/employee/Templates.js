@@ -1,239 +1,64 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import api from '../../utils/api';
-import {
-  ClockIcon,
-  ChartBarIcon,
-  TagIcon
-} from '@heroicons/react/24/outline';
+import { useLanguage } from '../../context/LanguageContext';
+import { usePageChrome } from '../../components/shell/PortalShell';
+import { SearchField } from '../../design/controls';
+import { EmptyState, Notice } from '../../design/kit';
+import { Skeleton } from '../../design/motionKit';
 
+const IMAGES = { 'Rice Package': 'Rice', 'Juice Pouch': 'Juice', 'Coffee Package': 'Coffee', 'Tea Package': 'Tea' };
+
+// Designer: ready-made templates to start a design from.
 const Templates = () => {
-  const [templates, setTemplates] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { t, dir } = useLanguage();
+  const [templates, setTemplates] = useState(null);
+  const [error, setError] = useState(null);
+  const [search, setSearch] = useState('');
+  usePageChrome({ subtitle: t('tp.subtitle') });
 
   useEffect(() => {
-    fetchTemplates();
-  }, []);
+    api.get('/api/templates')
+      .then((r) => setTemplates(r.data.templates || []))
+      .catch((e) => setError(e.response?.data?.message || t('tp.loadError')));
+  }, [t]);
 
-  const fetchTemplates = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get('/api/templates');
-      setTemplates(response.data.templates);
-    } catch (error) {
-      console.error('Error fetching templates:', error);
-      toast.error('Failed to load templates');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const shown = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (templates || []).filter((x) => !q || [x.name, x.category, x.subCategory].some((v) => String(v || '').toLowerCase().includes(q)));
+  }, [templates, search]);
 
-
-
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case 'Beginner':
-        return 'bg-green-100 text-green-800';
-      case 'Intermediate':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Advanced':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const formatEstimatedTime = (minutes) => {
-    if (minutes < 60) {
-      return `${minutes}min`;
-    }
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}min` : `${hours}h`;
-  };
-
-  const getTemplateImage = (subCategory) => {
-    switch (subCategory) {
-      case 'Rice Package':
-        return { 
-          src: '/images/templates/Rice.png',
-          alt: 'Rice Package Template',
-          placeholder: '🍚 Rice Package'
-        };
-      case 'Juice Pouch':
-        return { 
-          src: '/images/templates/Juice.png', 
-          alt: 'Juice Pouch Template',
-          placeholder: '🧃 Juice Pouch'
-        };
-      case 'Coffee Package':
-        return { 
-          src: '/images/templates/Coffee.png', 
-          alt: 'Coffee Package Template',
-          placeholder: '☕ Coffee Package'
-        };
-      case 'Tea Package':
-        return { 
-          src: '/images/templates/Tea.png', 
-          alt: 'Tea Package Template',
-          placeholder: '🍵 Tea Package'
-        };
-      default:
-        return { 
-          src: '', 
-          alt: 'Template',
-          placeholder: '📦 Template'
-        };
-    }
-  };
+  if (error) return <Notice tone="error">{error}</Notice>;
+  if (!templates) return <div role="status" aria-label={t('common.loading')}><Skeleton height={300} /></div>;
 
   return (
-    <div className="py-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Design Templates</h1>
-            <p className="text-sm text-gray-600 mt-1">
-              Choose from pre-made templates to speed up your design process
-            </p>
-          </div>
-        </div>
-
-
-
-        {/* Templates Grid */}
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-white rounded-lg shadow animate-pulse">
-                <div className="h-48 bg-gray-200 rounded-t-lg"></div>
-                <div className="p-4">
-                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : templates.length === 0 ? (
-          <div className="text-center py-12">
-            <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No templates available</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Templates will appear here once they are added to the system.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {templates.map((template) => (
-              <div key={template._id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow duration-200">
-                {/* Template Preview */}
-                <div className="relative h-48 bg-gray-100 rounded-t-lg overflow-hidden">
-                  {template.previewImage ? (
-                    <img
-                      src={template.previewImage.fileUrl}
-                      alt={template.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-50">
-                      {(() => {
-                        const templateImage = getTemplateImage(template.subCategory);
-                        return (
-                          <img
-                            src={templateImage.src}
-                            alt={templateImage.alt}
-                            className="w-full h-full object-contain p-4"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.nextSibling.style.display = 'flex';
-                            }}
-                          />
-                        );
-                      })()}
-                      <div className="text-center hidden flex-col items-center justify-center w-full h-full">
-                        {(() => {
-                          const templateImage = getTemplateImage(template.subCategory);
-                          return (
-                            <>
-                              <div className="text-4xl mb-2">{templateImage.placeholder.split(' ')[0]}</div>
-                              <p className="text-xs text-gray-500 font-medium">{templateImage.placeholder}</p>
-                            </>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  )}
-                  
-             
-                  {/* Difficulty Badge */}
-                  <div className="absolute top-2 left-2">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getDifficultyColor(template.difficulty)}`}>
-                      {template.difficulty}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Template Info */}
-                <div className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center">
-                        {(() => {
-                          const templateImage = getTemplateImage(template.subCategory);
-                          return (
-                            <div className="relative h-4 w-4 mr-2 flex-shrink-0">
-                              <img
-                                src={templateImage.src}
-                                alt={templateImage.alt}
-                                className="h-4 w-4 object-contain rounded"
-                                onError={(e) => {
-                                  e.target.style.display = 'none';
-                                  e.target.nextSibling.style.display = 'flex';
-                                }}
-                              />
-                              <div className="h-4 w-4 bg-gray-200 rounded hidden items-center justify-center text-xs">
-                                {templateImage.placeholder.split(' ')[0]}
-                              </div>
-                            </div>
-                          );
-                        })()}
-                        <h3 className="text-sm font-medium text-gray-900 truncate">
-                          {template.name}
-                        </h3>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {template.category} • {template.subCategory}
-                      </p>
-                    </div>
-                  </div>
-
-
-            
-
-                  
-                  {/* Action Buttons */}
-                  <div className="flex space-x-2 mt-4">
-                    
-                    <Link
-                      to={`/employee/templates/${template._id}/customize`}
-                      className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-transparent text-xs font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
-                    >
-                      Use Template
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-
+    <>
+      <div style={{ maxWidth: 420 }}>
+        <SearchField dir={dir} label={t('tp.search')} placeholder={t('tp.search')} value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
-    </div>
+      {shown.length === 0 ? (
+        <EmptyState dir={dir} title={search ? t('tp.emptyMatch') : t('tp.empty')} />
+      ) : (
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }} dir={dir}>
+          {shown.map((x, i) => {
+            const img = x.previewImage?.fileUrl || (IMAGES[x.subCategory] ? `/images/templates/${IMAGES[x.subCategory]}.png` : null);
+            return (
+              <li key={x._id} className="ud-card ud-rise" style={{ '--i': Math.min(i, 8), padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ aspectRatio: '4 / 3', background: 'var(--bg-app)', display: 'grid', placeItems: 'center', color: 'var(--text-muted)' }}>
+                  {img ? <img src={img} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <span>{x.subCategory || x.category}</span>}
+                </div>
+                <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+                  <h2 className="ud-card-h">{x.name}</h2>
+                  <p className="ud-card-s">{[x.category, x.subCategory].filter(Boolean).join(' · ')}{x.difficulty ? ` · ${t(`tp.difficulty.${x.difficulty}`)}` : ''}</p>
+                  <Link to={`/employee/templates/${x._id}/customize`} className="ud-btn ud-btn-primary" style={{ marginBlockStart: 'auto' }}>{t('tp.use')}</Link>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </>
   );
 };
 
-export default Templates; 
+export default Templates;

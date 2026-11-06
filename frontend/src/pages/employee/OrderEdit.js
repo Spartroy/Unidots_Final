@@ -1,771 +1,132 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../../utils/api';
-import AuthContext from '../../context/AuthContext';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { useLanguage } from '../../context/LanguageContext';
+import { usePageChrome } from '../../components/shell/PortalShell';
+import { Button, Notice } from '../../design/kit';
+import { Field, Select } from '../../design/controls';
+import { Skeleton } from '../../design/motionKit';
+import { COLORS, MATERIALS, PACKAGE_TYPES, PRINTING_MODES, THICKNESSES, colorCount, formFromOrder, validateStep } from '../../utils/orderForm';
 
+// Designer: correct an order's details (size, colours, material, prepress notes).
 const OrderEdit = () => {
   const { id } = useParams();
-  const { user } = useContext(AuthContext);
+  const { t, dir } = useLanguage();
   const navigate = useNavigate();
-
-  // Calculate initial color count
-  const calculateInitialColorCount = () => {
-    return Math.max(1, 0); // Start with minimum 1 color
-  };
-
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    orderType: 'New Order',
-    specifications: {
-      packageType: 'Other',
-      dimensions: {
-        width: '',
-        height: '',
-        widthRepeatCount: 1,
-        heightRepeatCount: 1,
-        unit: 'mm',
-      },
-      colors: calculateInitialColorCount(),
-      usedColors: [],
-      customColors: [],
-      printingMode: 'Surface Printing',
-      material: 'Flint',
-      materialThickness: 1.7,
-      distortion: '',
-      jobPath: '',
-      additionalDetails: '',
-    },
-  });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  // Standard color options with color codes
-  const standardColorOptions = [
-    { value: 'Cyan', label: 'Cyan', color: '#00FFFF' },
-    { value: 'Magenta', label: 'Magenta', color: '#FF00FF' },
-    { value: 'Yellow', label: 'Yellow', color: '#FFFF00' },
-    { value: 'Black', label: 'Black', color: '#000000' },
-    { value: 'CMYK Combined', label: 'CMYK Combined', color: '#333333' },
-    { value: 'Red', label: 'Red', color: '#FF0000' },
-    { value: 'Blue', label: 'Blue', color: '#0000FF' },
-    { value: 'Green', label: 'Green', color: '#008000' },
-    { value: 'Golden', label: 'Golden', color: '#FFD700' },
-    { value: 'Silver', label: 'Silver', color: '#C0C0C0' },
-    { value: 'White', label: 'White', color: '#FFFFFF' },
-    { value: 'Other', label: 'Transparent', color: '#AAAAAA' },
-  ];
+  const [form, setForm] = useState(null);
+  const [error, setError] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [busy, setBusy] = useState(false);
+  const actions = useMemo(() => <Link to={`/employee/orders/${id}`} className="ud-btn ud-btn-secondary">{t('wizard.cancel')}</Link>, [id, t]);
+  usePageChrome({ subtitle: t('ew.edit'), actions });
 
   useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        const response = await api.get(`/api/orders/${id}`);
-        const order = response.data;
-        
-                 setFormData({
-           title: order.title || '',
-           description: order.description || '',
-           orderType: order.orderType || 'New Order',
-           specifications: {
-             packageType: order.specifications?.packageType || 'Other',
-             dimensions: {
-               width: order.specifications?.dimensions?.width || '',
-               height: order.specifications?.dimensions?.height || '',
-               widthRepeatCount: order.specifications?.dimensions?.widthRepeatCount || 1,
-               heightRepeatCount: order.specifications?.dimensions?.heightRepeatCount || 1,
-               unit: order.specifications?.dimensions?.unit || 'mm',
-             },
-             colors: order.specifications?.colors || 1,
-             usedColors: order.specifications?.usedColors || [],
-             customColors: order.specifications?.customColors || [],
-             printingMode: order.specifications?.printingMode || 'Surface Printing',
-             material: order.specifications?.material || 'Flint',
-             materialThickness: order.specifications?.materialThickness || 1.7,
-             distortion: order.specifications?.distortion || '',
-             jobPath: order.specifications?.jobPath || '',
-             additionalDetails: order.specifications?.additionalDetails || '',
-           },
-         });
-      } catch (error) {
-        toast.error('Failed to fetch order details');
-        console.error('Error fetching order:', error);
-        navigate('/employee/orders');
-      } finally {
-        setLoading(false);
-      }
-    };
+    api.get(`/api/orders/${id}`)
+      .then((r) => setForm({ ...formFromOrder(r.data), orderType: r.data.orderType || 'New Order' }))
+      .catch((e) => setError(e.response?.data?.message || t('mg.d.loadError')));
+  }, [id, t]);
 
-    fetchOrder();
-  }, [id, navigate]);
+  if (error) return <Notice tone="error">{error}</Notice>;
+  if (!form) return <div role="status" aria-label={t('common.loading')}><Skeleton height={400} /></div>;
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    
-    if (name.includes('specifications.')) {
-      // Handle nested specifications object
-      const specField = name.split('.')[1];
-      setFormData({
-        ...formData,
-        specifications: {
-          ...formData.specifications,
-          [specField]: value,
-        },
-      });
-    } else if (name.includes('dimensions.')) {
-      // Handle nested dimensions object within specifications
-      const dimField = name.split('.')[1];
-      
-      let processedValue = value;
-      if (dimField === 'widthRepeatCount' || dimField === 'heightRepeatCount') {
-        processedValue = Math.max(1, parseInt(value) || 1); // Ensure minimum value of 1
-      }
-      
-      setFormData({
-        ...formData,
-        specifications: {
-          ...formData.specifications,
-          dimensions: {
-            ...formData.specifications.dimensions,
-            [dimField]: processedValue,
-          },
-        },
-      });
-    } else {
-      // Handle top-level fields
-      setFormData({
-        ...formData,
-        [name]: value,
-      });
-    }
-  };
+  const sp = form.specifications;
+  const dim = sp.dimensions;
+  const setTop = (patch) => setForm((f) => ({ ...f, ...patch }));
+  const setSpec = (patch) => setForm((f) => ({ ...f, specifications: { ...f.specifications, ...patch } }));
+  const setDim = (patch) => setForm((f) => ({ ...f, specifications: { ...f.specifications, dimensions: { ...f.specifications.dimensions, ...patch } } }));
+  const setColors = (used, custom) => setSpec({ usedColors: used, customColors: custom, colors: colorCount(used, custom) });
+  const toggle = (v) => setColors(sp.usedColors.includes(v) ? sp.usedColors.filter((c) => c !== v) : [...sp.usedColors, v], sp.customColors);
 
-  const handleColorToggle = (color) => {
-    const currentColors = [...formData.specifications.usedColors];
-    const colorIndex = currentColors.indexOf(color);
-    
-    if (colorIndex === -1) {
-      // Add color if not already selected
-      currentColors.push(color);
-    } else {
-      // Remove color if already selected
-      currentColors.splice(colorIndex, 1);
-    }
-    
-    // Calculate total number of colors including custom colors
-    const cmykWeight = currentColors.includes('CMYK Combined') ? 4 : 0;
-    const otherColorsCount = currentColors.filter(c => c !== 'CMYK Combined').length;
-    const customColorsCount = formData.specifications.customColors?.filter(c => c.trim() !== '').length || 0;
-    
-    const totalColors = Math.max(
-      cmykWeight + otherColorsCount + customColorsCount,
-      1 // Minimum of 1 color
-    );
-    
-    setFormData({
-      ...formData,
-      specifications: {
-        ...formData.specifications,
-        usedColors: currentColors,
-        colors: totalColors, // Update the colors count
-      },
-    });
-  };
-
-  const handleCustomColorChange = (index, value) => {
-    const newCustomColors = [...formData.specifications.customColors];
-    newCustomColors[index] = value;
-    
-    // Calculate total number of colors including standard colors
-    const cmykWeight = formData.specifications.usedColors.includes('CMYK Combined') ? 4 : 0;
-    const otherColorsCount = formData.specifications.usedColors.filter(c => c !== 'CMYK Combined').length;
-    const customColorsCount = newCustomColors.filter(c => c.trim() !== '').length;
-    
-    const totalColors = Math.max(
-      cmykWeight + otherColorsCount + customColorsCount,
-      1 // Minimum of 1 color
-    );
-    
-    setFormData({
-      ...formData,
-      specifications: {
-        ...formData.specifications,
-        customColors: newCustomColors,
-        colors: totalColors, // Update the colors count
-      },
-    });
-  };
-
-  const addCustomColorField = () => {
-    setFormData({
-      ...formData,
-      specifications: {
-        ...formData.specifications,
-        customColors: [...formData.specifications.customColors, ''],
-      },
-    });
-  };
-
-  const removeCustomColorField = (index) => {
-    const newCustomColors = [...formData.specifications.customColors];
-    newCustomColors.splice(index, 1);
-    
-    // Calculate total number of colors after removing a custom color
-    const cmykWeight = formData.specifications.usedColors.includes('CMYK Combined') ? 4 : 0;
-    const otherColorsCount = formData.specifications.usedColors.filter(c => c !== 'CMYK Combined').length;
-    const customColorsCount = newCustomColors.filter(c => c.trim() !== '').length;
-    
-    const totalColors = Math.max(
-      cmykWeight + otherColorsCount + customColorsCount,
-      1 // Minimum of 1 color
-    );
-    
-    setFormData({
-      ...formData,
-      specifications: {
-        ...formData.specifications,
-        customColors: newCustomColors,
-        colors: totalColors, // Update the colors count
-      },
-    });
-  };
-
-  // Function to try to get color for custom color inputs
-  const getColorForCustomColor = (colorName) => {
-    if (!colorName || colorName.trim() === '') return '#333333';
-    
-    // Check if the color name matches any of our standard colors
-    const matchedColor = standardColorOptions.find(
-      option => option.label.toLowerCase() === colorName.toLowerCase() || 
-                option.value.toLowerCase() === colorName.toLowerCase()
-    );
-    
-    if (matchedColor) return matchedColor.color;
-    
-    // Try to use the color name directly (works for standard CSS color names)
-    try {
-      // Common color names that might be entered
-      const commonColors = {
-        'gold': '#FFD700',
-        'silver': '#C0C0C0',
-        'bronze': '#CD7F32',
-        'navy': '#000080',
-        'teal': '#008080',
-        'maroon': '#800000',
-        'olive': '#808000',
-        'lime': '#00FF00',
-        'aqua': '#00FFFF',
-        'fuchsia': '#FF00FF'
-      };
-      
-      if (commonColors[colorName.toLowerCase()]) {
-        return commonColors[colorName.toLowerCase()];
-      }
-      
-      return colorName;
-    } catch (e) {
-      return '#333333'; // Default color if can't be determined
-    }
-  };
-
-  const handleSubmit = async (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-
+    const er = { ...validateStep(1, form), ...validateStep(2, form) };
+    setErrors(er);
+    if (Object.keys(er).length) return toast.warn(t('wiz.fixErrors'));
     try {
-      setIsSubmitting(true);
-      
-      // Check if any custom colors need to be marked as 'Other'
-      const formattedOrderData = {
-        ...formData,
-        specifications: {
-          ...formData.specifications,
-          // Filter out empty custom colors
-          customColors: formData.specifications.customColors.filter(color => color.trim() !== '')
-        },
-      };
-      
-      const res = await api.put(`/api/orders/${id}`, formattedOrderData);
-      
-      toast.success('Order updated successfully');
+      setBusy(true);
+      await api.put(`/api/orders/${id}`, { ...form, title: form.title.trim(), specifications: { ...sp, customColors: sp.customColors.filter((c) => c.trim()) } });
+      toast.success(t('pf.saved'));
       navigate(`/employee/orders/${id}`);
-    } catch (error) {
-      console.error('Error updating order:', error);
-      if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
-      } else {
-        toast.error('Failed to update order');
-      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || t('pf.saveError'));
     } finally {
-      setIsSubmitting(false);
+      setBusy(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading order details...</p>
-        </div>
-      </div>
-    );
-  }
-  
+  const num = (label, value, onChange, extra = {}) => <Field label={label} type="number" inputMode="decimal" dir="ltr" value={value} onChange={(e) => onChange(e.target.value)} {...extra} />;
+
   return (
-    <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Edit Order</h1>
-        <p className="mt-2 text-sm text-gray-500">
-          Update the order details as needed. All fields are optional.
-        </p>
-      </div>
+    <form onSubmit={submit} noValidate dir={dir} style={{ display: 'grid', gap: 16, maxWidth: 820 }}>
+      <section className="ud-card ud-rise" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <h2 className="ud-card-h">{t('wiz.basics')}</h2>
+        <Field label={t('wiz.name')} value={form.title} onChange={(e) => setTop({ title: e.target.value })} error={errors.title && t(errors.title)} required maxLength={120} />
+        <Field label={t('wiz.description')} multiline rows={3} value={form.description} onChange={(e) => setTop({ description: e.target.value })} />
+        <Select label={t('wiz.orderType')} value={form.orderType} onChange={(e) => setTop({ orderType: e.target.value })} options={['New Order', 'Existing'].map((v) => ({ value: v, label: t(`wiz.type.${v}`) }))} />
+      </section>
 
-      <form onSubmit={handleSubmit}>
-        <div className="space-y-12 divide-y divide-gray-200">
-          {/* Basic Information */}
-          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div className="px-6 py-6 sm:px-8">
-              <h3 className="text-xl leading-7 font-semibold text-gray-900">Basic Information</h3>
-            </div>
-            <div className="border-t border-gray-200 px-6 py-8 sm:p-8">
-              <div className="grid grid-cols-1 gap-y-8 gap-x-6 sm:grid-cols-6">
-                <div className="sm:col-span-4">
-                  <label htmlFor="title" className="block text-base font-semibold text-gray-700 mb-2">
-                    Order Name
-                  </label>
-                  <div className="mt-2">
-                    <input
-                      type="text"
-                      name="title"
-                      id="title"
-                      value={formData.title}
-                      onChange={handleChange}
-                      className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-base border-gray-300 rounded-md px-4 py-3"
-                    />
-                  </div>
-                </div>
-                
-                <div className="sm:col-span-6">
-                  <label htmlFor="description" className="block text-base font-semibold text-gray-700 mb-2">
-                    Order Description
-                  </label>
-                  <div className="mt-2">
-                    <textarea
-                      id="description"
-                      name="description"
-                      rows={4}
-                      value={formData.description}
-                      onChange={handleChange}
-                      className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-base border-gray-300 rounded-md px-4 py-3"
-                    />
-                  </div>
-                </div>
-                
-                <div className="sm:col-span-6">
-                  <label htmlFor="orderType" className="block text-base font-semibold text-gray-700 mb-2">
-                    Order Type
-                  </label>
-                  <div className="mt-2">
-                    <select
-                      id="orderType"
-                      name="orderType"
-                      value={formData.orderType}
-                      onChange={handleChange}
-                      className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-base border-gray-300 rounded-md px-4 py-3"
-                    >
-                      <option value="New Order">New Order</option>
-                      <option value="Existing">Existing Order</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
+      <section className="ud-card ud-rise" style={{ '--i': 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <h2 className="ud-card-h">{t('wiz.specs')}</h2>
+        <Select label={t('wiz.package')} value={sp.packageType} onChange={(e) => setSpec({ packageType: e.target.value })} options={PACKAGE_TYPES} />
+        <fieldset style={{ border: 0, padding: 0, margin: 0, display: 'grid', gap: 12 }}>
+          <legend className="ud-label" style={{ marginBlockEnd: 8 }}>{t('wiz.size')}</legend>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
+            {num(t('wiz.width'), dim.width, (v) => setDim({ width: v }), { min: 1, step: 0.1, required: true })}
+            {num(t('wiz.height'), dim.height, (v) => setDim({ height: v }), { min: 1, step: 0.1, required: true })}
+            <Select label={t('wiz.unit')} value={dim.unit} onChange={(e) => setDim({ unit: e.target.value })} options={['mm', 'cm', 'inch']} />
           </div>
-                
-          {/* Technical Specifications */}
-          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div className="px-6 py-6 sm:px-8">
-              <h3 className="text-xl leading-7 font-semibold text-gray-900">Technical Specifications</h3>
-            </div>
-            <div className="border-t border-gray-200 px-6 py-8 sm:p-8">
-              <div className="grid grid-cols-1 gap-y-8 gap-x-6 sm:grid-cols-6">
-                {/* Package Type */}
-                <div className="sm:col-span-3">
-                  <label htmlFor="packageType" className="block text-base font-semibold text-gray-700 mb-2">
-                    Package Type
-                  </label>
-                  <div className="mt-2">
-                    <select
-                      id="packageType"
-                      name="specifications.packageType"
-                      value={formData.specifications.packageType}
-                      onChange={handleChange}
-                      className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-base border-gray-300 rounded-md px-4 py-3"
-                    >
-                      <option value="Central Seal">Central Seal</option>
-                      <option value="2 Side Seal">2 Side Seal</option>
-                      <option value="3 Side Seal">3 Side Seal</option>
-                      <option value="Custom Pouch">Custom Pouch</option>
-                      <option value="Label">Label</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                </div>
-                
-                {/* Dimensions */}
-                <div className="sm:col-span-6">
-                  <h4 className="text-lg font-semibold text-gray-700 mb-6">Dimensions</h4>
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                    <div>
-                      <label htmlFor="width" className="block text-base font-semibold text-gray-700 mb-2">
-                        Width
-                      </label>
-                      <div className="mt-2">
-                        <input
-                          type="number"
-                          name="dimensions.width"
-                          id="width"
-                          min="1"
-                          step="0.1"
-                          value={formData.specifications.dimensions.width}
-                          onChange={handleChange}
-                          className="focus:ring-primary-500 focus:border-primary-500 block w-full text-base border-gray-300 rounded-md px-4 py-3"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="widthRepeatCount" className="block text-base font-semibold text-gray-700 mb-2">
-                        Width Repeat
-                      </label>
-                      <div className="mt-2">
-                        <input
-                          type="number"
-                          name="dimensions.widthRepeatCount"
-                          id="widthRepeatCount"
-                          min="1"
-                          step="1"
-                          value={formData.specifications.dimensions.widthRepeatCount}
-                          onChange={handleChange}
-                          className="focus:ring-primary-500 focus:border-primary-500 block w-full text-base border-gray-300 rounded-md px-4 py-3"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="height" className="block text-base font-semibold text-gray-700 mb-2">
-                        Height
-                      </label>
-                      <div className="mt-2">
-                        <input
-                          type="number"
-                          name="dimensions.height"
-                          id="height"
-                          min="1"
-                          step="0.1"
-                          value={formData.specifications.dimensions.height}
-                          onChange={handleChange}
-                          className="focus:ring-primary-500 focus:border-primary-500 block w-full text-base border-gray-300 rounded-md px-4 py-3"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="heightRepeatCount" className="block text-base font-semibold text-gray-700 mb-2">
-                        Height Repeat
-                      </label>
-                      <div className="mt-2">
-                        <input
-                          type="number"
-                          name="dimensions.heightRepeatCount"
-                          id="heightRepeatCount"
-                          min="1"
-                          step="1"
-                          value={formData.specifications.dimensions.heightRepeatCount}
-                          onChange={handleChange}
-                          className="focus:ring-primary-500 focus:border-primary-500 block w-full text-base border-gray-300 rounded-md px-4 py-3"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Material Settings and Distortion */}
-                <div className="sm:col-span-6">
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                    <div>
-                      <label htmlFor="material" className="block text-base font-semibold text-gray-700 mb-2">
-                        Material Type
-                      </label>
-                      <div className="mt-2">
-                        <select
-                          id="material"
-                          name="specifications.material"
-                          value={formData.specifications.material}
-                          onChange={handleChange}
-                          className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-base border-gray-300 rounded-md px-4 py-3"
-                        >
-                          <option value="Flint">Flint</option>
-                          <option value="Strong">Strong</option>
-                          <option value="Taiwan">Taiwan</option>
-+                          <option value="Other">Other</option>
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="materialThickness" className="block text-base font-semibold text-gray-700 mb-2">
-                        Material Thickness (microns)
-                      </label>
-                      <div className="mt-2">
-                        <select
-                          id="materialThickness"
-                          name="specifications.materialThickness"
-                          value={formData.specifications.materialThickness}
-                          onChange={handleChange}
-                          className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-base border-gray-300 rounded-md px-4 py-3"
-                        >
-                          <option value={1.14}>1.14</option>
-                          <option value={1.7}>1.7</option>
-                          <option value={2.54}>2.54</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Distortion and Job Path */}
-                <div className="sm:col-span-6">
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                    <div>
-                      <label htmlFor="distortion" className="block text-base font-semibold text-gray-700 mb-2">
-                        Distortion
-                      </label>
-                      <div className="mt-2">
-                        <input
-                          type="number"
-                          name="specifications.distortion"
-                          id="distortion"
-                          min="0"
-                          max="100"
-                          step="0.1"
-                          value={formData.specifications.distortion}
-                          onChange={handleChange}
-                          placeholder="Enter distortion value (0-100)"
-                          className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-base border-gray-300 rounded-md px-4 py-3"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="jobPath" className="block text-base font-semibold text-gray-700 mb-2">
-                        Job Path
-                      </label>
-                      <div className="mt-2">
-                        <input
-                          type="text"
-                          name="specifications.jobPath"
-                          id="jobPath"
-                          value={formData.specifications.jobPath}
-                          onChange={handleChange}
-                          placeholder="Enter file path for the job"
-                          className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-base border-gray-300 rounded-md px-4 py-3"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="sm:col-span-6">
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                    <div>
-                      <label htmlFor="printingMode" className="block text-base font-semibold text-gray-700 mb-2">
-                        Printing Mode
-                      </label>
-                      <div className="mt-2">
-                        <select
-                          id="printingMode"
-                          name="specifications.printingMode"
-                          value={formData.specifications.printingMode}
-                          onChange={handleChange}
-                          className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-base border-gray-300 rounded-md px-4 py-3"
-                        >
-                          <option value="Surface Printing">Surface Printing</option>
-                          <option value="Reverse Printing">Reverse Printing</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label htmlFor="colors" className="block text-base font-semibold text-gray-700 mb-2">
-                        Number of Colors
-                      </label>
-                      <div className="mt-2">
-                        <div className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-base border-gray-300 rounded-md py-3 px-4 bg-gray-50">
-                          {(() => {
-                            const cmykWeight = formData.specifications.usedColors.includes('CMYK Combined') ? 4 : 0;
-                            const otherColorsCount = formData.specifications.usedColors.filter(c => c !== 'CMYK Combined').length;
-                            const customColorsCount = formData.specifications.customColors?.filter(c => c.trim() !== '').length || 0;
-                            return Math.max(cmykWeight + otherColorsCount + customColorsCount, 1);
-                          })()}
-                        </div>
-                      </div>
-                      <p className="mt-2 text-sm text-gray-500">
-                        Based on your selected colors below (CMYK Combined counts as 4 colors)
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Color Selection */}
-                <div className="sm:col-span-6">
-                  <fieldset>
-                    <legend className="text-lg font-semibold text-gray-700 mb-4">Select Colors</legend>
-                    <div className="mt-4 space-y-3">
-                      <p className="text-sm text-gray-600">Choose the colors you need for this order:</p>
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-                        {standardColorOptions.map((colorOption) => {
-                          // Determine text color based on background for better contrast
-                          const getTextColor = (colorValue) => {
-                            const darkColors = ['Black', 'Blue', 'Red', 'Green', 'Magenta', 'CMYK Combined'];
-                            return darkColors.includes(colorValue) ? '#ffffff' : '#000000';
-                          };
-
-                          return (
-                            <div key={colorOption.value} className="relative flex items-center mb-2">
-                              <div className="flex items-center h-5">
-                                <input
-                                  id={`color-${colorOption.value}`}
-                                  name={`color-${colorOption.value}`}
-                                  type="checkbox"
-                                  checked={formData.specifications.usedColors.includes(colorOption.value)}
-                                  onChange={() => handleColorToggle(colorOption.value)}
-                                  className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300 rounded"
-                                />
-                              </div>
-                              <div className="ml-3">
-                                <label 
-                                  htmlFor={`color-${colorOption.value}`} 
-                                  className="inline-block font-medium px-4 py-2 rounded-full cursor-pointer text-sm shadow-sm border" 
-                                  style={{ 
-                                    backgroundColor: colorOption.value === 'Other' ? '#f3f4f6' : colorOption.color,
-                                    color: colorOption.value === 'Other' ? '#000000' : getTextColor(colorOption.value),
-                                    // Special handling for different color types
-                                    background: colorOption.value === 'Other' 
-                                      ? 'linear-gradient(45deg, #f3f4f6, #f3f4f6 2px, #e5e7eb 2px, #e5e7eb 4px)' 
-                                      : colorOption.value === 'CMYK Combined'
-                                        ? 'linear-gradient(45deg, #00FFFF 0%, #FF00FF 25%, #FFFF00 50%, #000000 75%, #00FFFF 100%)'
-                                        : colorOption.color,
-                                    // Add border for all colors for better definition
-                                    borderColor: colorOption.value === 'White' ? '#d1d5db' : 'rgba(0,0,0,0.1)',
-                                    // Add text shadow for better readability on similar colors
-                                    textShadow: colorOption.value === 'Yellow' || colorOption.value === 'Cyan' || colorOption.value === 'CMYK Combined' ? '0 0 2px rgba(0,0,0,0.8)' : 'none'
-                                  }}
-                                >
-                                  {colorOption.label}
-                                </label>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Custom Colors */}
-                      <div className="mt-6">
-                        <p className="text-base font-semibold text-gray-700 mb-2">Custom Colors</p>
-                        <p className="text-sm text-gray-600 mb-4">Add any specific colors not listed above:</p>
-                        
-                        {formData.specifications.customColors.map((color, index) => {
-                          // Determine text color for custom colors
-                          const getCustomTextColor = (colorName) => {
-                            if (!colorName || colorName.trim() === '') return '#000000';
-                            const darkColorNames = ['black', 'blue', 'red', 'green', 'navy', 'maroon', 'purple', 'brown'];
-                            return darkColorNames.some(dark => colorName.toLowerCase().includes(dark)) ? '#ffffff' : '#000000';
-                          };
-
-                          return (
-                            <div key={index} className="flex mt-3 items-center">
-                              <input
-                                type="text"
-                                value={color}
-                                onChange={(e) => handleCustomColorChange(index, e.target.value)}
-                                placeholder="Enter custom color"
-                                className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-base rounded-full px-4 py-3 font-medium border"
-                                style={{
-                                  backgroundColor: color.trim() !== '' ? getColorForCustomColor(color) : '#ffffff',
-                                  color: getCustomTextColor(color),
-                                  borderColor: color.trim() !== '' ? 'rgba(0,0,0,0.2)' : '#d1d5db',
-                                  textShadow: color.trim() !== '' && (color.toLowerCase().includes('yellow') || color.toLowerCase().includes('cyan') || color.toLowerCase().includes('lime')) ? '0 0 2px rgba(0,0,0,0.5)' : 'none'
-                                }}
-                              />
-                                <button
-                                  type="button"
-                                  onClick={() => removeCustomColorField(index)}
-                                  className="ml-3 inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                                >
-                                  <XMarkIcon className="h-4 w-4" aria-hidden="true" />
-                                </button>
-                              </div>
-                            );
-                          })}
-                        
-                        <button
-                          type="button"
-                          onClick={addCustomColorField}
-                          className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                        >
-                          + Add Custom Color
-                        </button>
-                      </div>
-                    </div>
-                  </fieldset>
-                </div>
-                
-                <div className="sm:col-span-6">
-                  <label htmlFor="additionalDetails" className="block text-base font-semibold text-gray-700 mb-2">
-                    Additional Notes
-                  </label>
-                  <div className="mt-2">
-                    <textarea
-                      id="additionalDetails"
-                      name="specifications.additionalDetails"
-                      rows={4}
-                      value={formData.specifications.additionalDetails}
-                      onChange={handleChange}
-                      className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full text-base border-gray-300 rounded-md px-4 py-3"
-                      placeholder="Any additional details or special instructions..."
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+          {errors.size && <span className="ud-error" role="alert">{t(errors.size)}</span>}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+            {num(t('wiz.widthRepeat'), dim.widthRepeatCount, (v) => setDim({ widthRepeatCount: Math.max(1, parseInt(v, 10) || 1) }), { min: 1, step: 1 })}
+            {num(t('wiz.heightRepeat'), dim.heightRepeatCount, (v) => setDim({ heightRepeatCount: Math.max(1, parseInt(v, 10) || 1) }), { min: 1, step: 1 })}
           </div>
-          
-          {/* Submit Button */}
-          <div className="pt-8">
-            <div className="flex justify-end space-x-4">
-              <button
-                type="button"
-                onClick={() => navigate(`/employee/orders/${id}`)}
-                className="bg-white py-3 px-6 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="inline-flex justify-center py-3 px-6 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
-              >
-                {isSubmitting ? 'Updating...' : 'Update Order'}
-              </button>
-            </div>
-          </div>
-          
+        </fieldset>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+          <Select label={t('wiz.material')} value={sp.material} onChange={(e) => setSpec({ material: e.target.value })} options={MATERIALS} />
+          <Select label={t('wiz.thickness')} value={sp.materialThickness} onChange={(e) => setSpec({ materialThickness: Number(e.target.value) })} options={THICKNESSES.map(String)} />
+          <Select label={t('wiz.printing')} value={sp.printingMode} onChange={(e) => setSpec({ printingMode: e.target.value })} options={PRINTING_MODES.map((v) => ({ value: v, label: t(`wiz.printing.${v}`) }))} />
         </div>
-      </form>
-    </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+          {num(t('mg.d.distortion'), sp.distortion, (v) => setSpec({ distortion: v }), { min: 0, max: 100, step: 0.1 })}
+          <Field label={t('mg.d.jobPath')} dir="ltr" value={sp.jobPath} onChange={(e) => setSpec({ jobPath: e.target.value })} />
+        </div>
+      </section>
+
+      <section className="ud-card ud-rise" style={{ '--i': 2, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <fieldset className="ud-colors ud-root" style={{ border: 0, padding: 0, margin: 0 }}>
+          <legend className="ud-label">{t('wiz.colors')}</legend>
+          <div className="ud-color-grid">
+            {COLORS.map((c) => (
+              <label key={c.value} className="ud-coloropt">
+                <input type="checkbox" checked={sp.usedColors.includes(c.value)} onChange={() => toggle(c.value)} />
+                <span className="ud-swatch" style={{ background: c.swatch }} />
+                {t(`wiz.color.${c.value}`)}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <div style={{ display: 'grid', gap: 8 }}>
+          <div className="ud-label">{t('wiz.custom')}</div>
+          {sp.customColors.map((c, i) => (
+            <div key={i} style={{ display: 'flex', gap: 8 }}>
+              <input className="ud-input" aria-label={`${t('wiz.customPlaceholder')} ${i + 1}`} value={c} onChange={(e) => setColors(sp.usedColors, sp.customColors.map((v, j) => (j === i ? e.target.value : v)))} />
+              <Button type="button" variant="secondary" aria-label={t('wiz.customRemove', { n: i + 1 })} onClick={() => setColors(sp.usedColors, sp.customColors.filter((_, j) => j !== i))}>×</Button>
+            </div>
+          ))}
+          <div><Button type="button" variant="secondary" onClick={() => setColors(sp.usedColors, [...sp.customColors, ''])}>+ {t('wiz.customAdd')}</Button></div>
+        </div>
+        {errors.colors && <span className="ud-error" role="alert">{t(errors.colors)}</span>}
+        <p className="ud-hint" style={{ margin: 0 }}>{t('wiz.colorCount', { n: colorCount(sp.usedColors, sp.customColors) })}</p>
+        <Field label={t('wiz.notes')} multiline rows={3} value={sp.additionalDetails} onChange={(e) => setSpec({ additionalDetails: e.target.value })} />
+      </section>
+
+      <div className="ud-actionbar ud-root" dir={dir}>
+        <Link to={`/employee/orders/${id}`} className="ud-btn ud-btn-secondary">{t('wizard.cancel')}</Link>
+        <span className="ud-spacer" />
+        <Button type="submit" disabled={busy}>{busy ? t('pf.saving') : t('pf.save')}</Button>
+      </div>
+    </form>
   );
 };
 

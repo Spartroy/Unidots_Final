@@ -32,6 +32,10 @@ import mreportsEn from './mreports.en';
 import mreportsAr from './mreports.ar';
 import barrelsEn from './barrels.en';
 import barrelsAr from './barrels.ar';
+import empworkEn from './empwork.en';
+import empworkAr from './empwork.ar';
+import templatesEn from './templates.en';
+import templatesAr from './templates.ar';
 
 const placeholders = (s) => (s.match(/\{\w+\}/g) || []).sort().join(',');
 
@@ -53,6 +57,8 @@ const pairs = [
   ['tasks', tasksEn, tasksAr],
   ['mreports', mreportsEn, mreportsAr],
   ['barrels', barrelsEn, barrelsAr],
+  ['empwork', empworkEn, empworkAr],
+  ['templates', templatesEn, templatesAr],
 ];
 
 describe.each(pairs)('%s translations', (name, enDict, arDict) => {

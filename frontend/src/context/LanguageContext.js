@@ -34,8 +34,12 @@ import mreportsEn from '../locales/mreports.en';
 import mreportsAr from '../locales/mreports.ar';
 import barrelsEn from '../locales/barrels.en';
 import barrelsAr from '../locales/barrels.ar';
+import empworkEn from '../locales/empwork.en';
+import empworkAr from '../locales/empwork.ar';
+import templatesEn from '../locales/templates.en';
+import templatesAr from '../locales/templates.ar';
 
-const dictionaries = { en: { ...en, ...landingEn, ...phase5En, ...prepressEn, ...activityEn, ...courierEn, ...ordersEn, ...managerEn, ...accountEn, ...profileEn, ...claimsEn, ...clientOrderEn, ...wizEn, ...peopleEn, ...tasksEn, ...mreportsEn, ...barrelsEn }, ar: { ...ar, ...landingAr, ...phase5Ar, ...prepressAr, ...activityAr, ...courierAr, ...ordersAr, ...managerAr, ...accountAr, ...profileAr, ...claimsAr, ...clientOrderAr, ...wizAr, ...peopleAr, ...tasksAr, ...mreportsAr, ...barrelsAr } };
+const dictionaries = { en: { ...en, ...landingEn, ...phase5En, ...prepressEn, ...activityEn, ...courierEn, ...ordersEn, ...managerEn, ...accountEn, ...profileEn, ...claimsEn, ...clientOrderEn, ...wizEn, ...peopleEn, ...tasksEn, ...mreportsEn, ...barrelsEn, ...empworkEn, ...templatesEn }, ar: { ...ar, ...landingAr, ...phase5Ar, ...prepressAr, ...activityAr, ...courierAr, ...ordersAr, ...managerAr, ...accountAr, ...profileAr, ...claimsAr, ...clientOrderAr, ...wizAr, ...peopleAr, ...tasksAr, ...mreportsAr, ...barrelsAr, ...empworkAr, ...templatesAr } };
 const STORAGE_KEY = 'unidots_lang';
 
 const readStored = () => {
