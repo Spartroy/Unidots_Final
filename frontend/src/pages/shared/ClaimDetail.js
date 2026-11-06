@@ -27,7 +27,7 @@ const ClaimDetail = () => {
   const [busy, setBusy] = useState(false);
 
   const actions = useMemo(() => <Link to={base} className="ud-btn ud-btn-secondary">{t('cl.detail.back')}</Link>, [base, t]);
-  usePageChrome({ subtitle: t('cl.subtitle.detail'), actions });
+  usePageChrome({ title: claim?.title, subtitle: t('cl.subtitle.detail'), actions });
 
   const load = useCallback(async () => {
     try {

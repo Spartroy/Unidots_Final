@@ -1,5 +1,11 @@
 // نموذج الأوردر الجديد (نصوص إضافية؛ نصوص الخطوات والمراجعة والسعر في ar.js تحت wizard.*)
 export default {
+  'wiz.package.Central Seal': 'لحام مركزي',
+  'wiz.package.2 Side Seal': 'لحام جانبين',
+  'wiz.package.3 Side Seal': 'لحام 3 جوانب',
+  'wiz.package.Custom Pouch': 'كيس مخصص',
+  'wiz.package.Label': 'ليبل',
+  'wiz.package.Other': 'أخرى',
   'wiz.subtitle': 'أخبرنا بما تريد طباعته. يمكنك إضافة التصميم بعد الإرسال.',
   'wiz.reorder': 'إعادة طلب {name}. تم نسخ المواصفات؛ راجعها ثم أرسل.',
   'wiz.basics': 'البيانات الأساسية',

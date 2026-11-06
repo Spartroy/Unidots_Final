@@ -16,6 +16,7 @@ import { PROCESS_KEYS } from '../../components/prepress/ProcessGrid';
 import { stepperIndex } from '../../utils/orderStatus';
 import { stageStates, nextStep } from '../../utils/orderFlow';
 import { openFile } from '../../utils/files';
+import { valueLabel } from '../../utils/orderForm';
 
 const TABS = ['details', 'progress', 'files', 'comments'];
 const CLOSED = ['Completed', 'Delivered', 'Cancelled'];
@@ -138,13 +139,13 @@ const ManagerOrderDetail = () => {
   const addressLine = address && typeof address === 'object' ? [address.street, address.city, address.state, address.country].filter(Boolean).join(', ') : address || '—';
 
   const orderInfo = [
-    [t('mg.d.type'), order.orderType],
-    [t('mg.d.package'), spec.packageType],
+    [t('mg.d.type'), valueLabel(t, 'wiz.type', order.orderType)],
+    [t('mg.d.package'), valueLabel(t, 'wiz.package', spec.packageType)],
     [t('mg.d.material'), spec.material],
     [t('mg.d.thickness'), spec.materialThickness ? <bdi dir="ltr">{spec.materialThickness} mm</bdi> : '—'],
     [t('mg.d.size'), dim.width && dim.height ? <bdi dir="ltr">{`${dim.width} × ${dim.height} ${dim.unit || 'mm'}`}</bdi> : '—'],
     [t('mg.d.colors'), spec.colors],
-    [t('mg.d.printing'), spec.printingMode],
+    [t('mg.d.printing'), valueLabel(t, 'wiz.printing', spec.printingMode)],
     [t('mg.d.created'), fmtDate(order.createdAt)],
     [t('mg.d.deadline'), fmtDate(order.deadline)],
     spec.jobPath ? [t('mg.d.jobPath'), <bdi dir="ltr">{spec.jobPath}</bdi>] : null,

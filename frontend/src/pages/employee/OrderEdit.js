@@ -19,7 +19,7 @@ const OrderEdit = () => {
   const [errors, setErrors] = useState({});
   const [busy, setBusy] = useState(false);
   const actions = useMemo(() => <Link to={`/employee/orders/${id}`} className="ud-btn ud-btn-secondary">{t('wizard.cancel')}</Link>, [id, t]);
-  usePageChrome({ subtitle: t('ew.edit'), actions });
+  usePageChrome({ title: t('ew.edit'), actions });
 
   useEffect(() => {
     api.get(`/api/orders/${id}`)
@@ -68,7 +68,7 @@ const OrderEdit = () => {
 
       <section className="ud-card ud-rise" style={{ '--i': 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
         <h2 className="ud-card-h">{t('wiz.specs')}</h2>
-        <Select label={t('wiz.package')} value={sp.packageType} onChange={(e) => setSpec({ packageType: e.target.value })} options={PACKAGE_TYPES} />
+        <Select label={t('wiz.package')} value={sp.packageType} onChange={(e) => setSpec({ packageType: e.target.value })} options={PACKAGE_TYPES.map((v) => ({ value: v, label: t(`wiz.package.${v}`) }))} />
         <fieldset style={{ border: 0, padding: 0, margin: 0, display: 'grid', gap: 12 }}>
           <legend className="ud-label" style={{ marginBlockEnd: 8 }}>{t('wiz.size')}</legend>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>

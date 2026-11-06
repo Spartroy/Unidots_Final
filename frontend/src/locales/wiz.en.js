@@ -1,5 +1,11 @@
 // New order form (extra strings; the step/review/price strings live in en.js as wizard.*)
 export default {
+  'wiz.package.Central Seal': 'Central seal',
+  'wiz.package.2 Side Seal': '2 side seal',
+  'wiz.package.3 Side Seal': '3 side seal',
+  'wiz.package.Custom Pouch': 'Custom pouch',
+  'wiz.package.Label': 'Label',
+  'wiz.package.Other': 'Other',
   'wiz.subtitle': 'Tell us what you need printed. You can add artwork after you submit.',
   'wiz.reorder': 'Reordering {name}. The specifications are copied; review them, then submit.',
   'wiz.basics': 'Basic information',

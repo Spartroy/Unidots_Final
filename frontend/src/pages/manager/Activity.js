@@ -39,7 +39,7 @@ const Activity = () => {
     try {
       const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE), ...FILTERS[filter] });
       const res = await api.get(`/api/audit?${params.toString()}`);
-      setData(res.data);
+      setData(res.data && Array.isArray(res.data.events) ? res.data : { events: [], total: 0, pages: 1 });
       setError(null);
     } catch (e) {
       setError(e.response?.data?.message || t('activity.loadError'));

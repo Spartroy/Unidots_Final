@@ -108,6 +108,10 @@ const managerEn = {
   'mg.d.cancelTitle': 'Cancel this order?',
   'mg.d.cancelText': 'The client is told the order was cancelled. This cannot be undone.',
   'mg.d.keep': 'Keep order',
+  'mg.priority.low': 'Low',
+  'mg.priority.medium': 'Medium',
+  'mg.priority.high': 'High',
+  'mg.priority.urgent': 'Urgent',
   'mg.d.waitingClient': 'Waiting for the client to answer the quote.',
 };
 

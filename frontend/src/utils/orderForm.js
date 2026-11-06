@@ -100,3 +100,11 @@ export const formFromOrder = (o) => {
     },
   };
 };
+
+/** A stored value (package type, printing mode, order type) in the reader's language; unknown values show as stored. */
+export const valueLabel = (t, prefix, value) => {
+  if (value === undefined || value === null || value === '') return '—';
+  const key = `${prefix}.${value}`;
+  const out = t(key);
+  return out === key ? value : out;
+};

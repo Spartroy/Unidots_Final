@@ -21,7 +21,7 @@ const NewOrder = () => {
   const location = useLocation();
   const reorderFrom = location.state?.reorderFrom;
   const draftKey = `unidots_order_draft_${user?._id || user?.id || 'anon'}`;
-  usePageChrome({ subtitle: t('wiz.subtitle') });
+  usePageChrome({ title: t('dash.newOrder'), subtitle: t('wiz.subtitle') });
 
   const [form, setForm] = useState(() => (reorderFrom ? formFromOrder(reorderFrom) : emptyForm()));
   const [step, setStep] = useState(1);
@@ -129,7 +129,7 @@ const NewOrder = () => {
 
   const review = [
     [t('wiz.name'), form.title, 1],
-    [t('wiz.package'), sp.packageType, 2],
+    [t('wiz.package'), t(`wiz.package.${sp.packageType}`), 2],
     [t('wiz.size'), <bdi dir="ltr">{`${dim.width} × ${dim.height} ${dim.unit}${dim.widthRepeatCount > 1 || dim.heightRepeatCount > 1 ? ` (${dim.widthRepeatCount} × ${dim.heightRepeatCount})` : ''}`}</bdi>, 2],
     [t('wiz.material'), <bdi dir="ltr">{`${sp.material}, ${sp.materialThickness} mm`}</bdi>, 2],
     [t('wiz.colors'), colorsText, 2],
@@ -182,7 +182,7 @@ const NewOrder = () => {
             <>
               <section className="ud-card" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <h1 ref={headingRef} tabIndex={-1} className="ud-card-h" style={{ outline: 'none' }}>{t('wiz.specs')}</h1>
-                <Select label={t('wiz.package')} value={sp.packageType} onChange={(e) => setSpec({ packageType: e.target.value })} options={PACKAGE_TYPES} />
+                <Select label={t('wiz.package')} value={sp.packageType} onChange={(e) => setSpec({ packageType: e.target.value })} options={PACKAGE_TYPES.map((v) => ({ value: v, label: t(`wiz.package.${v}`) }))} />
                 <fieldset style={{ border: 0, padding: 0, margin: 0, display: 'grid', gap: 12 }}>
                   <legend className="ud-label" style={{ marginBlockEnd: 8 }}>{t('wiz.size')}</legend>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>

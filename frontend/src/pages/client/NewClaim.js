@@ -25,7 +25,7 @@ const NewClaim = () => {
   const [busy, setBusy] = useState(false);
 
   const actions = useMemo(() => <Link to="/client/claims" className="ud-btn ud-btn-secondary">{t('cl.form.cancel')}</Link>, [t]);
-  usePageChrome({ subtitle: t('cl.subtitle.new'), actions });
+  usePageChrome({ title: t('cl.new'), subtitle: t('cl.subtitle.new'), actions });
 
   useEffect(() => {
     api.get('/api/orders?limit=100').then((r) => setOrders(r.data.orders || [])).catch(() => setOrders([]));

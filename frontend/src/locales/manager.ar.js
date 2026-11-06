@@ -108,6 +108,10 @@ const managerAr = {
   'mg.d.cancelTitle': 'إلغاء هذا الأوردر؟',
   'mg.d.cancelText': 'سيُبلَّغ العميل بإلغاء الأوردر. لا يمكن التراجع.',
   'mg.d.keep': 'إبقاء الأوردر',
+  'mg.priority.low': 'منخفضة',
+  'mg.priority.medium': 'متوسطة',
+  'mg.priority.high': 'عالية',
+  'mg.priority.urgent': 'عاجلة',
   'mg.d.waitingClient': 'في انتظار رد العميل على عرض السعر.',
 };
 

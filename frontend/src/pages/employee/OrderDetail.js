@@ -15,6 +15,7 @@ import OrderChat from '../../components/common/OrderChat';
 import { AttachmentList, FilePicker } from '../../components/claims/ClaimBits';
 import { stepperIndex } from '../../utils/orderStatus';
 import { stageStates } from '../../utils/orderFlow';
+import { valueLabel } from '../../utils/orderForm';
 
 const TABS = ['details', 'progress', 'files', 'comments', 'chat'];
 const WORK_FILES = { 'image/jpeg': [], 'image/png': [], 'application/pdf': [], 'application/postscript': ['.eps', '.ai'], 'application/illustrator': ['.ai'] };
@@ -239,13 +240,13 @@ const EmployeeOrderDetail = () => {
     { title: t('mg.d.stage.delivery'), state: states.delivery, note: stageNote(states.delivery) },
   ];
   const info = [
-    [t('mg.d.type'), order.orderType || '—'],
-    [t('mg.d.package'), spec.packageType || '—'],
+    [t('mg.d.type'), valueLabel(t, 'wiz.type', order.orderType)],
+    [t('mg.d.package'), valueLabel(t, 'wiz.package', spec.packageType)],
     [t('mg.d.material'), spec.material || '—'],
     [t('mg.d.thickness'), spec.materialThickness ? <bdi dir="ltr">{spec.materialThickness} mm</bdi> : '—'],
     [t('mg.d.size'), dim.width && dim.height ? <bdi dir="ltr">{`${dim.width} × ${dim.height} ${dim.unit || 'mm'} (${dim.widthRepeatCount || 1} × ${dim.heightRepeatCount || 1})`}</bdi> : '—'],
     [t('mg.d.colors'), [spec.colors, [...(spec.usedColors || []), ...(spec.customColors || [])].join(', ')].filter(Boolean).join(' · ') || '—'],
-    [t('mg.d.printing'), spec.printingMode || '—'],
+    [t('mg.d.printing'), valueLabel(t, 'wiz.printing', spec.printingMode)],
     [t('mg.d.deadline'), fmtDate(order.deadline)],
     spec.jobPath ? [t('mg.d.jobPath'), <bdi dir="ltr">{spec.jobPath}</bdi>] : null,
     spec.distortion !== undefined && spec.distortion !== null && spec.distortion !== '' ? [t('mg.d.distortion'), `${spec.distortion}%`] : null,

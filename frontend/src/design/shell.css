@@ -127,3 +127,7 @@ body:has(.ud-auth) { background: var(--bg-card); }
 .ud-chatpanel h2 { margin: 0; font: 600 16px/24px var(--font-sans); }
 .ud-chatorder { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-app); }
 @media (max-width: 800px) { .ud-chatfab { inset-block-end: 84px; inset-inline-end: 16px; } .ud-chatpanel { inset-block-end: 148px; inset-inline-end: 16px; } }
+
+/* Right-to-left pages: fields that hold left-to-right content (numbers, emails, links) keep their typing direction but line up with the labels */
+[dir='rtl'] .ud-input[dir='ltr'] { text-align: right; }
+[dir='rtl'] .ud-input[dir='ltr']::placeholder { text-align: right; }

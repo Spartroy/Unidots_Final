@@ -17,6 +17,7 @@ import QuoteCard from '../../components/client/QuoteCard';
 import { AttachmentList, FilePicker } from '../../components/claims/ClaimBits';
 import { stepperIndex } from '../../utils/orderStatus';
 import { stageStates } from '../../utils/orderFlow';
+import { valueLabel } from '../../utils/orderForm';
 
 const TABS = ['details', 'progress', 'files', 'chat'];
 const CANCELLABLE = ['Submitted', 'In Review'];
@@ -107,15 +108,15 @@ const OrderDetail = () => {
   const cancelled = order.status === 'Cancelled';
 
   const info = [
-    [t('co.type'), order.orderType || '—'],
-    [t('co.package'), spec.packageType || '—'],
+    [t('co.type'), valueLabel(t, 'wiz.type', order.orderType)],
+    [t('co.package'), valueLabel(t, 'wiz.package', spec.packageType)],
     [t('co.material'), spec.material || '—'],
     [t('co.thickness'), spec.materialThickness ? <bdi dir="ltr">{spec.materialThickness} mm</bdi> : '—'],
     [t('co.size'), dim.width && dim.height ? <bdi dir="ltr">{`${dim.width} × ${dim.height} ${unit}`}</bdi> : '—'],
     [t('co.repeat'), <bdi dir="ltr">{`${dim.widthRepeatCount || 1} × ${dim.heightRepeatCount || 1}`}</bdi>],
     [t('co.colors'), spec.colors || '—'],
     colorList ? [t('co.colorList'), colorList] : null,
-    [t('co.printing'), spec.printingMode || '—'],
+    [t('co.printing'), valueLabel(t, 'wiz.printing', spec.printingMode)],
     [t('co.deadline'), fmtDate(order.deadline)],
     [t('co.designer'), order.assignedTo?.name || t('co.noDesigner')],
     price ? [price.label, <span><bdi dir="ltr">{price.v}</bdi>{price.note && <span className="ud-hint" style={{ display: 'block' }}>{price.note}</span>}</span>] : null,
