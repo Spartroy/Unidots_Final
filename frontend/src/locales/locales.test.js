@@ -22,6 +22,8 @@ import claimsEn from './claims.en';
 import claimsAr from './claims.ar';
 import clientOrderEn from './clientorder.en';
 import clientOrderAr from './clientorder.ar';
+import wizEn from './wiz.en';
+import wizAr from './wiz.ar';
 
 const placeholders = (s) => (s.match(/\{\w+\}/g) || []).sort().join(',');
 
@@ -38,6 +40,7 @@ const pairs = [
   ['profile', profileEn, profileAr],
   ['claims', claimsEn, claimsAr],
   ['clientorder', clientOrderEn, clientOrderAr],
+  ['wiz', wizEn, wizAr],
 ];
 
 describe.each(pairs)('%s translations', (name, enDict, arDict) => {
