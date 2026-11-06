@@ -97,3 +97,15 @@ export const Pager = ({ page, pages, summary, onPage, prevLabel = 'Previous page
     </nav>
   );
 };
+
+// Tabs: items = [{ key, label, count }], value = active key
+export const Tabs = ({ items = [], value, onChange, label, dir }) => (
+  <div className="ud-tabs ud-root" role="tablist" aria-label={label} dir={dir}>
+    {items.map((it) => (
+      <button key={it.key} type="button" role="tab" className="ud-tab" aria-selected={it.key === value ? 'true' : 'false'} onClick={() => onChange && onChange(it.key)}>
+        {it.label}
+        {it.count != null ? <span className="ud-tab-n">{it.count}</span> : null}
+      </button>
+    ))}
+  </div>
+);

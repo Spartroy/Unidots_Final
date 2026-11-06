@@ -1,530 +1,289 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
-import api from '../../utils/api';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
-
-import { PaperClipIcon, DocumentTextIcon, ClipboardIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
-
-import { useDropzone } from 'react-dropzone';
+import api from '../../utils/api';
 import useAutoRefresh from '../../hooks/useAutoRefresh';
-
-
-import DetailsTab from './orderDetail/DetailsTab';
-import ProgressTab from './orderDetail/ProgressTab';
-import FilesTab from './orderDetail/FilesTab';
-import CommentsTab from './orderDetail/CommentsTab';
-import StatusActionsPanel from './orderDetail/StatusActionsPanel';
-import QuotePanel from '../../components/manager/QuotePanel';
+import { useLanguage } from '../../context/LanguageContext';
+import { usePageChrome } from '../../components/shell/PortalShell';
+import { Button, DefList, Notice, OrderStepper, PriorityBadge, ProgressTimeline } from '../../design/kit';
+import { Field, Select, Tabs } from '../../design/controls';
+import { Skeleton } from '../../design/motionKit';
+import Modal from '../../components/common/Modal';
+import OrderStatusBadge from '../../components/common/OrderStatusBadge';
 import OrderTimeline from '../../components/common/OrderTimeline';
-const OrderDetail = () => {
+import QuotePanel from '../../components/manager/QuotePanel';
+import { PROCESS_KEYS } from '../../components/prepress/ProcessGrid';
+import { stepperIndex } from '../../utils/orderStatus';
+import { stageStates, nextStep } from '../../utils/orderFlow';
+import { openFile } from '../../utils/files';
+
+const TABS = ['details', 'progress', 'files', 'comments'];
+const CLOSED = ['Completed', 'Delivered', 'Cancelled'];
+
+// Manager: one order. Who has it, where it is, what to do next, and everything that happened.
+const ManagerOrderDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  
+  const [params, setParams] = useSearchParams();
+  const { t, lang, dir } = useLanguage();
   const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
-  const [comment, setComment] = useState('');
-  const [submittingComment, setSubmittingComment] = useState(false);
+  const [error, setError] = useState(null);
   const [employees, setEmployees] = useState([]);
-  const [selectedEmployee, setSelectedEmployee] = useState('');
-  const [isAssigning, setIsAssigning] = useState(false);
-
-  const [files, setFiles] = useState([]);
+  const [chosen, setChosen] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [comment, setComment] = useState('');
+  const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
-  
-  // Tab management
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'details');
+  const fileInput = useRef(null);
+  const tab = TABS.includes(params.get('tab')) ? params.get('tab') : 'details';
 
-  // Tab configuration with mobile names
-  const tabs = [
-    { id: 'details', name: 'Order Details', mobileName: 'Details', icon: DocumentTextIcon },
-    { id: 'progress', name: 'Progress', mobileName: 'Progress', icon: ClipboardIcon },
-    { id: 'files', name: 'Files', mobileName: 'Files', icon: PaperClipIcon },
-    { id: 'comments', name: 'Comments', mobileName: 'Comments', icon: ChatBubbleLeftRightIcon },
-  ];
-
-  // Tab scrolling ref
-  const tabsRef = useRef(null);
+  const load = useCallback(async () => {
+    try {
+      const res = await api.get(`/api/orders/${id}`);
+      setOrder(res.data);
+      setChosen((c) => c || res.data.assignedTo?._id || '');
+      setError(null);
+    } catch (e) {
+      setError(e.response?.data?.message || t('mg.d.loadError'));
+    }
+  }, [id, t]);
 
   useEffect(() => {
-    // Update URL when tab changes
-    const newSearchParams = new URLSearchParams(searchParams);
-    if (activeTab !== 'details') {
-      newSearchParams.set('tab', activeTab);
-    } else {
-      newSearchParams.delete('tab');
-    }
-    setSearchParams(newSearchParams, { replace: true });
-  }, [activeTab, searchParams, setSearchParams]);
+    load();
+    api.get('/api/users?role=employee&isActive=true&limit=100').then((r) => setEmployees(r.data.users || [])).catch(() => {});
+  }, [load]);
+  useAutoRefresh(load, 60000, [load]);
+  usePageChrome({ title: order?.title });
 
-  const onDrop = acceptedFiles => {
-    setFiles(prevFiles => [
-      ...prevFiles,
-      ...acceptedFiles.map(file =>
-        Object.assign(file, { preview: URL.createObjectURL(file) })
-      )
-    ]);
-  };
+  const fmtDate = (d) => (d ? new Date(d).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—');
+  const fmtTime = (d) => new Date(d).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US', { dateStyle: 'medium', timeStyle: 'short' });
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.gif'],
-      'application/pdf': ['.pdf'],
-      'application/vnd.adobe.illustrator': ['.ai'],
-      'application/postscript': ['.eps'],
-      'application/x-photoshop': ['.psd'],
-    },
-    maxSize: 50 * 1024 * 1024, // 50MB
-  });
-
-  const removeFile = (fileToRemove) => {
-    setFiles(files.filter(file => file !== fileToRemove));
-    URL.revokeObjectURL(fileToRemove.preview);
-  };
-
-  const handleFileUpload = async () => {
-    if (files.length === 0) return;
-    
-    setUploading(true);
+  const run = async (fn, okMsg, errMsg) => {
     try {
-      const formData = new FormData();
-      
-      files.forEach(file => {
-        formData.append('files', file);
-      });
-      
-      formData.append('relatedOrder', id);
-      formData.append('fileType', 'manager');
-      
-      const response = await api.post('/api/files/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        }
-      });
-      
-      setFiles([]);
-      toast.success('Files uploaded successfully');
-      
-      // Refresh order data
-      const orderResponse = await api.get(`/api/orders/${id}`);
-      setOrder(orderResponse.data);
-    } catch (error) {
-      console.error('Error uploading files:', error);
-      toast.error('Failed to upload files');
+      setBusy(true);
+      await fn();
+      if (okMsg) toast.success(okMsg);
+      await load();
+    } catch (e) {
+      toast.error(e.response?.data?.message || errMsg);
     } finally {
-      setUploading(false);
+      setBusy(false);
     }
   };
 
-  useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        const response = await api.get(`/api/orders/${id}`);
-        setOrder(response.data);
-        if (response.data.assignedTo) {
-          setSelectedEmployee(response.data.assignedTo._id);
-        }
-      } catch (error) {
-        toast.error('Failed to fetch order details');
-        console.error('Error fetching order:', error);
-        // Redirect back to orders list if order not found
-        if (error.response?.status === 404) {
-          navigate('/manager/orders');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
+  const setStatus = (status) => run(() => api.put(`/api/orders/${id}/status`, { status }), t('mg.d.statusUpdated'), t('mg.d.statusError'));
+  const assign = () => run(() => api.put(`/api/orders/${id}/assign`, { employeeId: chosen }), t('mg.assigned'), t('mg.assignError'));
 
-    const fetchEmployees = async () => {
-      try {
-        const response = await api.get('/api/users?role=employee');
-        setEmployees(response.data.users || []);
-      } catch (error) {
-        console.error('Error fetching employees:', error);
-        toast.error('Failed to fetch employees');
-      }
-    };
-
-    fetchOrder();
-    fetchEmployees();
-    
-    return () => {};
-  }, [id, navigate, updating, submittingComment, isAssigning]);
-
-  const refreshOrder = useCallback(async () => {
-    try {
-      const response = await api.get(`/api/orders/${id}`);
-      setOrder(response.data);
-    } catch (_e) {}
-  }, [id]);
-
-  useAutoRefresh(refreshOrder, 60000, [refreshOrder]); // 60 seconds (1 minute)
-
-  // Format date to readable format
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Not specified';
-    
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return 'Not specified';
-      
-      const options = { year: 'numeric', month: 'long', day: 'numeric' };
-      return date.toLocaleDateString(undefined, options);
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'Not specified';
-    }
-  };
-  
-  // Format time separately
-  const formatTime = (dateString) => {
-    if (!dateString) return '';
-    
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '';
-    
-    const options = { hour: '2-digit', minute: '2-digit' };
-    return date.toLocaleTimeString(undefined, options);
-  };
-
-  // Get status badge color based on status
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Submitted':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'In Review':
-      case 'In Prepress':
-        return 'bg-blue-100 text-blue-800';
-      case 'Completed':
-      case 'Delivered':
-        return 'bg-green-100 text-green-800';
-      case 'Cancelled':
-        return 'bg-red-100 text-red-800';
-      case 'On Hold':
-        return 'bg-gray-100 text-gray-800';
-      case 'Ready for Delivery':
-        return 'bg-indigo-100 text-indigo-800';
-      case 'Ready for Prepress':
-        return 'bg-purple-100 text-purple-800';
-      case 'Approved':
-        return 'bg-indigo-100 text-indigo-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const handleStatusUpdate = async (newStatus) => {
-    try {
-      setUpdating(true);
-      // Convert status to proper case
-      const statusMap = {
-        'in prepress': 'In Prepress',
-        'completed': 'Completed',
-        'Completed': 'Completed',
-        'cancelled': 'Cancelled',
-        'Cancelled': 'Cancelled'
-      };
-      const formattedStatus = statusMap[newStatus] || newStatus;
-      
-      // Special handling for In Prepress status - only mark the prepress stage as in progress
-      // but leave the design stage as is (don't automatically mark it completed)
-      if (formattedStatus === 'In Prepress') {
-        await api.put(`/api/orders/${id}/status`, { status: formattedStatus });
-      } else {
-      await api.put(`/api/orders/${id}/status`, { status: formattedStatus });
-      }
-      
-      // Refresh order data
-      const response = await api.get(`/api/orders/${id}`);
-      setOrder(response.data);
-      toast.success(`Order status updated to ${formattedStatus}`);
-    } catch (error) {
-      toast.error('Failed to update order status');
-      console.error('Error updating status:', error);
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const handleAssignOrder = async () => {
-    if (!selectedEmployee) return;
-
-    try {
-      setIsAssigning(true);
-      await api.put(`/api/orders/${id}/assign`, { employeeId: selectedEmployee });
-      
-      // Refresh order data
-      const response = await api.get(`/api/orders/${id}`);
-      setOrder(response.data);
-      
-      toast.success('Order assigned successfully');
-    } catch (error) {
-      toast.error('Failed to assign order');
-      console.error('Error assigning order:', error);
-    } finally {
-      setIsAssigning(false);
-    }
-  };
-
-  const handleCommentSubmit = async (e) => {
+  const sendComment = async (e) => {
     e.preventDefault();
     if (!comment.trim()) return;
-
     try {
-      setSubmittingComment(true);
+      setSending(true);
       await api.post(`/api/orders/${id}/comments`, { content: comment });
-      // Refresh order data to show new comment
-      const response = await api.get(`/api/orders/${id}`);
-      setOrder(response.data);
       setComment('');
-      toast.success('Comment added successfully');
-    } catch (error) {
-      toast.error('Failed to add comment');
-      console.error('Error adding comment:', error);
+      await load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || t('mg.d.commentError'));
     } finally {
-      setSubmittingComment(false);
+      setSending(false);
     }
   };
 
-  const calculateProgressPercentage = () => {
-    if (!order || !order.stages) return 0;
-    
-    // If order is completed or delivered, return 100%
-    if (order.status === 'Completed' || order.status === 'Delivered') {
-      return 100;
+  const upload = async (e) => {
+    const picked = Array.from(e.target.files || []);
+    if (!picked.length) return;
+    try {
+      setUploading(true);
+      const fd = new FormData();
+      picked.forEach((f) => fd.append('files', f));
+      fd.append('relatedOrder', id);
+      fd.append('fileType', 'manager');
+      await api.post('/api/files/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      toast.success(t('mg.d.uploaded'));
+      await load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || t('mg.d.uploadError'));
+    } finally {
+      setUploading(false);
+      if (fileInput.current) fileInput.current.value = '';
     }
-
-    // Define stage weights - without production stage
-    const stageWeights = {
-      'submit': 1,
-      'review': 1,
-      'prepress': 1,
-      'delivery': 1
-    };
-
-    let completedWeight = 0;
-    const totalWeight = Object.values(stageWeights).reduce((a, b) => a + b, 0);
-
-    // Add submission weight automatically as it's always completed
-    completedWeight += stageWeights.submit;
-
-    // Check design/review stage
-    if (order.stages.review.status === 'Completed') {
-      completedWeight += stageWeights.review;
-    }
-
-    // Check prepress stage
-    if (order.stages.prepress.status === 'Completed') {
-      completedWeight += stageWeights.prepress;
-    }
-
-    // Check delivery stage
-    if (order.stages.delivery.status === 'Completed') {
-      completedWeight += stageWeights.delivery;
-    }
-
-    return (completedWeight / totalWeight) * 100;
   };
 
-  const arePrepressSubprocessesCompleted = () => {
-    if (!order?.stages?.prepress?.subProcesses) return false;
-    
-    const subProcesses = order.stages.prepress.subProcesses;
+  if (error && !order) {
     return (
-      subProcesses.positioning?.status === 'Completed' &&
-      subProcesses.backExposure?.status === 'Completed' &&
-      subProcesses.laserImaging?.status === 'Completed' &&
-      subProcesses.mainExposure?.status === 'Completed' &&
-      subProcesses.washout?.status === 'Completed' &&
-      subProcesses.drying?.status === 'Completed' &&
-      subProcesses.postExposure?.status === 'Completed' &&
-      subProcesses.uvcExposure?.status === 'Completed' &&
-      subProcesses.finishing?.status === 'Completed'
-    );
-  };
-
-  // Calculate price breakdown details
-  const calculatePriceBreakdown = () => {
-    if (!order || !order.specifications) return null;
-    
-    const { dimensions, materialThickness, colors } = order.specifications;
-    
-    // Calculate base dimensions with repeat
-    const width = parseFloat(dimensions?.width || 0);
-    const height = parseFloat(dimensions?.height || 0);
-    const widthRepeat = parseInt(dimensions?.widthRepeatCount || 1);
-    const heightRepeat = parseInt(dimensions?.heightRepeatCount || 1);
-    
-    const totalWidth = width * widthRepeat;
-    const totalHeight = height * heightRepeat;
-    const totalArea = totalWidth * totalHeight;
-    
-    // Determine material price factor
-    let materialPriceFactor = 0.85; // Default for 1.7 microns
-    if (materialThickness === 1.14) {
-      materialPriceFactor = 0.75;
-    } else if (materialThickness === 2.54) {
-      materialPriceFactor = 0.95;
-    }
-    
-    // Calculate color multiplier
-    let colorMultiplier = colors || 1;
-    
-    // Calculate final price
-    const estimatedPrice = order.cost?.estimatedCost || (totalArea * colorMultiplier * materialPriceFactor).toFixed(2);
-    
-    // Use cm as the unit rather than mm
-    const unit = 'cm';
-    
-    return {
-      dimensions: `${width} × ${height} ${unit}`,
-      totalDimensions: `${totalWidth} × ${totalHeight} ${unit}`,
-      repeats: `Width: ${widthRepeat} × Height: ${heightRepeat}`,
-      totalArea: totalArea.toFixed(2),
-      colors: colorMultiplier,
-      materialFactor: materialPriceFactor.toFixed(2),
-      formula: '(Width × Width Repeat) × (Height × Height Repeat) × Colors × Material Factor',
-      estimatedPrice
-    };
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
-      </div>
+      <>
+        <Notice tone="error">{error}</Notice>
+        <Link to="/manager/orders" className="ud-btn ud-btn-secondary" style={{ alignSelf: 'flex-start' }}>{t('mg.d.back')}</Link>
+      </>
     );
   }
-
   if (!order) {
     return (
-      <div className="py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white shadow overflow-hidden sm:rounded-lg p-6 text-center">
-            <p className="text-gray-500">Order not found</p>
-            <Link
-              to="/manager/orders"
-              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-600 bg-primary-50 hover:bg-primary-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            >
-              Back to Orders
-            </Link>
-          </div>
-        </div>
+      <div role="status" aria-label={t('common.loading')} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <Skeleton height={150} />
+        <Skeleton height={300} />
       </div>
     );
   }
 
+  const spec = order.specifications || {};
+  const dim = spec.dimensions || {};
+  const closed = CLOSED.includes(order.status);
+  const step = nextStep(order);
+  const states = stageStates(order);
+  const subs = order.stages?.prepress?.subProcesses || {};
+  const price = order.quote?.status === 'Approved' ? { label: t('mg.d.quoted'), v: `${Number(order.quote.amount).toLocaleString()} ${order.quote.currency}` } : order.cost?.estimatedCost ? { label: t('mg.d.estimate'), v: `${Number(order.cost.estimatedCost).toLocaleString()} ${order.cost.currency || ''}` } : null;
+  const address = order.client?.address;
+  const addressLine = address && typeof address === 'object' ? [address.street, address.city, address.state, address.country].filter(Boolean).join(', ') : address || '—';
+
+  const orderInfo = [
+    [t('mg.d.type'), order.orderType],
+    [t('mg.d.package'), spec.packageType],
+    [t('mg.d.material'), spec.material],
+    [t('mg.d.thickness'), spec.materialThickness ? <bdi dir="ltr">{spec.materialThickness} mm</bdi> : '—'],
+    [t('mg.d.size'), dim.width && dim.height ? <bdi dir="ltr">{`${dim.width} × ${dim.height} ${dim.unit || 'mm'}`}</bdi> : '—'],
+    [t('mg.d.colors'), spec.colors],
+    [t('mg.d.printing'), spec.printingMode],
+    [t('mg.d.created'), fmtDate(order.createdAt)],
+    [t('mg.d.deadline'), fmtDate(order.deadline)],
+    spec.jobPath ? [t('mg.d.jobPath'), <bdi dir="ltr">{spec.jobPath}</bdi>] : null,
+    spec.distortion !== undefined && spec.distortion !== null ? [t('mg.d.distortion'), `${spec.distortion}%`] : null,
+    price ? [price.label, <bdi dir="ltr">{price.v}</bdi>] : null,
+  ].filter(Boolean);
+
+  const stages = [
+    { title: t('mg.d.stage.submission'), state: states.submission, note: fmtDate(order.createdAt) },
+    { title: t('mg.d.stage.design'), state: states.design, note: order.assignedTo?.name || t('mg.notAssigned') },
+    { title: t('mg.d.stage.ripping'), state: states.ripping, note: t(`mg.d.stage.${states.ripping === 'done' ? 'done' : states.ripping === 'current' ? 'inProgress' : 'waiting'}`) },
+    {
+      title: t('mg.d.stage.prepress'),
+      state: states.prepress,
+      note: t(`mg.d.stage.${states.prepress === 'done' ? 'done' : states.prepress === 'current' ? 'inProgress' : 'waiting'}`),
+      subsTitle: t('mg.d.subsTitle'),
+      subs: PROCESS_KEYS.map((k) => ({ label: t(`process.${k}`), done: subs[k]?.status === 'Completed' })),
+    },
+    { title: t('mg.d.stage.delivery'), state: states.delivery, note: t(`mg.d.stage.${states.delivery === 'done' ? 'done' : states.delivery === 'current' ? 'inProgress' : 'waiting'}`) },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Order header */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="px-4 py-5 sm:px-6 flex justify-between items-start">
-          <div>
-            <h3 className="text-lg leading-6 font-medium text-gray-900">{order.title || 'Order Details'}</h3>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500">
-              Order #{order.orderNumber}
-            </p>
+    <>
+      <section className="ud-card ud-rise" dir={dir} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span className="ud-order-no ud-root">{order.orderNumber}</span>
+          <OrderStatusBadge status={order.status} />
+          {order.priority && <PriorityBadge level={String(order.priority).toLowerCase()} label={t(`mg.priority.${String(order.priority).toLowerCase()}`) === `mg.priority.${String(order.priority).toLowerCase()}` ? order.priority : undefined} />}
+          <span style={{ color: 'var(--text-muted)' }}>{order.client?.name}{order.client?.company ? ` · ${order.client.company}` : ''}</span>
         </div>
-          <div className="flex flex-col items-end">
-            <div>
-              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}>
-                {order.status || 'Unknown Status'}
-              </span>
-            </div>
+        <OrderStepper dir={dir} current={stepperIndex(order.status)} steps={[t('step.submission'), t('step.design'), t('step.ripping'), t('step.prepress'), t('step.delivery')]} label={t('dash.progress')} />
+        {order.status === 'Awaiting Approval' && <Notice tone="warn">{t('mg.d.waitingClient')}</Notice>}
+      </section>
+
+      {!closed && (
+        <section className="ud-card" dir={dir} style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div style={{ minWidth: 240, flex: '1 1 260px' }}>
+            <Select label={t('mg.d.assignedTo')} value={chosen} onChange={(e) => setChosen(e.target.value)} options={[{ value: '', label: t('mg.notAssigned') }, ...employees.map((u) => ({ value: u._id, label: u.name }))]} />
           </div>
+          <Button variant={step?.type === 'assign' ? 'primary' : 'secondary'} onClick={assign} disabled={busy || !chosen || chosen === (order.assignedTo?._id || '')}>{t('mg.assign')}</Button>
+        </section>
+      )}
+
+      <QuotePanel order={order} onChanged={load} />
+
+      <Tabs dir={dir} label={t('nav.orders')} value={tab} onChange={(k) => setParams(k === 'details' ? {} : { tab: k }, { replace: true })} items={TABS.map((k) => ({ key: k, label: t(`mg.tab.${k}`), count: k === 'files' ? (order.files || []).length : k === 'comments' ? (order.comments || []).length : undefined }))} />
+
+      {tab === 'details' && (
+        <div className="ud-grid ud-grid-2" dir={dir}>
+          <section className="ud-card ud-root"><h2 className="ud-card-h" style={{ marginBottom: 16 }}>{t('mg.d.order')}</h2><DefList dir={dir} items={orderInfo} /></section>
+          <section className="ud-card ud-root">
+            <h2 className="ud-card-h" style={{ marginBottom: 16 }}>{t('mg.d.client')}</h2>
+            <DefList dir={dir} items={[[t('mg.d.name'), order.client?.name || '—'], [t('mg.d.company'), order.client?.company || '—'], [t('mg.d.email'), <bdi dir="ltr">{order.client?.email || '—'}</bdi>], [t('mg.d.phone'), <bdi dir="ltr">{order.client?.phone || '—'}</bdi>], [t('mg.d.address'), addressLine]]} />
+            {spec.additionalDetails && (<><h3 className="ud-card-h" style={{ marginBlockStart: 20 }}>{t('mg.d.notes')}</h3><p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{spec.additionalDetails}</p></>)}
+          </section>
         </div>
-        
-        {/* Tab Navigation */}
-        <div className="border-t border-gray-200 bg-white">
-          {/* Scrollable tabs container */}
-          <div
-            ref={tabsRef}
-            className="flex overflow-x-auto scrollbar-hide px-4 sm:px-0 sm:overflow-visible sm:justify-center"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            <nav className="flex space-x-0 sm:space-x-8 sm:justify-center" aria-label="Tabs">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`${
-                    activeTab === tab.id
-                      ? 'border-primary-500 text-primary-600 bg-primary-50 sm:bg-transparent'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  } whitespace-nowrap py-3 px-4 sm:py-4 sm:px-1 border-b-2 font-medium text-sm flex items-center justify-center sm:justify-start min-w-[120px] sm:min-w-0 flex-shrink-0`}
-                >
-                  <tab.icon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
-                  <span className="hidden sm:inline">{tab.name}</span>
-                  <span className="sm:hidden">{tab.mobileName}</span>
-                </button>
+      )}
+
+      {tab === 'progress' && <section className="ud-card ud-root"><ProgressTimeline dir={dir} stages={stages} doneLabel={t('mg.d.doneLabel')} /></section>}
+
+      {tab === 'files' && (
+        <section className="ud-card ud-root" dir={dir}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <h2 className="ud-card-h">{t('mg.d.files')}</h2>
+            <>
+              <input ref={fileInput} id="mgr-files" type="file" multiple style={{ display: 'none' }} onChange={upload} />
+              <label htmlFor="mgr-files" className="ud-btn ud-btn-secondary" style={{ cursor: 'pointer' }}>{uploading ? t('mg.d.uploading') : t('mg.d.chooseFiles')}</label>
+            </>
+          </div>
+          {(order.files || []).length === 0 ? (
+            <p className="ud-card-s" style={{ marginBlockStart: 8 }}>{t('mg.d.noFiles')}</p>
+          ) : (
+            <ul className="ud-files" style={{ marginBlockStart: 12 }}>
+              {order.files.map((f) => (
+                <li key={f._id} className="ud-file">
+                  <span className="ud-file-ph">{(f.originalname || '').split('.').pop().toUpperCase().slice(0, 4)}</span>
+                  <span className="ud-file-name">{f.originalname || f.filename}
+                    <span className="ud-hint" style={{ display: 'block' }}>{f.uploadedBy?.name ? `${f.uploadedBy.name} · ` : ''}{fmtDate(f.createdAt)}</span>
+                  </span>
+                  <button type="button" className="ud-btn ud-btn-secondary" onClick={(e) => openFile(e, f._id)}>{t('mg.d.download')}</button>
+                </li>
               ))}
-            </nav>
-          </div>
-        </div>
+            </ul>
+          )}
+        </section>
+      )}
 
-        {/* Tab Content */}
-        <div className="px-3 py-4 sm:px-6 sm:py-5">
-          {/* Details Tab */}
-          {activeTab === 'details' && <DetailsTab formatDate={formatDate} formatTime={formatTime} order={order} />}
+      {tab === 'comments' && (
+        <section className="ud-card ud-root" dir={dir}>
+          {(order.comments || []).length === 0 ? (
+            <p className="ud-card-s">{t('mg.d.noComments')}</p>
+          ) : (
+            <ul style={{ listStyle: 'none', margin: '0 0 16px', padding: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {order.comments.map((c, i) => (
+                <li key={c._id || i} style={{ borderBlockEnd: '1px solid var(--border)', paddingBlockEnd: 12 }}>
+                  <b>{c.author?.name}</b> <span className="ud-hint">{fmtTime(c.createdAt)}</span>
+                  <p style={{ margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{c.content}</p>
+                </li>
+              ))}
+            </ul>
+          )}
+          <form onSubmit={sendComment} style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 560 }}>
+            <Field label={t('mg.d.addComment')} multiline rows={3} value={comment} onChange={(e) => setComment(e.target.value)} maxLength={2000} />
+            <Button type="submit" disabled={sending || !comment.trim()} style={{ alignSelf: 'flex-start' }}>{t('mg.d.send')}</Button>
+          </form>
+        </section>
+      )}
 
-          {/* Progress Tab */}
-          {activeTab === 'progress' && <ProgressTab formatDate={formatDate} formatTime={formatTime} order={order} />}
+      <OrderTimeline orderId={order._id} refreshKey={order.updatedAt} />
 
-          {/* Files Tab */}
-          {activeTab === 'files' && <FilesTab files={files} getInputProps={getInputProps} getRootProps={getRootProps} handleFileUpload={handleFileUpload} isDragActive={isDragActive} order={order} removeFile={removeFile} uploading={uploading} />}
-
-          {/* Comments Tab */}
-          {activeTab === 'comments' && <CommentsTab comment={comment} formatDate={formatDate} handleCommentSubmit={handleCommentSubmit} order={order} setComment={setComment} submittingComment={submittingComment} />}
-        </div>
-        
-        {/* Actions Section */}
-        <div className="border-t border-gray-200 px-3 py-4 sm:px-6 bg-gray-50">
-          {/* Navigation and Assignment Section */}
-          <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mb-4">
-            <Link
-              to="/manager/orders"
-              className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            >
-              Back to Orders
-            </Link>
-            
-            {/* Employee Assignment Dropdown */}
-            {!['Completed', 'Cancelled'].includes(order.status) && (
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                <select
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-sm"
-                  value={selectedEmployee}
-                  onChange={(e) => setSelectedEmployee(e.target.value)}
-                >
-                  <option value="">Select Employee</option>
-                  {employees.map((employee) => (
-                    <option key={employee._id} value={employee._id}>
-                      {employee.name}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={handleAssignOrder}
-                  disabled={isAssigning || !selectedEmployee}
-                  className="inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 text-center"
-                >
-                  {isAssigning ? 'Assigning...' : 'Assign'}
-                </button>
-              </div>
-            )}
-          </div>
-          
-          {/* Status Update Buttons */}
-          <div className="w-full"><QuotePanel order={order} onChanged={refreshOrder} /></div>
-          <div className="w-full"><OrderTimeline orderId={order._id} refreshKey={order.updatedAt} /></div>
-          {!['Completed', 'Cancelled'].includes(order.status) && <StatusActionsPanel handleStatusUpdate={handleStatusUpdate} order={order} updating={updating} />}
-        </div>
+      <div className="ud-actionbar ud-root" dir={dir}>
+        <Link to="/manager/orders" className="ud-btn ud-btn-secondary">{t('mg.d.back')}</Link>
+        <span className="ud-spacer" />
+        {!closed && order.status !== 'On Hold' && <Button variant="secondary" disabled={busy} onClick={() => setStatus('On Hold')}>{t('mg.d.hold')}</Button>}
+        {!closed && <Button variant="secondary" disabled={busy} style={{ color: 'var(--danger)' }} onClick={() => setConfirmCancel(true)}>{t('mg.d.cancelOrder')}</Button>}
+        {step && step.status && (
+          <Button disabled={busy} onClick={() => setStatus(step.status)}>
+            {t(step.type === 'resume' ? 'mg.d.resume' : `mg.d.next.${step.type}`)}
+          </Button>
+        )}
       </div>
-    </div>
+
+      {confirmCancel && (
+        <Modal
+          destructive
+          title={t('mg.d.cancelTitle')}
+          onClose={() => setConfirmCancel(false)}
+          actions={
+            <>
+              <Button variant="secondary" onClick={() => setConfirmCancel(false)}>{t('mg.d.keep')}</Button>
+              <Button variant="danger" disabled={busy} onClick={async () => { await setStatus('Cancelled'); setConfirmCancel(false); navigate('/manager/orders'); }}>{t('mg.d.cancelOrder')}</Button>
+            </>
+          }
+        >
+          <p>{t('mg.d.cancelText')}</p>
+        </Modal>
+      )}
+    </>
   );
 };
 
-export default OrderDetail;
+export default ManagerOrderDetail;

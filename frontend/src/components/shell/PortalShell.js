@@ -122,7 +122,11 @@ const PortalShell = ({ portal }) => {
             <img src={logoWhite} alt="UniDots" className="ud-logo" />
           </Link>
           <p className="ud-portal">{t(portal.titleKey)}</p>
-          <nav aria-label={t('nav.mainNavigation')}>{all.map(navLink)}</nav>
+          <nav aria-label={t('nav.mainNavigation')}>
+            {items.map(navLink)}
+            {more.length > 0 && <p className="ud-side-group">{t('nav.more')}</p>}
+            {more.map(navLink)}
+          </nav>
           <div className="ud-side-foot-wrap" style={{ marginBlockStart: 'auto' }}>
             <div className="ud-side-foot">
               <Avatar name={user?.name || 'U'} onNav />

@@ -385,6 +385,22 @@ const getOrders = asyncHandler(async (req, res) => {
     query['stages.delivery.courierInfo.mode'] = { $exists: true, $ne: null };
   }
 
+  // Manager shortcut: orders that need a decision (new and unassigned, or past their deadline)
+  if (req.query.needsAction === 'true') {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    query = {
+      $and: [
+        query,
+        { $or: [{ status: 'Submitted', assignedTo: null }, { deadline: { $lt: today }, status: { $nin: ['Completed', 'Delivered', 'Cancelled'] } }] },
+      ],
+    };
+  }
+
+  // Sorting: newest first by default, or by deadline / status
+  const SORTS = { deadline: { deadline: 1, createdAt: -1 }, status: { status: 1, createdAt: -1 }, created: { createdAt: -1 } };
+  const sortBy = SORTS[req.query.sort] || SORTS.created;
+
   // Every role only gets the orders it is allowed to see (search and filters cannot widen this)
   const scope = visibleOrderFilter(req.user);
   if (Object.keys(scope).length) query = { $and: [scope, query] };
@@ -406,7 +422,7 @@ const getOrders = asyncHandler(async (req, res) => {
     .populate('stages.prepress.subProcesses.postExposure.completedBy', 'name')
     .populate('stages.prepress.subProcesses.uvcExposure.completedBy', 'name')
     .populate('stages.prepress.subProcesses.finishing.completedBy', 'name')
-    .sort({ createdAt: -1 })
+    .sort(sortBy)
     .skip(startIndex)
     .limit(limit);
 

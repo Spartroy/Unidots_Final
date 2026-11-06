@@ -28,10 +28,15 @@ import { protect, client, staff, manager, prepress, prepressOrManager, courier }
 import { getSuggestedQuote, sendQuote, respondToQuote } from '../controllers/quoteController.js';
 import { getClientReport } from '../controllers/reportController.js';
 import { getOrderTimeline } from '../controllers/auditController.js';
+import { getManagerOverview } from '../controllers/overviewController.js';
 
 // Client dashboard routes (must be defined before the /:id routes to avoid conflicts)
 router.route('/client-stats')
   .get(protect, client, getClientStats);
+
+// Manager dashboard numbers (before /:id)
+router.route('/overview')
+  .get(protect, manager, getManagerOverview);
 
 // Client's own monthly report (before /:id)
 router.route('/client-report')

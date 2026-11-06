@@ -12,7 +12,7 @@ const OrderTimeline = ({ orderId, refreshKey }) => {
     let alive = true;
     api
       .get(`/api/orders/${orderId}/timeline`)
-      .then((r) => alive && (setEntries(r.data.entries), setFailed(false)))
+      .then((r) => alive && (setEntries(Array.isArray(r.data?.entries) ? r.data.entries : []), setFailed(false)))
       .catch(() => alive && setFailed(true));
     return () => {
       alive = false;

@@ -12,6 +12,8 @@ import courierEn from './courier.en';
 import courierAr from './courier.ar';
 import ordersEn from './orders.en';
 import ordersAr from './orders.ar';
+import managerEn from './manager.en';
+import managerAr from './manager.ar';
 
 const placeholders = (s) => (s.match(/\{\w+\}/g) || []).sort().join(',');
 
@@ -23,6 +25,7 @@ const pairs = [
   ['activity', activityEn, activityAr],
   ['courier', courierEn, courierAr],
   ['orders', ordersEn, ordersAr],
+  ['manager', managerEn, managerAr],
 ];
 
 describe.each(pairs)('%s translations', (name, enDict, arDict) => {
