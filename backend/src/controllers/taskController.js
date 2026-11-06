@@ -205,7 +205,8 @@ const updateTask = asyncHandler(async (req, res) => {
   // Fields that can be updated by managers
   else if (req.user.role === 'manager' || req.user.role === 'admin') {
     // Allow updating any field provided in the request
-    Object.keys(req.body).forEach(key => {
+    const allowed = ['title', 'description', 'status', 'priority', 'taskType', 'dueDate', 'relatedOrder', 'notes', 'progress', 'completionNotes'];
+    Object.keys(req.body).filter((key) => allowed.includes(key)).forEach(key => {
       updatedFields[key] = req.body[key];
       changedFields.push(key);
     });

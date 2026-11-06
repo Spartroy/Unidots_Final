@@ -28,8 +28,10 @@ import wizEn from '../locales/wiz.en';
 import wizAr from '../locales/wiz.ar';
 import peopleEn from '../locales/people.en';
 import peopleAr from '../locales/people.ar';
+import tasksEn from '../locales/tasks.en';
+import tasksAr from '../locales/tasks.ar';
 
-const dictionaries = { en: { ...en, ...landingEn, ...phase5En, ...prepressEn, ...activityEn, ...courierEn, ...ordersEn, ...managerEn, ...accountEn, ...profileEn, ...claimsEn, ...clientOrderEn, ...wizEn, ...peopleEn }, ar: { ...ar, ...landingAr, ...phase5Ar, ...prepressAr, ...activityAr, ...courierAr, ...ordersAr, ...managerAr, ...accountAr, ...profileAr, ...claimsAr, ...clientOrderAr, ...wizAr, ...peopleAr } };
+const dictionaries = { en: { ...en, ...landingEn, ...phase5En, ...prepressEn, ...activityEn, ...courierEn, ...ordersEn, ...managerEn, ...accountEn, ...profileEn, ...claimsEn, ...clientOrderEn, ...wizEn, ...peopleEn, ...tasksEn }, ar: { ...ar, ...landingAr, ...phase5Ar, ...prepressAr, ...activityAr, ...courierAr, ...ordersAr, ...managerAr, ...accountAr, ...profileAr, ...claimsAr, ...clientOrderAr, ...wizAr, ...peopleAr, ...tasksAr } };
 const STORAGE_KEY = 'unidots_lang';
 
 const readStored = () => {
